@@ -1,4 +1,3 @@
-import React from "react";
 import axios from "axios";
 
 import { useState } from "react";
@@ -44,6 +43,7 @@ const Signup = () => {
         console.log("naay guba");
       } else {
         setError("Something went wrong. Please try again.");
+        console.log("asd");
       }
     }
   };

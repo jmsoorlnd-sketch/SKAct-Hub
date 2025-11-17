@@ -3,6 +3,11 @@ const projectSchema = new Schema({
     type: String,
     required: true,
   },
+
+  proposer: {
+    typeof: Schema.Types.ObjectId,
+    ref: "User",
+  },
   description: {
     type: String,
     required: true,

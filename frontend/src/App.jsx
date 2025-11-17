@@ -1,12 +1,13 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-// import Navbar from "./components/Navbar";
 import Signin from "./pages/Signin";
 import Signup from "./pages/Signup";
 import ProfilePage from "./pages/ProfilePage";
 import Public from "./components/Public";
 import Protected from "./components/Protected";
+import Projects from "./pages/Projects";
+import Youth from "./pages/Youth";
 
 const App = () => {
   const token = localStorage.getItem("token");
@@ -50,12 +51,27 @@ const App = () => {
             path="/dashboard"
             element={
               <Protected>
-                {" "}
                 <Dashboard />
               </Protected>
             }
           />
-          {/* <Route path="/" element={<Navbar />} /> */}
+
+          <Route
+            path="/project"
+            element={
+              <Protected>
+                <Projects />
+              </Protected>
+            }
+          />
+          <Route
+            path="/youthprofiles"
+            element={
+              <Protected>
+                <Youth />
+              </Protected>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </div>

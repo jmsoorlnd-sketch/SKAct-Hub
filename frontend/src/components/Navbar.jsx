@@ -16,13 +16,13 @@ const Navbar = () => {
         </div>
         <ul className="flex items-center gap-[6rem]">
           <li>
-            <a href="">Profiles</a>
+            <a href="/youthprofiles">Profiles</a>
           </li>
           <li>
-            <a href="">Dashboard</a>
+            <a href="/dashboard">Dashboard</a>
           </li>
           <li>
-            <a href="">Project</a>
+            <a href="/project">Project</a>
           </li>
           <div className="flex gap-[1rem]">
             <a href="/profile">user Profile</a>
