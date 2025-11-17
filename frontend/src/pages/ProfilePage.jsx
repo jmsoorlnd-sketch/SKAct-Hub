@@ -14,17 +14,13 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
-  // Fetch current logged-in user's profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/users/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("res", res.data);
 
         if (res.data.user) {
           setFormData({
@@ -42,24 +38,19 @@ const ProfilePage = () => {
         setLoading(false);
       }
     };
+
     fetchProfile();
   }, []);
 
-  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save or update profile
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      console.log(formData);
       const res = await axios.post(
         "http://localhost:5000/api/users/create",
         formData,
@@ -71,7 +62,6 @@ const ProfilePage = () => {
         }
       );
       setMessage("Profile saved successfully!");
-      console.log("Profile saved:", res.data);
     } catch (error) {
       console.error("Error saving profile:", error);
       setMessage("Failed to save profile. Try again.");
@@ -81,76 +71,66 @@ const ProfilePage = () => {
   if (loading) return <p>Loading profile...</p>;
 
   return (
-    <form
-      className="max-w-[400px] mx-auto my-[10rem] p-[3rem] rounded-[3px] shadow-[0_4px_8px_rgba(0,0,0,0.4)] flex flex-col gap-[1.5rem]"
-      onSubmit={handleSubmit}
-    >
-      <h1 className="text-2xl font-bold text-center">Profile</h1>
+    <div className="flex justify-center mt-20 px-4">
+      <form
+        className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-200 flex flex-col gap-6"
+        onSubmit={handleSubmit}
+      >
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={() => (window.location.href = "/dashboard")}
+          className="text-blue-600 hover:underline text-sm text-left"
+        >
+          ← Back to Dashboard
+        </button>
 
-      {message && <p className="text-center text-green-600">{message}</p>}
+        <h1 className="text-3xl font-bold text-center">Profile</h1>
 
-      <div className="flex flex-col">
-        <label>First Name</label>
-        <input
-          type="text"
-          name="firstname"
-          value={formData.firstname}
-          onChange={handleChange}
-        />
-      </div>
+        {message && (
+          <p className="text-center text-green-600 font-medium">{message}</p>
+        )}
 
-      <div className="flex flex-col">
-        <label>Last Name</label>
-        <input
-          type="text"
-          name="lastname"
-          value={formData.lastname}
-          onChange={handleChange}
-        />
-      </div>
+        {/* Profile picture circle */}
+        <div className="flex justify-center">
+          <div className="w-28 h-28 bg-gray-200 rounded-full flex items-center justify-center shadow-md border border-gray-300">
+            <span className="text-gray-500 text-sm">Profile</span>
+          </div>
+        </div>
 
-      <div className="flex flex-col">
-        <label>Age</label>
-        <input
-          type="number"
-          name="age"
-          value={formData.age}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="flex flex-col">
-        <label>Address</label>
-        <input
-          type="text"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="flex flex-col">
-        <label>Role</label>
-        <input
-          type="text"
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          readOnly
-        />
-      </div>
-      <div className="flex flex-col">
-        <label>Email</label>
-        <input
-          type="text"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-        />
-      </div>
+        {/* Inputs */}
+        <div className="flex flex-col gap-4">
+          {[
+            { label: "First Name", name: "firstname" },
+            { label: "Last Name", name: "lastname" },
+            { label: "Age", name: "age", type: "number" },
+            { label: "Address", name: "address" },
+            { label: "Role", name: "role", readOnly: true },
+            { label: "Email", name: "email" },
+          ].map((field, index) => (
+            <div key={index} className="flex flex-col">
+              <label className="font-medium mb-1">{field.label}</label>
+              <input
+                type={field.type || "text"}
+                name={field.name}
+                value={formData[field.name]}
+                onChange={handleChange}
+                readOnly={field.readOnly}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm"
+              />
+            </div>
+          ))}
+        </div>
 
-      <button type="submit" className="bg-blue-600 text-white py-2 rounded">
-        Save Profile
-      </button>
-    </form>
+        {/* Save Button */}
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium shadow-md transition"
+        >
+          Save Profile
+        </button>
+      </form>
+    </div>
   );
 };
 

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import axios from "axios";
+
 const Signin = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
+
   const { username, password } = formData;
-  const handleChange = async (e) => {
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -14,13 +17,12 @@ const Signin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // signin logic
-
     try {
       const res = await axios.post("http://localhost:5000/api/users/signin", {
         username,
         password,
       });
+
       console.log(res.data);
 
       localStorage.setItem("token", res.data.token);
@@ -30,63 +32,69 @@ const Signin = () => {
       window.location.href = "/dashboard";
     } catch (error) {
       console.error("Login failed:", error);
+      alert(error.response?.data?.message || "Login failed. Please try again.");
     }
   };
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-[400px] mx-auto my-[10rem] p-[3rem]  rounded-[3px] shadow-[0_4px_8px_rgba(0,0,0,0.4)] flex flex-col gap-[1.5rem]"
-    >
-      <h1 className="text-2xl font-bold text-center">Signin</h1>
-
-      {/* Username */}
-      <div className="flex flex-col">
-        <label className="mb-1 text-sm font-semibold">Username</label>
-        <input
-          type="text"
-          required
-          name="username"
-          value={username}
-          onChange={handleChange}
-          className="border rounded-[5px] p-[.5rem] w-full"
-        />
-      </div>
-
-      {/* Password */}
-      <div className="flex flex-col">
-        <label className="mb-1 text-sm font-semibold">Password</label>
-        <input
-          type="password"
-          required
-          name="password"
-          value={password}
-          onChange={handleChange}
-          className="border rounded-[5px] p-[0.5rem]  w-full"
-        />
-      </div>
-
-      {/* Button */}
-      <button
-        type="submit"
-        className=" text-white py-[1rem] rounded-[5px] w-full border-none "
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="w-[400px] bg-white p-10 rounded-xl shadow-lg flex flex-col gap-6"
       >
-        Submit
-      </button>
-      <a className="text-center text-[#374151] no-underline" href="">
-        Forgot Password
-      </a>
+        <h1 className="text-2xl font-bold text-center">Signin</h1>
 
-      {/* "Don't have an account?" line */}
-      <p className="text-center w-full text-sm border-t pt-[.5rem]">
-        Don’t have an account?{" "}
-        <a
-          href="/signup"
-          className="text-blue-600 no-underline text-[#ff0000] hover:underline"
+        {/* Username */}
+        <div className="flex flex-col">
+          <label className="mb-1 text-sm font-semibold">Username</label>
+          <input
+            type="text"
+            required
+            name="username"
+            value={username}
+            onChange={handleChange}
+            className="border rounded-md p-2 w-full"
+          />
+        </div>
+
+        {/* Password */}
+        <div className="flex flex-col">
+          <label className="mb-1 text-sm font-semibold">Password</label>
+          <input
+            type="password"
+            required
+            name="password"
+            value={password}
+            onChange={handleChange}
+            className="border rounded-md p-2 w-full"
+          />
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md w-full transition"
         >
-          Register
+          Submit
+        </button>
+
+        {/* Forgot Password */}
+        <a
+          className="text-center text-[#374151] hover:underline cursor-pointer"
+          href="#"
+        >
+          Forgot Password
         </a>
-      </p>
-    </form>
+
+        {/* Register Link */}
+        <p className="text-center text-sm border-t pt-3">
+          Don’t have an account?{" "}
+          <a href="/signup" className="text-blue-600 hover:underline">
+            Register
+          </a>
+        </p>
+      </form>
+    </div>
   );
 };
 

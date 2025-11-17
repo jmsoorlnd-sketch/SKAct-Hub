@@ -1,6 +1,5 @@
 import React from "react";
 import axios from "axios";
-
 import { useState } from "react";
 
 const Signup = () => {
@@ -14,16 +13,17 @@ const Signup = () => {
   const { username, email, role, password, confirmpass } = formData;
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    // signup logic here
     if (password !== confirmpass) {
       setError("Passwords do not match");
       return;
@@ -35,28 +35,29 @@ const Signup = () => {
         formData
       );
       setSuccess("Signup successful! You can now login.");
-      console.log(res.data);
-      console.log("naay guba");
       window.location.href = "/";
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // backend error
-        console.log("naay guba");
+        setError(err.response.data.message);
       } else {
         setError("Something went wrong. Please try again.");
       }
     }
   };
+
   return (
     <form
       className="
-    max-w-[400px] mx-auto my-[10rem] p-[3rem]  rounded-[3px] shadow-[0_4px_8px_rgba(0,0,0,0.4)] flex flex-col gap-[1.5rem]"
+        max-w-[400px] mx-auto my-[10rem] p-[3rem] 
+        rounded-[3px] shadow-[0_4px_8px_rgba(0,0,0,0.4)] 
+        flex flex-col gap-[1.5rem]
+      "
       onSubmit={handleSubmit}
     >
       <h1 className="text-2xl font-bold text-center">Signup</h1>
-      {/* username */}
+
       <div className="flex flex-col">
-        <label htmlFor="">Username</label>
+        <label>Username</label>
         <input
           type="text"
           name="username"
@@ -65,9 +66,9 @@ const Signup = () => {
           onChange={handleChange}
         />
       </div>
-      {/* email */}
+
       <div className="flex flex-col">
-        <label htmlFor="">Email</label>
+        <label>Email</label>
         <input
           type="email"
           name="email"
@@ -76,20 +77,20 @@ const Signup = () => {
           onChange={handleChange}
         />
       </div>
-      {/* role */}
+
       <div className="flex flex-col">
-        <label htmlFor="">Role</label>
-        <select name="role" value={role} required onChange={handleChange} id="">
+        <label>Role</label>
+        <select name="role" value={role} required onChange={handleChange}>
           <option value="">-- Select --</option>
           <option value="Admin">Admin</option>
           <option value="Chairman">Chairman</option>
           <option value="Treasurer">Treasurer</option>
           <option value="Secretary">Secretary</option>
-        </select>{" "}
+        </select>
       </div>
-      {/* password */}
+
       <div className="flex flex-col">
-        <label htmlFor="">Password</label>
+        <label>Password</label>
         <input
           type="text"
           name="password"
@@ -97,9 +98,9 @@ const Signup = () => {
           onChange={handleChange}
         />
       </div>
-      {/* confirm password */}
+
       <div className="flex flex-col">
-        <label htmlFor="">Confirm Password</label>
+        <label>Confirm Password</label>
         <input
           type="text"
           name="confirmpass"
@@ -107,7 +108,19 @@ const Signup = () => {
           onChange={handleChange}
         />
       </div>
-      <button type="submit">Create</button>
+
+      <button type="submit" className="bg-blue-600 text-white py-2 rounded">
+        Create
+      </button>
+
+      {/* BACK BUTTON — SMALL, LEFT SIDE */}
+      <button
+        type="button"
+        onClick={() => (window.location.href = "/")}
+        className="text-sm text-blue-600 underline w-fit"
+      >
+        ← Back to Login
+      </button>
     </form>
   );
 };
