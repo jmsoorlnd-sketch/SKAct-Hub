@@ -1,14 +1,11 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
-import Signin from "./pages/Signin";
-import Signup from "./pages/Signup";
+import Signin from "./pages/auth/Signin";
+import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
-import Public from "./components/Public";
-import Protected from "./components/Protected";
-import Projects from "./pages/Projects";
-import Youth from "./pages/Youth";
-
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import RoleProtectedRoute from "./utils/Auth";
+import PublicRoute from "./utils/PublicRoute";
 const App = () => {
   const token = localStorage.getItem("token");
 
@@ -22,56 +19,45 @@ const App = () => {
     <div>
       <BrowserRouter>
         <Routes>
+          {/* AUTH */}
           <Route
             path="/"
             element={
-              <Public>
+              <PublicRoute>
                 <Signin />
-              </Public>
+              </PublicRoute>
             }
           />
           <Route
             path="/signup"
             element={
-              <Public>
-                {" "}
+              <PublicRoute>
                 <Signup />
-              </Public>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <Protected>
-                <ProfilePage />
-              </Protected>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <Protected>
-                <Dashboard />
-              </Protected>
+              </PublicRoute>
             }
           />
 
+          {/* ADMIN */}
           <Route
-            path="/project"
+            path="/admin-dashboard"
             element={
-              <Protected>
-                <Projects />
-              </Protected>
+              <RoleProtectedRoute role={["Admin"]}>
+                <AdminDashboard />
+              </RoleProtectedRoute>
             }
           />
+
+          {/* Official */}
           <Route
-            path="/youthprofiles"
+            path="/profile"
             element={
-              <Protected>
-                <Youth />
-              </Protected>
+              <RoleProtectedRoute role={["Official"]}>
+                <ProfilePage />
+              </RoleProtectedRoute>
             }
           />
+
+          {/* Youth */}
         </Routes>
       </BrowserRouter>
     </div>

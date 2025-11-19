@@ -18,7 +18,8 @@ const barangaySchema = new mongoose.Schema({
     required: true,
   },
   chairman: {
-    type: String,
+    typeof: Schema.Types.ObjectId,
+    ref: "Official",
   },
 });
 

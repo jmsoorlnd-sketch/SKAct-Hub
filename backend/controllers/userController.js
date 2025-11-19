@@ -5,41 +5,49 @@ import jwt from "jsonwebtoken";
 //Register a new user
 const signupUser = async (req, res) => {
   try {
-    const { username, email, role, password } = req.body;
-    console.log(req.body);
-    //check existing user
-    const existUser = await User.findOne({ email });
-    if (existUser) {
-      return res.status(400).json({ message: "User already exist" });
-    }
+    const { username, email, password, role } = req.body;
+
+    // validate fields
     if (!username || !email || !role || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    //hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // check existing
+    const existUser = await User.findOne({ email });
+    if (existUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
 
-    //create new user
+    // ONLY admins can create admin/official accounts
+    if (role !== "Youth") {
+      if (!req.user || req.user.role !== "Admin") {
+        return res.status(403).json({
+          message: "Only admin can create Official or Admin accounts",
+        });
+      }
+    }
+
+    // hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = await User.create({
       username,
-      role,
       email,
       password: hashedPassword,
+      role,
     });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Account created successfully",
       user: {
-        _id: newUser.id,
+        _id: newUser._id,
         username: newUser.username,
         email: newUser.email,
         role: newUser.role,
-        password: newUser.password,
       },
     });
   } catch (error) {
-    console.error("Signup error details:", error);
+    console.error("Signup error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -48,20 +56,24 @@ const signupUser = async (req, res) => {
 const signinUser = async (req, res) => {
   try {
     const { username, password } = req.body;
-    //check user
+
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: "Invalid username or password" });
     }
-    //check password
+
     const passMatch = await bcrypt.compare(password, user.password);
     if (!passMatch) {
       return res.status(400).json({ message: "Invalid username or password" });
     }
-    //generate token
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+
+    // generate token
+    const token = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     res.status(200).json({
       token,
       user: {

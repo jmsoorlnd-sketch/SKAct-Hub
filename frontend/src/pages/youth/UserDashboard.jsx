@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Layout from "../layout/Layout";
+import Layout from "../../layout/Layout";
 
 const Dashboard = () => {
   const [openCompose, setOpenCompose] = useState(false);
