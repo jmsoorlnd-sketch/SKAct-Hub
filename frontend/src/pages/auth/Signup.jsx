@@ -62,10 +62,8 @@ const Signup = () => {
         onSubmit={handleSubmit}
       >
         <h1 className="text-2xl font-bold text-center">Signup</h1>
-
         {error && <p className="text-red-600">{error}</p>}
         {success && <p className="text-green-600">{success}</p>}
-
         <div className="flex flex-col">
           <label>Username</label>
           <input
@@ -77,7 +75,6 @@ const Signup = () => {
             className="border p-2 rounded"
           />
         </div>
-
         <div className="flex flex-col">
           <label>Email</label>
           <input
@@ -89,40 +86,6 @@ const Signup = () => {
             className="border p-2 rounded"
           />
         </div>
-
-        <div className="flex flex-col">
-          <label>Role</label>
-          <select
-            name="role"
-            value={role}
-            required
-            onChange={handleChange}
-            className="border p-2 rounded"
-          >
-            <option value="">-- Select --</option>
-            <option value="Admin">Admin</option>
-            <option value="Chairman">Chairman</option>
-            <option value="Treasurer">Treasurer</option>
-            <option value="Secretary">Secretary</option>
-          </select>
-        </div>
-
-        {/* Show admin key only for Admin role */}
-        {role === "Admin" && (
-          <div className="flex flex-col">
-            <label>Admin Key</label>
-            <input
-              type="text"
-              name="adminkey"
-              value={adminkey}
-              onChange={handleChange}
-              required
-              className="border p-2 rounded"
-              placeholder="Enter Admin Secret Key"
-            />
-          </div>
-        )}
-
         <div className="flex flex-col">
           <label>Password</label>
           <input
@@ -133,7 +96,6 @@ const Signup = () => {
             className="border p-2 rounded"
           />
         </div>
-
         <div className="flex flex-col">
           <label>Confirm Password</label>
           <input
@@ -144,14 +106,12 @@ const Signup = () => {
             className="border p-2 rounded"
           />
         </div>
-
         <button
           type="submit"
           className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
         >
           Create
         </button>
-
         <button
           type="button"
           onClick={() => (window.location.href = "/")}

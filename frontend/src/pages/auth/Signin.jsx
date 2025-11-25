@@ -29,16 +29,10 @@ const Signin = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       console.log(res.data.user);
+
       alert("Login successful!");
 
-      // SECURE REDIRECT based on BACKEND user role
-      if (user.role === "Admin") {
-        window.location.href = "/admin-dashboard";
-      } else if (user.role === "Official") {
-        window.location.href = "/official-dashboard";
-      } else {
-        window.location.href = "/user-dashboard";
-      }
+      window.location.href = "/dashboard";
     } catch (error) {
       console.error("Login failed:", error);
       alert(error.response?.data?.message || "Login failed.");

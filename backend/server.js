@@ -14,6 +14,9 @@ app.use(express.json());
 import UserRoute from "./routes/UserRoute.js";
 app.use("/api/users", UserRoute);
 
+import AdminRoute from "./routes/AdminRoute.js";
+app.use("/api/admins", AdminRoute);
+
 app.use("/api/posts", (req, res) => {
   res.send("Posts route is under construction.");
 });

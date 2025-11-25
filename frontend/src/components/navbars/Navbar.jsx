@@ -18,25 +18,6 @@ const Navbar = () => {
         <h1 className="text-xl font-bold tracking-wide">SKhub</h1>
       </div>
 
-      {/* NAV LINKS */}
-      <ul className="flex items-center gap-10 text-gray-600 font-medium">
-        <li>
-          <a className="hover:text-blue-600 transition" href="/profiles">
-            Profiles
-          </a>
-        </li>
-        <li>
-          <a className="hover:text-blue-600 transition" href="/dashboard">
-            Dashboard
-          </a>
-        </li>
-        <li>
-          <a className="hover:text-blue-600 transition" href="/project">
-            Project
-          </a>
-        </li>
-      </ul>
-
       {/* USER + LOGOUT */}
       <div className="flex items-center gap-4">
         <a

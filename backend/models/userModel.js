@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema({
 
   civil: { type: String, enum: ["married", "unmarried"] },
 
+  barangay: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Barangay",
+  },
+
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -3,14 +3,17 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import RoleProtectedRoute from "./utils/Auth";
+import Dashboard from "./pages/Dashboard";
 import PublicRoute from "./utils/PublicRoute";
+// import UserDashboard from "./pages/youth/UserDashboard";
+import SkOfficial from "./pages/admin/SkOfficial";
+import ProtectedRoute from "./utils/Auth";
 const App = () => {
   const token = localStorage.getItem("token");
-
+  const user = localStorage.getItem("user");
   if (token) {
     console.log("✅ Token still exists:", token);
+    console.log("✅ User still exists:", user);
   } else {
     console.log("🚫 No token found — user is logged out");
   }
@@ -39,11 +42,19 @@ const App = () => {
 
           {/* ADMIN */}
           <Route
-            path="/admin-dashboard"
+            path="/dashboard"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
-                <AdminDashboard />
-              </RoleProtectedRoute>
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sk-official"
+            element={
+              <ProtectedRoute>
+                <SkOfficial />
+              </ProtectedRoute>
             }
           />
 
@@ -51,9 +62,9 @@ const App = () => {
           <Route
             path="/profile"
             element={
-              <RoleProtectedRoute role={["Official"]}>
+              <ProtectedRoute role={["Official"]}>
                 <ProfilePage />
-              </RoleProtectedRoute>
+              </ProtectedRoute>
             }
           />
 

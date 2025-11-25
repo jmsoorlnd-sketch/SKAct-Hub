@@ -5,50 +5,66 @@ import jwt from "jsonwebtoken";
 //Register a new user
 const signupUser = async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
+    let { username, email, password } = req.body;
 
-    // validate fields
-    if (!username || !email || !role || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    // sanitize
+    username = username?.trim();
+    email = email?.trim();
+
+    // validate
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
-    // check existing
-    const existUser = await User.findOne({ email });
-    if (existUser) {
-      return res.status(400).json({ message: "User already exists" });
+    // check existing email
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
     }
 
-    // ONLY admins can create admin/official accounts
-    if (role !== "Youth") {
-      if (!req.user || req.user.role !== "Admin") {
-        return res.status(403).json({
-          message: "Only admin can create Official or Admin accounts",
-        });
-      }
+    // check existing username
+    const usernameExists = await User.findOne({ username });
+    if (usernameExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Username already exists",
+      });
     }
 
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // create user
     const newUser = await User.create({
       username,
       email,
       password: hashedPassword,
-      role,
+      role: "Youth",
     });
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "Account created successfully",
-      user: {
+      data: {
         _id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
-        role: newUser.role,
+        email,
+        username,
+        role: "Youth",
       },
     });
   } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Signup Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
   }
 };
 

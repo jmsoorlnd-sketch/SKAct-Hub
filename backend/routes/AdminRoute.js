@@ -1,5 +1,5 @@
 import express from "express";
-import { isAdmin, requireSignIn } from "../middlewares/authMiddleware.js";
+import { adminOnly, requireAuth } from "../middleware/Auth.js";
 import {
   createOfficial,
   getAllOfficials,
@@ -8,26 +8,20 @@ import {
   deleteOfficial,
   updateOfficial,
 } from "../controllers/AdminController.js";
-import e from "express";
 
 const router = express.Router();
 
-//createOfficial
-router.post("/officials", requireSignIn, isAdmin, createOfficial);
-//getAllOfficials
-router.get("/officials", requireSignIn, isAdmin, getAllOfficials);
-//getOfficialById
-router.get("/officials/:id", requireSignIn, isAdmin, getOfficialById);
-//resetOfficialPassword
+// ✅ Protected routes
+router.post("/addofficial", requireAuth, adminOnly, createOfficial);
+router.get("/getofficials", requireAuth, getAllOfficials);
+router.get("/officials/:id", requireAuth, adminOnly, getOfficialById);
 router.put(
   "/officials/reset-password/:id",
-  requireSignIn,
-  isAdmin,
+  requireAuth,
+  adminOnly,
   resetOfficialPassword
 );
-//deleteOfficial
-router.delete("/officials/:id", requireSignIn, isAdmin, deleteOfficial);
-//updateOfficial
-router.put("/officials/:id", requireSignIn, isAdmin, updateOfficial);
+router.delete("/officials/:id", requireAuth, adminOnly, deleteOfficial);
+router.put("/officials/:id", requireAuth, adminOnly, updateOfficial);
 
 export default router;
