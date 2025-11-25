@@ -4,6 +4,7 @@ import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import OfficialDashboard from "./pages/officials/officialDashboard";
 import RoleProtectedRoute from "./utils/Auth";
 import PublicRoute from "./utils/PublicRoute";
 const App = () => {
@@ -49,10 +50,10 @@ const App = () => {
 
           {/* Official */}
           <Route
-            path="/profile"
+            path="/official-dashboard"
             element={
               <RoleProtectedRoute role={["Official"]}>
-                <ProfilePage />
+                \n <OfficialDashboard />
               </RoleProtectedRoute>
             }
           />
