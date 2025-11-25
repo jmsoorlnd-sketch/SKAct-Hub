@@ -3,11 +3,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
-import Dashboard from "./pages/Dashboard";
+// import Dashboard from "./pages/Dashboard";
+
 import PublicRoute from "./utils/PublicRoute";
 // import UserDashboard from "./pages/youth/UserDashboard";
 import SkOfficial from "./pages/admin/SkOfficial";
 import ProtectedRoute from "./utils/Auth";
+import Dashboard from "./pages/Dashboard";
 const App = () => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
@@ -62,7 +64,7 @@ const App = () => {
           <Route
             path="/profile"
             element={
-              <ProtectedRoute role={["Official"]}>
+              <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
             }

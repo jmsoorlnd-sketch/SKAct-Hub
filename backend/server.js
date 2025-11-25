@@ -12,7 +12,9 @@ app.use(express.json());
 
 //routes
 import UserRoute from "./routes/UserRoute.js";
+import MessageRoute from "./routes/MessageRoute.js";
 app.use("/api/users", UserRoute);
+app.use("/api/messages", MessageRoute);
 
 import AdminRoute from "./routes/AdminRoute.js";
 app.use("/api/admins", AdminRoute);
