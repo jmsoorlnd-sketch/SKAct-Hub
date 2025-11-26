@@ -1,17 +1,40 @@
 import express from "express";
 import { requireAuth } from "../middleware/Auth.js";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
 import {
   sendMessage,
   getInbox,
   markAsRead,
   deleteMessage,
   getAdmins,
+  updateStatus,
+  getActivities,
 } from "../controllers/MessageController.js";
 
 const router = express.Router();
 
-// Send a message
-router.post("/send", requireAuth, sendMessage);
+// ensure uploads directory exists
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const unique = `${Date.now()}-${file.originalname}`;
+    cb(null, unique);
+  },
+});
+
+const upload = multer({ storage });
+
+// Send a message (supports single file upload 'attachment')
+router.post("/send", requireAuth, upload.single("attachment"), sendMessage);
 
 // Get inbox
 router.get("/inbox", requireAuth, getInbox);
@@ -24,5 +47,11 @@ router.delete("/:messageId", requireAuth, deleteMessage);
 
 // Get all admins
 router.get("/admins/list", requireAuth, getAdmins);
+
+// Update status (approve/reject/ongoing)
+router.put("/:messageId/status", requireAuth, updateStatus);
+
+// Activities for calendar
+router.get("/activities", requireAuth, getActivities);
 
 export default router;

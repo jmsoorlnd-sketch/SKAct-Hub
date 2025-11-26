@@ -31,6 +31,11 @@ const Navbar = () => {
           </a>
         </li>
         <li>
+          <a className="hover:text-blue-600 transition" href="/calendar">
+            Calendar
+          </a>
+        </li>
+        <li>
           <a className="hover:text-blue-600 transition" href="/project">
             Project
           </a>

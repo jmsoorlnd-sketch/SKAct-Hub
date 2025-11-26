@@ -5,11 +5,23 @@ import User from "../models/UserModel.js";
 export const sendMessage = async (req, res) => {
   try {
     const senderId = req.user._id;
-    const { recipientId, subject, body, attachmentName } = req.body;
+    const { recipientId, subject, body, startDate, endDate } = req.body;
 
     if (!recipientId || !subject || !body) {
       return res.status(400).json({ message: "Missing required fields" });
     }
+
+    // Attachment handling (multer adds `req.file`)
+    let attachmentUrl = null;
+    let attachmentName = null;
+    if (req.file) {
+      attachmentUrl = `/uploads/${req.file.filename}`;
+      attachmentName = req.file.originalname;
+    }
+
+    // parse dates if provided
+    let s = startDate ? new Date(startDate) : null;
+    let e = endDate ? new Date(endDate) : null;
 
     // Create message
     const message = await Message.create({
@@ -17,7 +29,11 @@ export const sendMessage = async (req, res) => {
       recipient: recipientId,
       subject,
       body,
+      attachmentUrl,
       attachmentName,
+      startDate: s,
+      endDate: e,
+      status: "pending",
     });
 
     await message.populate("sender", "username email role");
@@ -45,6 +61,44 @@ export const getInbox = async (req, res) => {
       messages,
       total: messages.length,
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update message status (approve / ongoing / rejected)
+export const updateStatus = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { status } = req.body;
+
+    if (!["pending", "approved", "ongoing", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const message = await Message.findByIdAndUpdate(
+      messageId,
+      { status },
+      { new: true }
+    ).populate("sender", "username email role");
+
+    res.status(200).json({ message: "Status updated", data: message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get activities that are approved or ongoing (for calendar)
+export const getActivities = async (req, res) => {
+  try {
+    const activities = await Message.find({
+      status: { $in: ["approved", "ongoing"] },
+      startDate: { $exists: true },
+    })
+      .populate("sender", "username email role")
+      .sort({ startDate: 1 });
+
+    res.status(200).json({ activities });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

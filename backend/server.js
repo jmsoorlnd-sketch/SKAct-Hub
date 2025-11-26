@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 
 //dotenv config
 dotenv.config();
@@ -34,3 +35,6 @@ app.get("/", (req, res) => {
 // MongoDB connection
 import connectDB from "./ConfigDb.js";
 connectDB();
+
+// serve uploaded files
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

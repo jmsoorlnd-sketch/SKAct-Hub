@@ -46,18 +46,19 @@ const Dashboard = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const data = {
-        recipientId: adminRecipient,
-        subject: formData.subject,
-        body: formData.body,
-        attachmentName: attachedFile?.name || null,
-      };
 
-      const _res = await axios.post(
-        "http://localhost:5000/api/messages/send",
-        data,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // Use FormData when uploading a file
+      const payload = new FormData();
+      payload.append("recipientId", adminRecipient);
+      payload.append("subject", formData.subject);
+      payload.append("body", formData.body);
+      if (formData.startDate) payload.append("startDate", formData.startDate);
+      if (formData.endDate) payload.append("endDate", formData.endDate);
+      if (attachedFile) payload.append("attachment", attachedFile);
+
+      await axios.post("http://localhost:5000/api/messages/send", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       alert("Message sent successfully!");
       setOpenCompose(false);
@@ -181,7 +182,27 @@ const Dashboard = () => {
               placeholder="Subject"
               className="border-b py-2 text-sm outline-none"
             />
-
+            {/* Activity dates */}
+            <div className="flex gap-2 mt-2">
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate || ""}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, startDate: e.target.value }))
+                }
+                className="border px-2 py-1 text-sm outline-none"
+              />
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate || ""}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, endDate: e.target.value }))
+                }
+                className="border px-2 py-1 text-sm outline-none"
+              />
+            </div>
             <textarea
               name="body"
               value={formData.body}

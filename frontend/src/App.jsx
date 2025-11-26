@@ -5,6 +5,7 @@ import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import OfficialDashboard from "./pages/officials/officialDashboard";
+import Calendar from "./pages/Calendar";
 import RoleProtectedRoute from "./utils/Auth";
 import PublicRoute from "./utils/PublicRoute";
 const App = () => {
@@ -21,14 +22,7 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           {/* AUTH */}
-          <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <Signin />
-              </PublicRoute>
-            }
-          />
+          <Route path="/" element={<Signin />} />
           <Route
             path="/signup"
             element={
@@ -53,7 +47,17 @@ const App = () => {
             path="/official-dashboard"
             element={
               <RoleProtectedRoute role={["Official"]}>
-                \n <OfficialDashboard />
+                <OfficialDashboard />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Calendar */}
+          <Route
+            path="/calendar"
+            element={
+              <RoleProtectedRoute role={["Admin", "Official", "Youth"]}>
+                <Calendar />
               </RoleProtectedRoute>
             }
           />

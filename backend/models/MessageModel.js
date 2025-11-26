@@ -28,6 +28,19 @@ const messageSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    // Activity dates for events sent by officials
+    startDate: {
+      type: Date,
+    },
+    endDate: {
+      type: Date,
+    },
+    // status: pending | approved | ongoing | rejected
+    status: {
+      type: String,
+      enum: ["pending", "approved", "ongoing", "rejected"],
+      default: "pending",
+    },
     isRead: {
       type: Boolean,
       default: false,
