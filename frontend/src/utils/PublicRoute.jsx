@@ -11,12 +11,15 @@ const PublicRoute = ({ children }) => {
   }
 
   // If logged in, block access to signin/signup
-  if (token && user?.role) {
-    if (user.role === "Admin")
-      return <Navigate to="/admin-dashboard" replace />;
-    if (user.role === "Official")
+  // Only redirect when token exists AND user has a valid role string
+  if (token && typeof user === "object" && typeof user.role === "string") {
+    // Normalize role string just in case
+    const role = user.role;
+    if (role === "Admin") return <Navigate to="/admin-dashboard" replace />;
+    if (role === "Official")
       return <Navigate to="/official-dashboard" replace />;
-    if (user.role === "User") return <Navigate to="/user-dashboard" replace />;
+    // role for youth users in the backend is 'Youth'
+    if (role === "Youth") return <Navigate to="/user-dashboard" replace />;
   }
 
   return children; // not logged in → allow access

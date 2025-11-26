@@ -22,7 +22,14 @@ const App = () => {
       <BrowserRouter>
         <Routes>
           {/* AUTH */}
-          <Route path="/" element={<Signin />} />
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <Signin />
+              </PublicRoute>
+            }
+          />
           <Route
             path="/signup"
             element={

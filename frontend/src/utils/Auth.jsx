@@ -18,7 +18,8 @@ const RoleProtectedRoute = ({ children, role }) => {
       return <Navigate to="/admin-dashboard" replace />;
     if (user?.role === "Official")
       return <Navigate to="/official-dashboard" replace />;
-    if (user?.role === "User") return <Navigate to="/user-dashboard" replace />;
+    if (user?.role === "Youth")
+      return <Navigate to="/user-dashboard" replace />;
 
     return <Navigate to="/" replace />;
   }
