@@ -27,6 +27,30 @@ const SkOfficial = () => {
 
     fetchOfficials();
   }, []);
+  const handleSoftDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this official?"))
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.delete(
+        `http://localhost:5000/api/admins/delete-officials/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setOfficials((prev) => prev.filter((o) => o._id !== id));
+      alert("Official removed successfully");
+    } catch (error) {
+      console.log(error);
+      alert(error.response?.data?.message || "Failed to delete official");
+    }
+  };
 
   return (
     <Layout>
@@ -136,7 +160,10 @@ const SkOfficial = () => {
                         <button className="text-blue-600 hover:text-blue-800 font-medium">
                           Edit
                         </button>
-                        <button className="text-red-600 hover:text-red-800 font-medium">
+                        <button
+                          className="text-red-600 hover:text-red-800 font-medium"
+                          onClick={() => handleSoftDelete(official._id)}
+                        >
                           Delete
                         </button>
                       </div>

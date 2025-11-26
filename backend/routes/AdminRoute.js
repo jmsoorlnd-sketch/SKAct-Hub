@@ -5,7 +5,7 @@ import {
   getAllOfficials,
   getOfficialById,
   resetOfficialPassword,
-  deleteOfficial,
+  softDelete,
   updateOfficial,
 } from "../controllers/AdminController.js";
 
@@ -21,7 +21,7 @@ router.put(
   adminOnly,
   resetOfficialPassword
 );
-router.delete("/officials/:id", requireAuth, adminOnly, deleteOfficial);
+router.delete("/delete-officials/:id", requireAuth, adminOnly, softDelete);
 router.put("/officials/:id", requireAuth, adminOnly, updateOfficial);
 
 export default router;

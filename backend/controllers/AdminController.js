@@ -54,7 +54,10 @@ const createOfficial = async (req, res) => {
  */
 const getAllOfficials = async (req, res) => {
   try {
-    const officials = await User.find({ role: "Official" }).select("-password");
+    const officials = await User.find({
+      role: "Official",
+      isDeleted: false,
+    }).select("-password");
     res.status(200).json(officials);
   } catch (error) {
     console.error("Get All Officials error:", error);
@@ -108,28 +111,24 @@ const resetOfficialPassword = async (req, res) => {
   }
 };
 
-/**
- * @desc Delete an official
- */
-const deleteOfficial = async (req, res) => {
+//soft delete official user
+
+const softDelete = async (req, res) => {
   try {
-    const officialId = req.params.id;
-
-    const official = await User.findById(officialId);
-    if (!official || official.role !== "Official") {
-      return res.status(404).json({ message: "Official not found" });
+    const id = req.params.id;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-
-    // 2️⃣ Fixed bug: should delete from User, not Official
-    await User.findByIdAndDelete(officialId);
-
-    res.status(200).json({ message: "Official deleted successfully" });
+    user.isDeleted = true;
+    await user.save();
+    res.status(200).json({ message: "User deleted successfully" });
+    console.log(id);
   } catch (error) {
-    console.error("Delete Official error:", error);
+    console.error("Delete User error:", error);
     res.status(500).json({ error: error.message });
   }
 };
-
 /**
  * @desc Update official details
  */
@@ -166,6 +165,6 @@ export {
   getAllOfficials,
   getOfficialById,
   resetOfficialPassword,
-  deleteOfficial,
+  softDelete,
   updateOfficial,
 };
