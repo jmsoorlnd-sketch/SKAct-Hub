@@ -77,7 +77,7 @@ const signinUser = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid username or password" });
     }
-    if (user.isDeleted) {
+    if (user.status == "Inactive") {
       return res
         .status(400)
         .json({ message: "User is deactivated, please contact admin" });

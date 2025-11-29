@@ -33,8 +33,11 @@ const userSchema = new mongoose.Schema({
     ref: "Barangay",
   },
 
-  isDeleted: { type: Boolean, default: false },
-
+  status: {
+    type: String,
+    enum: ["Active", "Inactive"],
+    default: "Active",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

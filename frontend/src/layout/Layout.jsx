@@ -19,10 +19,10 @@ const Layout = ({ children }) => {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 p-5 bg-gray-200  overflow-y-auto">
+          {children}
+        </main>
       </div>
-
-      <Footer />
     </div>
   );
 };

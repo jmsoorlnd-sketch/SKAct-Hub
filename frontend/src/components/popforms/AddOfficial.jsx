@@ -9,27 +9,41 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     position: "",
     username: "",
     password: "",
+    confirmPassword: "",
     role: "Official",
+    status: "Active",
   });
 
-  const { firstname, email, lastname, position, username, password } = formData;
+  const [error, setError] = useState("");
+
   if (!isOpen) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🔥 1. VALIDATE PASSWORD MATCH
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // 🔥 2. VALIDATE PASSWORD LENGTH (professional)
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
-    console.log("Sending token:", token);
 
     try {
       const response = await axios.post(
         "http://localhost:5000/api/admins/addofficial",
-
         formData,
         {
           headers: {
@@ -38,22 +52,28 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
           },
         }
       );
-      console.log(response.data);
-      console.log("Form Data:", formData);
-      onSubmit(formData); // pass data to parent
+
+      onSubmit(formData);
       onClose(); // close modal
     } catch (error) {
       console.error(error);
-      console.log(token);
+      setError("Failed to create official. Try again.");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50">
-      <div className="bg-white w-full max-w-md rounded-lg shadow-xl p-6">
+    <div className="fixed inset-0 z-50 flex bg-black/50 items-center justify-center pointer-events-none">
+      {/* <div className="absolute inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto"></div> */}
+
+      <div className="relative z-10 bg-white w-full max-w-md rounded-lg shadow-xl p-6 pointer-events-auto">
         <h2 className="text-xl font-semibold mb-4 text-blue-700">
           Create SK Official
         </h2>
+
+        {/* 🔥 ERROR MESSAGE */}
+        {error && (
+          <p className="mb-3 text-red-600 text-sm font-medium">{error}</p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* First + Last Name */}
@@ -113,11 +133,11 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             />
           </div>
 
-          {/* email */}
+          {/* Email */}
           <div>
             <label className="text-sm font-medium">Email</label>
             <input
-              type="text"
+              type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
@@ -139,8 +159,23 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             />
           </div>
 
+          {/* Confirm Password (PROFESSIONAL WAY) */}
+          <div>
+            <label className="text-sm font-medium">Confirm Password</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              className={`w-full mt-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-400 ${
+                error ? "border-red-500" : ""
+              }`}
+            />
+          </div>
+
           {/* Buttons */}
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 pt-6">
             <button
               type="button"
               onClick={onClose}

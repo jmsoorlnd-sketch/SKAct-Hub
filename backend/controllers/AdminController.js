@@ -20,7 +20,7 @@ const createOfficial = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 3️⃣ Create new official user
+    // 3️⃣ Create new official user with status
     const newOfficial = await User.create({
       username,
       role: "Official",
@@ -29,6 +29,7 @@ const createOfficial = async (req, res) => {
       firstname: firstname || "",
       lastname: lastname || "",
       position: position || "",
+      status: "Active", // ✅ Set initial status
     });
 
     res.status(201).json({
@@ -41,6 +42,7 @@ const createOfficial = async (req, res) => {
         firstname: newOfficial.firstname,
         lastname: newOfficial.lastname,
         position: newOfficial.position,
+        status: newOfficial.status, // ✅ include status in response
       },
     });
   } catch (error) {
@@ -54,10 +56,8 @@ const createOfficial = async (req, res) => {
  */
 const getAllOfficials = async (req, res) => {
   try {
-    const officials = await User.find({
-      role: "Official",
-      isDeleted: false,
-    }).select("-password");
+    const officials = await User.find({ role: "Official" }).select("-password");
+
     res.status(200).json(officials);
   } catch (error) {
     console.error("Get All Officials error:", error);
@@ -111,31 +111,42 @@ const resetOfficialPassword = async (req, res) => {
   }
 };
 
-//soft delete official user
+//deactivate official user
 
-const softDelete = async (req, res) => {
+const updateOfficialStatus = async (req, res) => {
   try {
-    const id = req.params.id;
-    const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["Active", "Inactive"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
     }
-    user.isDeleted = true;
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.status = status;
     await user.save();
-    res.status(200).json({ message: "User deleted successfully" });
-    console.log(id);
+
+    res.status(200).json({
+      message: `User ${status.toLowerCase()} successfully`,
+      user,
+    });
   } catch (error) {
-    console.error("Delete User error:", error);
     res.status(500).json({ error: error.message });
   }
 };
+
+export default updateOfficialStatus;
+
 /**
  * @desc Update official details
  */
 const updateOfficial = async (req, res) => {
   try {
     const officialId = req.params.id;
-    const { firstname, lastname, position, email, username } = req.body;
+    const { firstname, lastname, position, email, username, password } =
+      req.body;
 
     const official = await User.findById(officialId);
     if (!official || official.role !== "Official") {
@@ -149,14 +160,18 @@ const updateOfficial = async (req, res) => {
     official.email = email || official.email;
     official.username = username || official.username;
 
-    await official.save();
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      official.password = await bcrypt.hash(password, salt);
+    }
 
-    res
-      .status(200)
-      .json({ message: "Official updated successfully", official });
+    const updatedOfficial = await official.save();
+
+    // Send only **one** response with updated data
+    return res.status(200).json(updatedOfficial);
   } catch (error) {
     console.error("Update Official error:", error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -165,6 +180,6 @@ export {
   getAllOfficials,
   getOfficialById,
   resetOfficialPassword,
-  softDelete,
+  updateOfficialStatus,
   updateOfficial,
 };

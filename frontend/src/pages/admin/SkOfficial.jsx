@@ -1,13 +1,52 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "../../layout/Layout";
 import CreateOfficialModal from "../../components/popforms/AddOfficial";
-import { useState } from "react";
+import EditOfficial from "../../components/popforms/EditOfficial";
 import axios from "axios";
 
 const SkOfficial = () => {
   const [officials, setOfficials] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [selectedOfficial, setSelectedOfficial] = useState(null);
+
+  const [filters, setFilters] = useState({
+    status: "",
+    position: "",
+    barangay: "",
+    search: "",
+  });
+
+  // Apply filters to officials
+  const applyFilters = (officials) => {
+    return officials.filter((official) => {
+      if (filters.status && official.status !== filters.status) return false;
+      if (filters.position && official.position !== filters.position)
+        return false;
+      if (filters.barangay && official.barangay !== filters.barangay)
+        return false;
+      if (
+        filters.search &&
+        !(
+          official.firstname
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          official.lastname
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          official.username
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          official.email.toLowerCase().includes(filters.search.toLowerCase())
+        )
+      )
+        return false;
+      return true;
+    });
+  };
+
+  // Fetch officials from backend
   useEffect(() => {
     const fetchOfficials = async () => {
       try {
@@ -20,22 +59,29 @@ const SkOfficial = () => {
         );
         setOfficials(res.data);
       } catch (err) {
-        console.log(err);
-        console.log("Error fetching officials:", err);
+        console.error("Error fetching officials:", err);
       }
     };
-
     fetchOfficials();
   }, []);
-  const handleSoftDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to remove this official?"))
-      return;
+
+  // Toggle active/inactive status
+  const handleToggleStatus = async (official) => {
+    const newStatus = official.status === "Active" ? "Inactive" : "Active";
+
+    const confirmMsg =
+      newStatus === "Inactive"
+        ? "Are you sure you want to deactivate this official?"
+        : "Are you sure you want to activate this official?";
+
+    if (!window.confirm(confirmMsg)) return;
 
     try {
       const token = localStorage.getItem("token");
 
-      await axios.delete(
-        `http://localhost:5000/api/admins/delete-officials/${id}`,
+      await axios.put(
+        `http://localhost:5000/api/admins/status-official/${official._id}`,
+        { status: newStatus },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -44,60 +90,85 @@ const SkOfficial = () => {
         }
       );
 
-      setOfficials((prev) => prev.filter((o) => o._id !== id));
-      alert("Official removed successfully");
+      // Update UI instantly
+      setOfficials((prev) =>
+        prev.map((o) =>
+          o._id === official._id ? { ...o, status: newStatus } : o
+        )
+      );
     } catch (error) {
-      console.log(error);
-      alert(error.response?.data?.message || "Failed to delete official");
+      console.error(error);
+      alert(error.response?.data?.message || "Failed to update status");
     }
   };
-
+  const handleUpdateOfficial = (updatedOfficial) => {
+    setOfficials((prev) =>
+      prev.map((o) => (o._id === updatedOfficial._id ? updatedOfficial : o))
+    );
+  };
   return (
     <Layout>
-      <div className="bg-gray-200">
-        {/* Page Header */}
-        <div className="p-2">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-800">
-              SK Officials Management
-            </h1>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md"
-            >
-              + Add Official
-            </button>
-            <CreateOfficialModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onSubmit={(newOfficial) =>
-                setOfficials((prev) => [...prev, newOfficial])
-              }
-            />
-          </div>
+      <div className="bg-gray-200 p-2">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            SK Officials Management
+          </h1>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+          >
+            + Add Official
+          </button>
+          <CreateOfficialModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSubmit={(newOfficial) =>
+              setOfficials((prev) => [...prev, newOfficial])
+            }
+          />
         </div>
 
-        {/* Search + Filter */}
+        {/* Search + Filters */}
         <div className="p-2 rounded-lg mb-6 flex items-center gap-4">
           <input
             type="text"
             placeholder="Search SK officials..."
             className="flex-1 px-4 py-2 border rounded-lg bg-white"
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />
-
-          <select className="px-4 py-2 border rounded-lg bg-white">
+          <select
+            className="px-4 py-2 border rounded-lg bg-white"
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          >
+            <option value="">Filter by Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <select
+            className="px-4 py-2 border rounded-lg bg-white"
+            value={filters.position}
+            onChange={(e) =>
+              setFilters({ ...filters, position: e.target.value })
+            }
+          >
             <option value="">Filter by Position</option>
-            <option>Chairperson</option>
-            <option>Kagawad</option>
+            <option>Chairman</option>
             <option>Secretary</option>
             <option>Treasurer</option>
           </select>
-
-          <select className="px-4 py-2 border rounded-lg bg-white">
-            <option value="">Barangay</option>
+          <select
+            className="px-4 py-2 border rounded-lg bg-white"
+            value={filters.barangay}
+            onChange={(e) =>
+              setFilters({ ...filters, barangay: e.target.value })
+            }
+          >
+            <option value="">Filter by Barangay</option>
             <option>Brgy. 1</option>
             <option>Brgy. 2</option>
-            <option>Brgy. 3</option>
           </select>
         </div>
 
@@ -125,17 +196,24 @@ const SkOfficial = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Email
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Status
+                  </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="bg-white divide-y divide-gray-200">
-                {officials.map((official) => (
+              <tbody className="divide-y divide-gray-200">
+                {applyFilters(officials).map((official) => (
                   <tr
                     key={official._id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className={`transition-colors duration-500 ${
+                      official.status === "Inactive"
+                        ? "bg-red-100"
+                        : "bg-green-100"
+                    }`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {official.lastname}
@@ -155,16 +233,40 @@ const SkOfficial = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {official.email}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          official.status === "Active"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-red-200 text-red-800"
+                        }`}
+                      >
+                        {official.status}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                       <div className="flex gap-3 justify-center">
-                        <button className="text-blue-600 hover:text-blue-800 font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          onClick={() => {
+                            setSelectedOfficial(official);
+                            setIsResetOpen(true);
+                          }}
+                        >
                           Edit
                         </button>
+
                         <button
-                          className="text-red-600 hover:text-red-800 font-medium"
-                          onClick={() => handleSoftDelete(official._id)}
+                          className={`font-medium ${
+                            official.status === "Active"
+                              ? "text-red-600 hover:text-red-800"
+                              : "text-green-600 hover:text-green-800"
+                          }`}
+                          onClick={() => handleToggleStatus(official)}
                         >
-                          Delete
+                          {official.status === "Active"
+                            ? "Deactivate"
+                            : "Activate"}
                         </button>
                       </div>
                     </td>
@@ -174,6 +276,17 @@ const SkOfficial = () => {
             </table>
           </div>
         </div>
+
+        {/* Reset Password Modal */}
+        <EditOfficial
+          isOpen={isResetOpen}
+          onClose={() => {
+            setIsResetOpen(false);
+            setSelectedOfficial(null);
+          }}
+          official={selectedOfficial}
+          onSubmit={handleUpdateOfficial}
+        />
       </div>
     </Layout>
   );
