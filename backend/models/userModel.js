@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema({
     ref: "Barangay",
   },
 
+  status: {
+    type: String,
+    enum: ["Active", "Inactive"],
+    default: "Active",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

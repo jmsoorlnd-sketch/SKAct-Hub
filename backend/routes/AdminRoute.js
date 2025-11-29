@@ -1,11 +1,10 @@
 import express from "express";
 import { adminOnly, requireAuth } from "../middleware/Auth.js";
-import {
+import updateOfficialStatus, {
   createOfficial,
   getAllOfficials,
   getOfficialById,
   resetOfficialPassword,
-  deleteOfficial,
   updateOfficial,
 } from "../controllers/AdminController.js";
 
@@ -21,7 +20,13 @@ router.put(
   adminOnly,
   resetOfficialPassword
 );
-router.delete("/officials/:id", requireAuth, adminOnly, deleteOfficial);
-router.put("/officials/:id", requireAuth, adminOnly, updateOfficial);
+
+router.put(
+  "/status-official/:id",
+  requireAuth,
+  adminOnly,
+  updateOfficialStatus
+);
+router.put("/update-official/:id", requireAuth, adminOnly, updateOfficial);
 
 export default router;

@@ -18,64 +18,42 @@ const Sidebar = () => {
           <h1 className="text-2xl font-bold tracking-wide">Admin Panel</h1>
 
           <nav className="flex flex-col gap-3">
-            <a
-              href="/dashboard"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/dashboard" className="menu-item">
               <span>📊</span>
               <span>Dashboard</span>
             </a>
 
-            <a
-              href="/barangay-storage"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/barangay-storage" className="menu-item">
               <span>🏘️</span>
               <span>Barangays</span>
             </a>
 
-            <a
-              href="/admin/youth-profiles"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/admin/youth-profiles" className="menu-item">
               <span>🧑‍🤝‍🧑</span>
               <span>Youth Profiles</span>
             </a>
 
-            <a
-              href="/admin/events"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/admin/events" className="menu-item">
               <span>📅</span>
               <span>Event Scheduling</span>
             </a>
 
-            <a
-              href="/admin/monitoring"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/admin/monitoring" className="menu-item">
               <span>📊</span>
               <span>Monitoring & Evaluation</span>
             </a>
 
-            <a
-              href="/admin/reports"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/admin/reports" className="menu-item">
               <span>📑</span>
               <span>Reports</span>
             </a>
-            <a
-              href="/profile"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+
+            <a href="/profile" className="menu-item">
               <span>👤</span>
               <span>Profile</span>
             </a>
-            <a
-              href="/admin/settings"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+
+            <a href="/admin/settings" className="menu-item">
               <span>⚙️</span>
               <span>Settings</span>
             </a>
@@ -93,50 +71,32 @@ const Sidebar = () => {
           <h1 className="text-2xl font-bold tracking-wide">SKOfficial Panel</h1>
 
           <nav className="flex flex-col gap-3">
-            <a
-              href="/official-dashboard"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/official-dashboard" className="menu-item">
               <span>✉️</span>
               <span>Compose</span>
             </a>
 
-            <a
-              href="/dashboard"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/dashboard" className="menu-item">
               <span>📥</span>
               <span>Inbox</span>
             </a>
 
-            <a
-              href="/sent"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/sent" className="menu-item">
               <span>📤</span>
               <span>Sent</span>
             </a>
 
-            <a
-              href="/calendar"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/calendar" className="menu-item">
               <span>📅</span>
               <span>Event Scheduling</span>
             </a>
 
-            <a
-              href="/barangay-storage"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/barangay-storage" className="menu-item">
               <span>🏘️</span>
               <span>Barangays</span>
             </a>
 
-            <a
-              href="/profile"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/profile" className="menu-item">
               <span>👤</span>
               <span>Profile</span>
             </a>
@@ -154,50 +114,32 @@ const Sidebar = () => {
           <h1 className="text-2xl font-bold tracking-wide">Youth Member</h1>
 
           <nav className="flex flex-col gap-3">
-            <a
-              href="/official-dashboard"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/official-dashboard" className="menu-item">
               <span>✉️</span>
               <span>Compose</span>
             </a>
 
-            <a
-              href="/dashboard"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/dashboard" className="menu-item">
               <span>📥</span>
               <span>Inbox</span>
             </a>
 
-            <a
-              href="/sent"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/sent" className="menu-item">
               <span>📤</span>
               <span>Sent</span>
             </a>
 
-            <a
-              href="/calendar"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/calendar" className="menu-item">
               <span>📅</span>
               <span>Event Scheduling</span>
             </a>
 
-            <a
-              href="/barangay-storage"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/barangay-storage" className="menu-item">
               <span>🏘️</span>
               <span>Barangays</span>
             </a>
 
-            <a
-              href="/profile"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition"
-            >
+            <a href="/profile" className="menu-item">
               <span>👤</span>
               <span>Profile</span>
             </a>
@@ -207,13 +149,14 @@ const Sidebar = () => {
     );
   }
 
-  // Default / guest sidebar
+  // Default / Guest
   return (
     <div className="flex">
       <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6">
         <h1 className="text-2xl font-bold tracking-wide">SKhub</h1>
+
         <nav className="flex flex-col gap-3">
-          <a href="/" className="p-2 rounded-lg hover:bg-gray-700 transition">
+          <a href="/" className="menu-item">
             Home
           </a>
         </nav>

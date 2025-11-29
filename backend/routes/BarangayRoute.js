@@ -23,9 +23,9 @@ router.put("/:id", requireAuth, adminOnly, updateBarangay);
 router.delete("/:id", requireAuth, adminOnly, deleteBarangay);
 router.get("/:barangayId/users", requireAuth, adminOnly, getUsersByBarangay);
 router.post("/assign-user", requireAuth, adminOnly, assignUserToBarangay);
-router.get("/:barangayId/storage", requireAuth, adminOnly, getBarangayStorage);
+router.get("/:barangayId/storage", requireAuth, getBarangayStorage);
 
-// Protected routes (for users)
+// User routes
 router.get("/me/barangay", requireAuth, getUserBarangay);
 router.get("/me/storage", requireAuth, getMyBarangayStorage);
 
