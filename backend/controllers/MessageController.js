@@ -104,6 +104,21 @@ export const getActivities = async (req, res) => {
   }
 };
 
+// Get messages sent by the logged-in user
+export const getSentMessages = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const messages = await Message.find({ sender: userId })
+      .populate("recipient", "username email role")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ messages, total: messages.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Mark message as read
 export const markAsRead = async (req, res) => {
   try {

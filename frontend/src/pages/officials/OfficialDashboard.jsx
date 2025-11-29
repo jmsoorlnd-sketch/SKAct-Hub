@@ -79,7 +79,7 @@ const Dashboard = () => {
         {/* LEFT SIDE */}
         <div className="w-1/4"></div>
 
-        {/* CENTER CONTENT */}
+        {/* CENTER */}
         <div className="w-2/4 bg-white rounded-xl p-6 shadow min-h-[600px]">
           <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
           <p>Your main content will appear here.</p>
@@ -91,10 +91,14 @@ const Dashboard = () => {
           <button
             onClick={() => setOpenCompose(true)}
             className="flex items-center gap-3
-            bg-[#D9EEFF] hover:bg-[#c9e7ff]
-            text-black font-medium
-            px-6 py-4 rounded-2xl shadow-sm
-            transition w-40 justify-center"
+              bg-[#D9EEFF] 
+              hover:bg-[#bfe3ff]
+              hover:scale-105
+              hover:shadow-md
+              text-black font-medium
+              px-6 py-4 rounded-2xl shadow
+              transition-all duration-200
+              w-40 justify-center"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -137,12 +141,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ==============================
-              COMPOSE POPUP WINDOW
-      =============================== */}
+      {/* =====================================================
+                   COMPOSE POPUP
+      ===================================================== */}
       {openCompose && (
         <div className="fixed bottom-4 right-6 w-[450px] bg-white shadow-xl rounded-lg border">
-          {/* HEADER */}
           <div className="flex justify-between items-center px-4 py-2 bg-gray-100 rounded-t-lg border-b">
             <span className="font-medium">New Message</span>
             <button
@@ -158,9 +161,7 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* BODY */}
           <div className="flex flex-col px-4 py-3">
-            {/* Recipient Dropdown */}
             <select
               value={adminRecipient}
               onChange={(e) => setAdminRecipient(e.target.value)}
@@ -182,7 +183,7 @@ const Dashboard = () => {
               placeholder="Subject"
               className="border-b py-2 text-sm outline-none"
             />
-            {/* Activity dates */}
+
             <div className="flex gap-2 mt-2">
               <input
                 type="date"
@@ -203,6 +204,7 @@ const Dashboard = () => {
                 className="border px-2 py-1 text-sm outline-none"
               />
             </div>
+
             <textarea
               name="body"
               value={formData.body}
@@ -211,7 +213,6 @@ const Dashboard = () => {
               className="mt-3 h-40 resize-none outline-none text-sm"
             />
 
-            {/* SHOW ATTACHED FILE NAME */}
             {attachedFile && (
               <div className="mt-2 text-sm bg-gray-100 p-2 rounded border flex justify-between items-center">
                 <span>{attachedFile.name}</span>
@@ -225,9 +226,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* FOOTER */}
           <div className="flex items-center gap-3 px-4 py-3">
-            {/* SEND BUTTON */}
             <button
               onClick={handleSendMessage}
               disabled={loading}
@@ -236,7 +235,6 @@ const Dashboard = () => {
               {loading ? "Sending..." : "Send"}
             </button>
 
-            {/* ATTACH FILE BUTTON */}
             <label className="cursor-pointer">
               <input
                 type="file"

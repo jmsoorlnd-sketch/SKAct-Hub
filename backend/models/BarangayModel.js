@@ -17,10 +17,6 @@ const barangaySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  chairman: {
-    typeof: Schema.Types.ObjectId,
-    ref: "Official",
-  },
 });
 
 const Barangay = mongoose.model("Barangay", barangaySchema);

@@ -5,50 +5,80 @@ import jwt from "jsonwebtoken";
 //Register a new user
 const signupUser = async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
+    let { username, email, password, role, position } = req.body;
 
-    // validate fields
-    if (!username || !email || !role || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    // sanitize
+    username = username?.trim();
+    email = email?.trim();
+    role = role ? String(role).trim() : undefined;
+    position = position ? String(position).trim() : undefined;
+
+    // validate
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Username, email and password are required",
+      });
     }
 
-    // check existing
-    const existUser = await User.findOne({ email });
-    if (existUser) {
-      return res.status(400).json({ message: "User already exists" });
+    // check existing email
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already exists",
+      });
     }
 
-    // ONLY admins can create admin/official accounts
-    if (role !== "Youth") {
-      if (!req.user || req.user.role !== "Admin") {
-        return res.status(403).json({
-          message: "Only admin can create Official or Admin accounts",
-        });
-      }
+    // check existing username
+    const usernameExists = await User.findOne({ username });
+    if (usernameExists) {
+      return res.status(400).json({
+        success: false,
+        message: "Username already exists",
+      });
     }
 
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
+    // determine role (default to Youth)
+    const allowedRoles = ["Youth", "Official", "Admin"];
+    const finalRole = allowedRoles.includes(role) ? role : "Youth";
+
+    // create user object
+    const userData = {
       username,
       email,
       password: hashedPassword,
-      role,
-    });
+      role: finalRole,
+    };
 
-    res.status(201).json({
+    // attach position only when Official
+    if (finalRole === "Official" && position) {
+      userData.position = position;
+    }
+
+    const newUser = await User.create(userData);
+
+    return res.status(201).json({
+      success: true,
       message: "Account created successfully",
-      user: {
+      data: {
         _id: newUser._id,
-        username: newUser.username,
-        email: newUser.email,
+        email,
+        username,
         role: newUser.role,
+        position: newUser.position || null,
       },
     });
   } catch (error) {
-    console.error("Signup error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Signup Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: error.message,
+    });
   }
 };
 
@@ -99,12 +129,64 @@ const createProfile = async (req, res) => {
     }
 
     // destructure profile fields from request body
-    const { firstname, lastname, email, role, age, address } = req.body;
+    let {
+      firstname,
+      lastname,
+      email,
+      role,
+      age,
+      address,
+      username,
+      password,
+      civil,
+      barangayName,
+    } = req.body;
+
+    // sanitize
+    firstname = firstname?.trim();
+    lastname = lastname?.trim();
+    email = email?.trim();
+    username = username?.trim();
+    barangayName = barangayName?.trim();
+
+    // prepare update object
+    const update = {};
+    if (firstname !== undefined) update.firstname = firstname;
+    if (lastname !== undefined) update.lastname = lastname;
+    if (email !== undefined) update.email = email;
+    if (role !== undefined) update.role = role;
+    if (age !== undefined) update.age = age;
+    if (address !== undefined) update.address = address;
+    if (civil !== undefined) update.civil = civil;
+    if (barangayName !== undefined) update.barangayName = barangayName;
+
+    // handle username change: ensure uniqueness
+    if (username) {
+      const existing = await User.findOne({ username });
+      if (existing && String(existing._id) !== String(userId)) {
+        return res.status(400).json({ message: "Username already in use" });
+      }
+      update.username = username;
+    }
+
+    // handle email change: ensure uniqueness
+    if (email) {
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail && String(existingEmail._id) !== String(userId)) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+    }
+
+    // handle password change
+    if (password && String(password).trim().length > 0) {
+      const hashed = await bcrypt.hash(String(password), 10);
+      update.password = hashed;
+    }
 
     // update or create user profile
     const updatedProfile = await User.findByIdAndUpdate(
       userId, // find by _id
-      { firstname, lastname, role, email, age, address }, // update data
+      update, // update data
       { new: true } // return the updated document
     );
 
@@ -165,6 +247,22 @@ const getAllProfile = async (req, res) => {
   }
 };
 
+// delete user (admin only)
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    if (!userId) return res.status(400).json({ message: "User id required" });
+
+    const deleted = await User.findByIdAndDelete(userId);
+    if (!deleted) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ message: "User deleted" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 export {
   signupUser,
   signinUser,
@@ -172,4 +270,5 @@ export {
   getUserProfile,
   getProfileById,
   getAllProfile,
+  deleteUser,
 };

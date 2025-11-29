@@ -1,30 +1,51 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 
-const RoleProtectedRoute = ({ children, role }) => {
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  if (!token) return <Navigate to="/" replace />;
+  return children;
+};
+
+export const RoleProtectedRoute = ({ children, role = [] }) => {
   const token = localStorage.getItem("token");
   let user = null;
   try {
     user = JSON.parse(localStorage.getItem("user"));
-  } catch (e) {
+  } catch {
     user = null;
   }
 
   if (!token) return <Navigate to="/" replace />;
+  // Normalize and compare roles case-insensitively
+  const allowed = (Array.isArray(role) ? role : [role]).map((r) =>
+    String(r).trim().toLowerCase()
+  );
+  const normalizedUserRole = String(user?.role || "")
+    .trim()
+    .toLowerCase();
 
-  if (!role.includes(user?.role)) {
-    // redirect based on actual role
-    if (user?.role === "Admin")
+  // Debugging info to help track redirect issues in-browser
+  console.debug(
+    "RoleProtectedRoute: token:",
+    !!token,
+    "userRole:",
+    normalizedUserRole,
+    "allowed:",
+    allowed
+  );
+
+  if (!user || !allowed.includes(normalizedUserRole)) {
+    if (normalizedUserRole === "admin")
       return <Navigate to="/admin-dashboard" replace />;
-    if (user?.role === "Official")
+    if (normalizedUserRole === "official")
       return <Navigate to="/official-dashboard" replace />;
-    if (user?.role === "Youth")
-      return <Navigate to="/user-dashboard" replace />;
-
+    if (normalizedUserRole === "youth")
+      return <Navigate to="/dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
   return children;
 };
 
-export default RoleProtectedRoute;
+export default ProtectedRoute;

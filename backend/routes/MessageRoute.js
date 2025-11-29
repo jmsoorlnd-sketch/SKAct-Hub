@@ -10,6 +10,7 @@ import {
   deleteMessage,
   getAdmins,
   updateStatus,
+  getSentMessages,
   getActivities,
 } from "../controllers/MessageController.js";
 
@@ -47,6 +48,9 @@ router.delete("/:messageId", requireAuth, deleteMessage);
 
 // Get all admins
 router.get("/admins/list", requireAuth, getAdmins);
+
+// Get sent messages for logged in user
+router.get("/sent", requireAuth, getSentMessages);
 
 // Update status (approve/reject/ongoing)
 router.put("/:messageId/status", requireAuth, updateStatus);

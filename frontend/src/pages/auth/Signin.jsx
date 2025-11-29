@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 const Signin = () => {
@@ -8,6 +8,9 @@ const Signin = () => {
   });
 
   const { username, password } = formData;
+
+  const usernameRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,30 +30,50 @@ const Signin = () => {
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+      console.log(res.data.user);
 
       alert("Login successful!");
 
-      if (user.role === "Admin") {
+      // Redirect based on role
+      const role = String(user?.role || "")
+        .trim()
+        .toLowerCase();
+      if (role === "admin") {
         window.location.href = "/admin-dashboard";
-      } else if (user.role === "Official") {
+      } else if (role === "official") {
         window.location.href = "/official-dashboard";
       } else {
-        window.location.href = "/user-dashboard";
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       alert(error.response?.data?.message || "Login failed.");
     }
   };
 
+  // Sync potential browser autofill values into React state
+  useEffect(() => {
+    const syncAutofill = () => {
+      const u = usernameRef.current?.value || "";
+      const p = passwordRef.current?.value || "";
+      setFormData((prev) => ({
+        username: prev.username || u,
+        password: prev.password || p,
+      }));
+    };
+
+    // run once after mount and again shortly after to catch autofill
+    syncAutofill();
+    const id = setTimeout(syncAutofill, 250);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
     <div className="min-h-screen w-full bg-linear-to-br from-blue-500 to-blue-700 flex items-center justify-center p-6">
       <div className="w-full max-w-6xl bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/20 flex">
         {/* LEFT SIDE */}
         <div className="w-1/2 p-16 text-white flex flex-col justify-center bg-linear-to-br from-blue-500 to-blue-700">
-          <h1 className="text-6xl font-bold mb-6">Welcome!</h1>
-          <p className="text-lg opacity-90 mb-10">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-          </p>
+          <h1 className="text-6xl font-bold mb-6">Welcome! to SKAct-Hub</h1>
+          <p className="text-lg opacity-90 mb-10">kiko</p>
 
           <a
             href="#"
@@ -60,7 +83,7 @@ const Signin = () => {
           </a>
         </div>
 
-        {/* RIGHT SIDE (SIGN IN CARD) */}
+        {/* RIGHT SIDE */}
         <div className="w-1/2 p-16 flex flex-col justify-center bg-linear-to-br from-blue-300/40 to-blue-400/40 backdrop-blur-xl">
           <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto">
             <h2 className="text-4xl text-white font-bold text-center mb-12">
@@ -74,10 +97,17 @@ const Signin = () => {
             <input
               type="text"
               name="username"
+              ref={usernameRef}
               value={username}
-              onChange={handleChange}
+              onInput={(e) => handleChange(e)}
+              onChange={(e) => {
+                console.debug("Signin: username change", e.target.value);
+                handleChange(e);
+              }}
+              onFocus={() => console.debug("Signin: username focus")}
+              autoComplete="username"
               required
-              className="w-full px-6 py-4 rounded-xl bg-white/20 text-white text-lg text-center placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white/30 transition mb-10"
+              className="w-full px-4 py-3 rounded-xl bg-white/90 text-black text-lg text-left placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 transition mb-10"
               placeholder="Enter username"
             />
 
@@ -88,19 +118,29 @@ const Signin = () => {
             <input
               type="password"
               name="password"
+              ref={passwordRef}
               value={password}
-              onChange={handleChange}
+              onInput={(e) => handleChange(e)}
+              onChange={(e) => {
+                console.debug(
+                  "Signin: password change",
+                  e.target.value ? "(chars)" : ""
+                );
+                handleChange(e);
+              }}
+              onFocus={() => console.debug("Signin: password focus")}
+              autoComplete="current-password"
               required
-              className="w-full px-6 py-4 rounded-xl bg-white/20 text-white text-lg text-center placeholder-white/70 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:bg-white/30 transition mb-12"
+              className="w-full px-4 py-3 rounded-xl bg-white/90 text-black text-lg text-left placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 transition mb-16"
               placeholder="Enter password"
             />
 
-            {/* SUBMIT BUTTON */}
+            {/* SUBMIT BUTTON (UPDATED PADDING) */}
             <button
               type="submit"
-              className="w-full py-4 rounded-xl bg-linear-to-r from-blue-300 to-blue-600 text-white text-xl font-bold shadow-xl hover:scale-105 transition-all"
+              className="w-full py-4 rounded-xl bg-blue-600 text-white text-lg font-semibold shadow hover:scale-105 transition-all"
             >
-              Submit
+              Sign In
             </button>
           </form>
         </div>

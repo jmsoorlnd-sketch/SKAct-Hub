@@ -14,8 +14,13 @@ app.use(express.json());
 //routes
 import UserRoute from "./routes/UserRoute.js";
 import MessageRoute from "./routes/MessageRoute.js";
+import BarangayRoute from "./routes/BarangayRoute.js";
 app.use("/api/users", UserRoute);
 app.use("/api/messages", MessageRoute);
+app.use("/api/barangays", BarangayRoute);
+
+import AdminRoute from "./routes/AdminRoute.js";
+app.use("/api/admins", AdminRoute);
 
 app.use("/api/posts", (req, res) => {
   res.send("Posts route is under construction.");
@@ -33,7 +38,7 @@ app.get("/", (req, res) => {
 });
 
 // MongoDB connection
-import connectDB from "./ConfigDb.js";
+import connectDB from "./configDB.js";
 connectDB();
 
 // serve uploaded files

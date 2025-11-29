@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Layout from "../../layout/Layout";
+import Layout from "../layout/Layout";
 
-const AdminDashboard = () => {
+const Dashboard = () => {
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -116,38 +116,20 @@ const AdminDashboard = () => {
             <>
               {/* HEADER WITH CLOSE + DELETE BUTTONS */}
               <div className="flex justify-between items-start mb-6">
-                {/* LEFT SIDE: PROFILE PHOTO + SUBJECT + INFO */}
-                <div className="flex gap-4">
-                  {/* Profile Photo */}
-                  <div className="w-16 h-16 rounded-full bg-gray-200 shrink-0 overflow-hidden border border-gray-300">
-                    {selectedMessage.sender?.profileImage ? (
-                      <img
-                        src={`http://localhost:5000${selectedMessage.sender.profileImage}`}
-                        alt={selectedMessage.sender.username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
-                        No Photo
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Subject + Info */}
-                  <div>
-                    <h2 className="text-2xl font-bold">
-                      {selectedMessage.subject}
-                    </h2>
-                    <p className="text-gray-600 text-sm mt-2">
-                      From:{" "}
-                      <span className="font-semibold">
-                        {selectedMessage.sender?.username || "Unknown"}
-                      </span>
-                    </p>
-                    <p className="text-gray-500 text-xs">
-                      {new Date(selectedMessage.createdAt).toLocaleString()}
-                    </p>
-                  </div>
+                {/* LEFT SIDE: SUBJECT + INFO */}
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    {selectedMessage.subject}
+                  </h2>
+                  <p className="text-gray-600 text-sm mt-2">
+                    From:{" "}
+                    <span className="font-semibold">
+                      {selectedMessage.sender?.username || "Unknown"}
+                    </span>
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    {new Date(selectedMessage.createdAt).toLocaleString()}
+                  </p>
                 </div>
 
                 {/* RIGHT SIDE: BUTTON GROUP */}
@@ -265,4 +247,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default Dashboard;
