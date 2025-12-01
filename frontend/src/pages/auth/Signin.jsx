@@ -33,23 +33,17 @@ const Signin = () => {
       console.log(res.data.user);
 
       alert("Login successful!");
+      window.location.href = "/dashboard";
 
       // Redirect based on role
-      const role = String(user?.role || "")
-        .trim()
-        .toLowerCase();
-      if (role === "admin") {
-        window.location.href = "/admin-dashboard";
-      } else if (role === "official") {
-        window.location.href = "/official-dashboard";
+    } catch (err) {
+      if (err.response?.data?.message) {
+        alert(err.response.data.message);
       } else {
-        window.location.href = "/dashboard";
+        alert("Something went wrong. Please try again.");
       }
-    } catch (error) {
-      alert(error.response?.data?.message || "Login failed.");
     }
   };
-
   // Sync potential browser autofill values into React state
   useEffect(() => {
     const syncAutofill = () => {

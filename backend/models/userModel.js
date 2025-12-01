@@ -18,13 +18,10 @@ const userSchema = new mongoose.Schema({
 
   position: {
     type: String,
-    enum: ["Chairperson", "Treasurer", "Secretary", "Kagawad", "SK", "Admin"],
+    enum: ["Chairman", "Treasurer", "Secretary", "Admin"],
   },
 
-  phone: { type: String, unique: true },
   age: Number,
-  gender: { type: String, enum: ["Male", "Female"] },
-  address: String,
 
   // human-readable barangay name (optional)
   barangayName: String,
@@ -32,8 +29,11 @@ const userSchema = new mongoose.Schema({
   // profile image URL
   profileImage: String,
 
-  civil: { type: String, enum: ["married", "unmarried"] },
-
+  civil: {
+    type: String,
+    enum: ["Single", "Married"],
+    default: "Single",
+  },
   barangay: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Barangay",

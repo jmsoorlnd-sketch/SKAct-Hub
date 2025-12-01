@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Layout from "../../layout/Layout";
-import CreateOfficialModal from "../../components/popforms/AddOfficial";
-import EditOfficial from "../../components/popforms/EditOfficial";
+import CreateOfficialModal from "../../components/popforms/official/AddOfficial";
+import EditOfficial from "../../components/popforms/official/EditOfficial";
 import axios from "axios";
 
 const SkOfficial = () => {
   const [officials, setOfficials] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [barangay, setBarangay] = useState([]);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [selectedOfficial, setSelectedOfficial] = useState(null);
 
@@ -106,6 +106,25 @@ const SkOfficial = () => {
       prev.map((o) => (o._id === updatedOfficial._id ? updatedOfficial : o))
     );
   };
+
+  //fetch barangay
+  useEffect(() => {
+    const fetchBarangays = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          "http://localhost:5000/api/barangays/all-barangays",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setBarangay(res.data.barangays || []); // ensure it's always an array
+      } catch (err) {
+        console.error("Error fetching barangays:", err);
+      }
+    };
+    fetchBarangays();
+  }, []);
   return (
     <Layout>
       <div className="bg-gray-200 p-2">
@@ -167,8 +186,12 @@ const SkOfficial = () => {
             }
           >
             <option value="">Filter by Barangay</option>
-            <option>Brgy. 1</option>
-            <option>Brgy. 2</option>
+
+            {barangay.map((barangay) => (
+              <option key={barangay._id} value={barangay._id}>
+                {barangay.barangayName}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -225,7 +248,7 @@ const SkOfficial = () => {
                       {official.position}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {official.barangay}
+                      {official.barangay?.barangayName || ""}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       {official.username}

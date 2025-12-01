@@ -44,7 +44,7 @@ const signupUser = async (req, res) => {
 
     // determine role (default to Youth)
     const allowedRoles = ["Youth", "Official", "Admin"];
-    const finalRole = allowedRoles.includes(role) ? role : "Youth";
+    const finalRole = allowedRoles.includes(role) ? role : "Admin";
 
     // create user object
     const userData = {
@@ -52,13 +52,12 @@ const signupUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: finalRole,
+      position: "Admin",
     };
 
-    // attach position only when Official
-    if (finalRole === "Official" && position) {
+    if (finalRole === "Admin") {
       userData.position = position;
     }
-
     const newUser = await User.create(userData);
 
     return res.status(201).json({

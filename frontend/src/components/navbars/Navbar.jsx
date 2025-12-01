@@ -20,13 +20,13 @@ const Navbar = () => {
 
       <ul className="flex items-center gap-10 text-gray-600 font-medium">
         <li>
-          <a className="hover:text-blue-600 transition" href="/dashboard">
-            Dashboard
+          <a className="hover:text-blue-600 transition" href="/calendar">
+            Calendar
           </a>
         </li>
         <li>
-          <a className="hover:text-blue-600 transition" href="/calendar">
-            Calendar
+          <a className="hover:text-blue-600 transition" href="/inbox">
+            inbox
           </a>
         </li>
       </ul>

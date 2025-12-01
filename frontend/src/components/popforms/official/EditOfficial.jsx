@@ -137,6 +137,21 @@ const EditOfficial = ({ isOpen, onClose, official, onSubmit }) => {
               <option value="Treasurer">Treasurer</option>
             </select>
           </div>
+          <div>
+            <label className="text-sm font-medium">Barangay</label>
+            <select
+              name="position"
+              value={formData.position}
+              onChange={handleChange}
+              required
+              className="w-full mt-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Select Position</option>
+              <option value="Chairman">Chairman</option>
+              <option value="Secretary">Secretary</option>
+              <option value="Treasurer">Treasurer</option>
+            </select>
+          </div>
 
           {/* Username */}
           <div>
