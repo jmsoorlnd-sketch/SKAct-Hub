@@ -174,7 +174,7 @@ const SkOfficial = () => {
 
         {/* Officials Table */}
         <div className="rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>

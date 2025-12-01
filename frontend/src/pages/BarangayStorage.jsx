@@ -20,7 +20,16 @@ const BarangayStorage = () => {
   });
 
   useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user"));
+    let userData = null;
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw && raw !== "undefined" && raw !== "null") {
+        userData = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.warn("Failed to parse stored user in BarangayStorage:", err);
+      userData = null;
+    }
     setUser(userData);
     fetchBarangays();
   }, []);
