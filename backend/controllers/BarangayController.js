@@ -140,11 +140,14 @@ export const assignUserToBarangay = async (req, res) => {
   try {
     const { userId, barangayId } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { barangay: barangayId },
-      { new: true }
-    );
+    // find barangay to capture its display name
+    const barangay = await Barangay.findById(barangayId);
+
+    const update = { barangay: barangayId };
+    if (barangay && barangay.barangayName)
+      update.barangayName = barangay.barangayName;
+
+    const user = await User.findByIdAndUpdate(userId, update, { new: true });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

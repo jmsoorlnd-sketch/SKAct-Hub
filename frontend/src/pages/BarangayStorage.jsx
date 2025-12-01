@@ -23,49 +23,89 @@ const BarangayStorage = () => {
     let userData = null;
     try {
       const raw = localStorage.getItem("user");
-      if (raw && raw !== "undefined" && raw !== "null") {
+      if (raw && raw !== "undefined" && raw !== "null")
         userData = JSON.parse(raw);
-      }
     } catch (err) {
       console.warn("Failed to parse stored user in BarangayStorage:", err);
       userData = null;
     }
     setUser(userData);
-    fetchBarangays();
+    (async () => {
+      await fetchBarangays(userData);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchBarangays = async () => {
+  const fetchBarangays = async (currentUser = user) => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "http://localhost:5000/api/barangays/all-barangays",
-        {
-          headers: { Authorization: `Bearer ${token}` },
+      if (currentUser && currentUser.role === "Admin") {
+        const res = await axios.get(
+          "http://localhost:5000/api/barangays/all-barangays",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setBarangays(res.data.barangays || []);
+      } else {
+        try {
+          const meRes = await axios.get(
+            "http://localhost:5000/api/barangays/me/barangay",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          const myBarangay = meRes.data.barangay;
+          if (myBarangay) {
+            const id = myBarangay._id || myBarangay.id;
+            setBarangays([myBarangay]);
+            setSelectedBarangay(id);
+            await fetchStorageDocuments(id, currentUser);
+          } else {
+            setBarangays([]);
+            setStorage([]);
+          }
+        } catch (err) {
+          console.warn(
+            "No assigned barangay for user or fetch failed",
+            err?.response?.data || err.message
+          );
+          setBarangays([]);
+          setStorage([]);
         }
-      );
-      setBarangays(res.data.barangays || []);
+      }
     } catch (error) {
       console.error("Error fetching barangays:", error);
+      setBarangays([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchStorageDocuments = async (barangayId) => {
+  const fetchStorageDocuments = async (barangayId, currentUser = user) => {
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        `http://localhost:5000/api/barangays/${barangayId}/storage`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setStorage(res.data.storage || []);
-      setSelectedBarangay(barangayId);
-      // Fetch users in this barangay
-      fetchUsersInBarangay(barangayId);
-      // Fetch all available users for assignment
-      fetchAvailableUsers();
+      if (currentUser && currentUser.role !== "Admin") {
+        const res = await axios.get(
+          "http://localhost:5000/api/barangays/me/storage",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setStorage(res.data.storage || []);
+      } else {
+        const res = await axios.get(
+          `http://localhost:5000/api/barangays/${barangayId}/storage`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setStorage(res.data.storage || []);
+        setSelectedBarangay(barangayId);
+        await fetchUsersInBarangay(barangayId);
+        await fetchAvailableUsers();
+      }
     } catch (error) {
       console.error("Error fetching storage:", error);
       setStorage([]);
@@ -75,6 +115,7 @@ const BarangayStorage = () => {
   const fetchUsersInBarangay = async (barangayId) => {
     try {
       const token = localStorage.getItem("token");
+      if (!user || user.role !== "Admin") return;
       const res = await axios.get(
         `http://localhost:5000/api/barangays/${barangayId}/users`,
         {
@@ -84,6 +125,7 @@ const BarangayStorage = () => {
       setUsersInBarangay(res.data.users || []);
     } catch (error) {
       console.error("Error fetching users in barangay:", error);
+      setUsersInBarangay([]);
     }
   };
 
@@ -96,6 +138,7 @@ const BarangayStorage = () => {
       setAvailableUsers(res.data.users || []);
     } catch (error) {
       console.error("Error fetching users:", error);
+      setAvailableUsers([]);
     }
   };
 
@@ -106,8 +149,6 @@ const BarangayStorage = () => {
 
   const handleCreateBarangay = async (e) => {
     e.preventDefault();
-
-    // Check for duplicate barangay name
     const isDuplicate = barangays.some((b) => {
       const name = b.barangayName || b.barangay || "";
       return (
@@ -116,12 +157,7 @@ const BarangayStorage = () => {
         name.toLowerCase() === formData.barangay.toLowerCase()
       );
     });
-
-    if (isDuplicate) {
-      alert("A barangay with this name already exists!");
-      return;
-    }
-
+    if (isDuplicate) return alert("A barangay with this name already exists!");
     try {
       const token = localStorage.getItem("token");
       const dataToSubmit = {
@@ -130,15 +166,11 @@ const BarangayStorage = () => {
         province: "Leyte",
         region: "Region 8",
       };
-
       await axios.post(
         "http://localhost:5000/api/barangays/add-barangay",
         dataToSubmit,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       alert("Barangay created successfully!");
       setFormData({ barangay: "", city: "", province: "", region: "" });
       setShowForm(false);
@@ -151,7 +183,6 @@ const BarangayStorage = () => {
 
   const handleDeleteBarangay = async (barangayId) => {
     if (!window.confirm("Delete this barangay?")) return;
-
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:5000/api/barangays/${barangayId}`, {
@@ -168,26 +199,47 @@ const BarangayStorage = () => {
   };
 
   const handleAssignUser = async () => {
-    if (!selectedUserToAdd || !selectedBarangay) {
-      alert("Please select a user to assign.");
-      return;
-    }
+    if (!selectedUserToAdd || !selectedBarangay)
+      return alert("Please select a user to assign.");
+
+    // find the selected user's previous barangay (if any)
+    const prevUser = availableUsers.find((u) => u._id === selectedUserToAdd);
+    const prevBarangayId = prevUser?.barangay
+      ? String(prevUser.barangay)
+      : null;
+    const prevBarangayName = prevUser?.barangayName || null;
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
+      const res = await axios.post(
         "http://localhost:5000/api/barangays/assign-user",
-        {
-          userId: selectedUserToAdd,
-          barangayId: selectedBarangay,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { userId: selectedUserToAdd, barangayId: selectedBarangay },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("User assigned successfully!");
+
+      // refresh lists
+      await fetchUsersInBarangay(selectedBarangay);
+      await fetchAvailableUsers();
+
+      // find the target barangay display name
+      const targetBarangay =
+        barangays.find((b) => b._id === selectedBarangay) || {};
+      const targetName =
+        targetBarangay.barangayName ||
+        targetBarangay.barangay ||
+        "this barangay";
+
+      if (prevBarangayId && prevBarangayId !== String(selectedBarangay)) {
+        alert(
+          `User reassigned from "${
+            prevBarangayName || prevBarangayId
+          }" to "${targetName}". Previous access revoked.`
+        );
+      } else {
+        alert("User assigned successfully!");
+      }
+
       setSelectedUserToAdd("");
-      fetchUsersInBarangay(selectedBarangay);
     } catch (error) {
       console.error("Error assigning user:", error);
       alert("Failed to assign user.");
@@ -227,7 +279,6 @@ const BarangayStorage = () => {
           )}
         </div>
 
-        {/* Create Form - Only for Admins */}
         {showForm && user?.role === "Admin" && (
           <div className="bg-white p-6 rounded-lg shadow mb-6">
             <h2 className="text-xl font-bold mb-4">Create New Barangay</h2>
@@ -278,9 +329,7 @@ const BarangayStorage = () => {
           </div>
         )}
 
-        {/* Main Container - Barangays List and Details */}
         <div className="grid grid-cols-3 gap-6">
-          {/* LEFT SIDE - BARANGAYS LIST */}
           <div className="col-span-1 bg-white p-4 rounded-lg shadow">
             <h2 className="text-xl font-bold mb-4">Barangays</h2>
             {loading ? (
@@ -322,11 +371,9 @@ const BarangayStorage = () => {
             )}
           </div>
 
-          {/* RIGHT SIDE - DETAILS (DOCUMENTS & USERS) */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow">
             {selectedBarangay ? (
               <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-                {/* DOCUMENTS SECTION */}
                 <div>
                   <h2 className="text-2xl font-bold mb-4">Stored Documents</h2>
                   {storage.length === 0 ? (
@@ -374,12 +421,9 @@ const BarangayStorage = () => {
                   )}
                 </div>
 
-                {/* USERS SECTION - ADMIN ONLY */}
                 {user?.role === "Admin" && (
                   <div className="border-t pt-6">
                     <h2 className="text-2xl font-bold mb-4">Assigned Users</h2>
-
-                    {/* Assign User Form */}
                     <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
                       <label className="block text-sm font-semibold mb-2">
                         Add User to Barangay
@@ -409,7 +453,6 @@ const BarangayStorage = () => {
                       </div>
                     </div>
 
-                    {/* Users List */}
                     {usersInBarangay.length === 0 ? (
                       <p className="text-gray-500">No users assigned yet.</p>
                     ) : (
@@ -439,18 +482,12 @@ const BarangayStorage = () => {
                                 {u.position || "—"}
                               </td>
                               <td className="border p-2 text-right">
-                                {user?.role === "Admin" ? (
-                                  <button
-                                    onClick={() => handleRemoveUser(u._id)}
-                                    className="text-sm bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
-                                  >
-                                    Remove
-                                  </button>
-                                ) : (
-                                  <span className="text-sm text-gray-500">
-                                    —
-                                  </span>
-                                )}
+                                <button
+                                  onClick={() => handleRemoveUser(u._id)}
+                                  className="text-sm bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                                >
+                                  Remove
+                                </button>
                               </td>
                             </tr>
                           ))}
