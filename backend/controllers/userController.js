@@ -5,11 +5,14 @@ import jwt from "jsonwebtoken";
 //Register a new user
 const signupUser = async (req, res) => {
   try {
-    let { username, email, password, role, position } = req.body;
+    let { username, email, password, role, position, firstname, lastname } =
+      req.body;
 
     // sanitize
     username = username?.trim();
     email = email?.trim();
+    firstname = firstname?.trim();
+    lastname = lastname?.trim();
     role = role ? String(role).trim() : undefined;
     position = position ? String(position).trim() : undefined;
 
@@ -44,7 +47,7 @@ const signupUser = async (req, res) => {
 
     // determine role (default to Youth)
     const allowedRoles = ["Youth", "Official", "Admin"];
-    const finalRole = allowedRoles.includes(role) ? role : "Youth";
+    const finalRole = allowedRoles.includes(role) ? role : "Admin";
 
     // create user object
     const userData = {
@@ -52,13 +55,16 @@ const signupUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: finalRole,
+      position: "Admin",
     };
 
-    // attach position only when Official
-    if (finalRole === "Official" && position) {
+    // include optional names when provided
+    if (firstname) userData.firstname = firstname;
+    if (lastname) userData.lastname = lastname;
+
+    if (finalRole === "Admin") {
       userData.position = position;
     }
-
     const newUser = await User.create(userData);
 
     return res.status(201).json({
@@ -68,6 +74,8 @@ const signupUser = async (req, res) => {
         _id: newUser._id,
         email,
         username,
+        firstname: newUser.firstname || null,
+        lastname: newUser.lastname || null,
         role: newUser.role,
         position: newUser.position || null,
       },

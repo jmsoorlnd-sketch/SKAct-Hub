@@ -37,9 +37,12 @@ const BarangayStorage = () => {
   const fetchBarangays = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/barangays", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/barangays/all-barangays",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setBarangays(res.data.barangays || []);
     } catch (error) {
       console.error("Error fetching barangays:", error);
@@ -105,9 +108,14 @@ const BarangayStorage = () => {
     e.preventDefault();
 
     // Check for duplicate barangay name
-    const isDuplicate = barangays.some(
-      (b) => b.barangay.toLowerCase() === formData.barangay.toLowerCase()
-    );
+    const isDuplicate = barangays.some((b) => {
+      const name = b.barangayName || b.barangay || "";
+      return (
+        name &&
+        formData.barangay &&
+        name.toLowerCase() === formData.barangay.toLowerCase()
+      );
+    });
 
     if (isDuplicate) {
       alert("A barangay with this name already exists!");
@@ -117,14 +125,20 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       const dataToSubmit = {
-        ...formData,
+        barangayName: formData.barangay,
         city: "Ormoc City",
         province: "Leyte",
         region: "Region 8",
       };
-      await axios.post("http://localhost:5000/api/barangays", dataToSubmit, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+
+      await axios.post(
+        "http://localhost:5000/api/barangays/add-barangay",
+        dataToSubmit,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       alert("Barangay created successfully!");
       setFormData({ barangay: "", city: "", province: "", region: "" });
       setShowForm(false);
@@ -177,6 +191,24 @@ const BarangayStorage = () => {
     } catch (error) {
       console.error("Error assigning user:", error);
       alert("Failed to assign user.");
+    }
+  };
+
+  const handleRemoveUser = async (userId) => {
+    if (!userId || !selectedBarangay) return;
+    if (!window.confirm("Remove this user from the barangay?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:5000/api/barangays/remove-user",
+        { userId, barangayId: selectedBarangay },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("User removed from barangay");
+      fetchUsersInBarangay(selectedBarangay);
+    } catch (error) {
+      console.error("Error removing user:", error);
+      alert("Failed to remove user from barangay.");
     }
   };
 
@@ -256,7 +288,7 @@ const BarangayStorage = () => {
             ) : barangays.length === 0 ? (
               <p className="text-gray-500">No barangays yet.</p>
             ) : (
-              <div className="space-y-2 overflow-y-auto max-h-[70vh]">
+              <div className="space-y-3 overflow-y-auto max-h-[70vh]">
                 {barangays.map((b) => (
                   <div
                     key={b._id}
@@ -267,7 +299,9 @@ const BarangayStorage = () => {
                         : "bg-gray-100 hover:bg-gray-200"
                     }`}
                   >
-                    <p className="font-semibold text-sm">{b.barangay}</p>
+                    <p className="font-semibold text-sm">
+                      {b.barangayName || b.barangay || "—"}
+                    </p>
                     <p className="text-xs opacity-75">
                       {b.city}, {b.province}
                     </p>
@@ -383,9 +417,11 @@ const BarangayStorage = () => {
                         <thead>
                           <tr className="bg-gray-200">
                             <th className="border p-2 text-left">Username</th>
-                            <th className="border p-2 text-left">Name</th>
+                            <th className="border p-2 text-left">First Name</th>
+                            <th className="border p-2 text-left">Last Name</th>
                             <th className="border p-2 text-left">Role</th>
                             <th className="border p-2 text-left">Position</th>
+                            <th className="border p-2 text-left">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -393,11 +429,28 @@ const BarangayStorage = () => {
                             <tr key={u._id} className="border hover:bg-gray-50">
                               <td className="border p-2">{u.username}</td>
                               <td className="border p-2">
-                                {u.firstname} {u.lastname}
+                                {u.firstname || "—"}
+                              </td>
+                              <td className="border p-2">
+                                {u.lastname || "—"}
                               </td>
                               <td className="border p-2">{u.role}</td>
                               <td className="border p-2">
                                 {u.position || "—"}
+                              </td>
+                              <td className="border p-2 text-right">
+                                {user?.role === "Admin" ? (
+                                  <button
+                                    onClick={() => handleRemoveUser(u._id)}
+                                    className="text-sm bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                                  >
+                                    Remove
+                                  </button>
+                                ) : (
+                                  <span className="text-sm text-gray-500">
+                                    —
+                                  </span>
+                                )}
                               </td>
                             </tr>
                           ))}

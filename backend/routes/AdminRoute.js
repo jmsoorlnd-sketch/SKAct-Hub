@@ -1,32 +1,28 @@
 import express from "express";
 import { adminOnly, requireAuth } from "../middleware/Auth.js";
-import updateOfficialStatus, {
+import {
   createOfficial,
   getAllOfficials,
   getOfficialById,
-  resetOfficialPassword,
+  updateOfficialStatus,
   updateOfficial,
 } from "../controllers/AdminController.js";
 
 const router = express.Router();
 
-// ✅ Protected routes
-router.post("/addofficial", requireAuth, adminOnly, createOfficial);
-router.get("/getofficials", requireAuth, getAllOfficials);
-router.get("/officials/:id", requireAuth, adminOnly, getOfficialById);
-router.put(
-  "/officials/reset-password/:id",
-  requireAuth,
-  adminOnly,
-  resetOfficialPassword
-);
+// ✅ Create new official
+router.post("/create-official", requireAuth, adminOnly, createOfficial);
 
-router.put(
-  "/status-official/:id",
-  requireAuth,
-  adminOnly,
-  updateOfficialStatus
-);
-router.put("/update-official/:id", requireAuth, adminOnly, updateOfficial);
+// ✅ Get all officials
+router.get("/getofficials", requireAuth, getAllOfficials);
+
+// ✅ Get single official by ID
+router.get("/officials/:id", requireAuth, getOfficialById);
+
+// ✅ Update official status (Active/Inactive)
+router.put("/status-official/:id", requireAuth, updateOfficialStatus);
+
+// ✅ Update official details
+router.put("/update-official/:id", requireAuth, updateOfficial);
 
 export default router;

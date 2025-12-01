@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../layout/Layout";
 
@@ -16,16 +17,30 @@ const Profiles = () => {
     position: "",
     barangay: "",
   });
+  const navigate = useNavigate();
 
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        // No token -> force signin
+        navigate && navigate("/", { replace: true });
+        return;
+      }
       const res = await axios.get("http://localhost:5000/api/users/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data.users || []);
     } catch (error) {
       console.error("Failed to fetch users:", error);
+      // If unauthorized, clear token and redirect to signin
+      if (error?.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        alert("Session expired or unauthorized — please sign in again.");
+        navigate && navigate("/", { replace: true });
+        return;
+      }
       alert("Failed to fetch users. Check console for details.");
     } finally {
       setLoading(false);

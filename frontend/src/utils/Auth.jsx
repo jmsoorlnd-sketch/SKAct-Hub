@@ -11,29 +11,22 @@ export const RoleProtectedRoute = ({ children, role = [] }) => {
   const token = localStorage.getItem("token");
   let user = null;
   try {
-    user = JSON.parse(localStorage.getItem("user"));
-  } catch {
+    const raw = localStorage.getItem("user");
+    if (raw && raw !== "undefined" && raw !== "null") {
+      user = JSON.parse(raw);
+    }
+  } catch (err) {
     user = null;
   }
 
   if (!token) return <Navigate to="/" replace />;
-  // Normalize and compare roles case-insensitively
+
   const allowed = (Array.isArray(role) ? role : [role]).map((r) =>
     String(r).trim().toLowerCase()
   );
   const normalizedUserRole = String(user?.role || "")
     .trim()
     .toLowerCase();
-
-  // Debugging info to help track redirect issues in-browser
-  console.debug(
-    "RoleProtectedRoute: token:",
-    !!token,
-    "userRole:",
-    normalizedUserRole,
-    "allowed:",
-    allowed
-  );
 
   if (!user || !allowed.includes(normalizedUserRole)) {
     if (normalizedUserRole === "admin")

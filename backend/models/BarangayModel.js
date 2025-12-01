@@ -1,13 +1,17 @@
 import mongoose from "mongoose";
 
 const barangaySchema = new mongoose.Schema({
-  barangay: {
+  barangayName: {
     type: String,
     required: true,
   },
   city: {
     type: String,
     required: true,
+  },
+  chairmanId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
   },
   province: {
     type: String,

@@ -2,6 +2,43 @@ import Barangay from "../models/BarangayModel.js";
 import User from "../models/UserModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 
+// GET /api/admins/officials/:barangayId
+export const getOfficialsByBarangay = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const officials = await User.find({
+      barangay: id,
+      role: "Official",
+    }).select("firstname lastname position status profileImage email");
+
+    console.log("Officials fetched:", officials); // Moved to correct position
+
+    res.status(200).json({ officials });
+  } catch (error) {
+    console.error("Error fetching officials:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+//get barangay by id
+
+export const getBarangayById = async (req, res) => {
+  try {
+    const { id } = req.params; // match route param name
+    const barangay = await Barangay.findById(id);
+
+    if (!barangay) {
+      return res.status(404).json({ message: "Barangay not found" });
+    }
+
+    res.status(200).json({ barangay }); // singular
+  } catch (error) {
+    console.error("Error fetching barangay:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get all barangays
 export const getAllBarangays = async (req, res) => {
   try {
@@ -16,14 +53,14 @@ export const getAllBarangays = async (req, res) => {
 // Create a new barangay
 export const createBarangay = async (req, res) => {
   try {
-    const { barangay, city, province, region } = req.body;
+    const { barangayName, city, province, region } = req.body;
 
-    if (!barangay || !city || !province || !region) {
+    if (!barangayName || !city || !province || !region) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     const newBarangay = await Barangay.create({
-      barangay,
+      barangayName,
       city,
       province,
       region,
@@ -119,6 +156,38 @@ export const assignUserToBarangay = async (req, res) => {
     });
   } catch (error) {
     console.error("Error assigning user:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Remove user from barangay
+export const removeUserFromBarangay = async (req, res) => {
+  try {
+    const { userId, barangayId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // If a barangayId was provided, ensure it matches the user's current barangay
+    if (
+      barangayId &&
+      user.barangay &&
+      user.barangay.toString() !== barangayId
+    ) {
+      return res
+        .status(400)
+        .json({ message: "User is not assigned to the provided barangay" });
+    }
+
+    user.barangay = null;
+    user.barangayName = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "User removed from barangay", user });
+  } catch (error) {
+    console.error("Error removing user from barangay:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

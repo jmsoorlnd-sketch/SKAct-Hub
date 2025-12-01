@@ -1,13 +1,11 @@
-import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
+import ProtectedRoute, { RoleProtectedRoute } from "./utils/Auth";
 import OfficialDashboard from "./pages/officials/officialDashboard";
 import Calendar from "./pages/Calendar";
-import ProtectedRoute, { RoleProtectedRoute } from "./utils/Auth";
 import PublicRoute from "./utils/PublicRoute";
-// import UserDashboard from "./pages/youth/UserDashboard";
 import SkOfficial from "./pages/admin/SkOfficial";
 import Dashboard from "./pages/Dashboard";
 import YouthProfiles from "./pages/admin/YouthProfiles";
@@ -15,6 +13,10 @@ import Profiles from "./pages/admin/Profiles";
 import Sent from "./pages/Sent";
 import BarangayManagement from "./pages/admin/BarangayManagement";
 import BarangayStorage from "./pages/BarangayStorage";
+import Inbox from "./pages/Inbox";
+import BarangayPage from "./pages/barangay/BarangayPage";
+import BarangayView from "./pages/barangay/BarangayView";
+import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 const App = () => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
@@ -107,14 +109,6 @@ const App = () => {
           />
 
           {/* Sent messages */}
-          <Route
-            path="/sent"
-            element={
-              <RoleProtectedRoute role={["Official", "Youth", "Admin"]}>
-                <Sent />
-              </RoleProtectedRoute>
-            }
-          />
 
           {/* Profile */}
           <Route
@@ -125,14 +119,12 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
-          {/* Barangay Management (Admin) */}
           <Route
-            path="/barangay-management"
+            path="/inbox"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
-                <BarangayManagement />
-              </RoleProtectedRoute>
+              <ProtectedRoute>
+                <Inbox />
+              </ProtectedRoute>
             }
           />
 
@@ -145,8 +137,22 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
-          {/* Youth */}
+          <Route
+            path="/barangay-page"
+            element={
+              <ProtectedRoute>
+                <BarangayPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/barangay-view/:barangayId"
+            element={
+              <ProtectedRoute>
+                <BarangayViewPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </div>
