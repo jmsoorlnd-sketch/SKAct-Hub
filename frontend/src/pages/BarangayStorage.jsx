@@ -18,6 +18,10 @@ const BarangayStorage = () => {
     province: "",
     region: "",
   });
+  const ADMIN_LIMIT = 5;
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [composeFile, setComposeFile] = useState(null);
 
   useEffect(() => {
     let userData = null;
@@ -85,6 +89,22 @@ const BarangayStorage = () => {
 
   const fetchStorageDocuments = async (barangayId, currentUser = user) => {
     const token = localStorage.getItem("token");
+
+    // Debug: log token info
+    console.log("fetchStorageDocuments - token exists:", !!token);
+    console.log(
+      "fetchStorageDocuments - token starts with Bearer:",
+      token?.startsWith("Bearer")
+    );
+    console.log("fetchStorageDocuments - currentUser:", currentUser);
+    console.log("fetchStorageDocuments - currentUser.role:", currentUser?.role);
+
+    if (!token) {
+      console.error("No token found in localStorage");
+      setStorage([]);
+      return;
+    }
+
     try {
       if (currentUser && currentUser.role !== "Admin") {
         const res = await axios.get(
@@ -108,6 +128,8 @@ const BarangayStorage = () => {
       }
     } catch (error) {
       console.error("Error fetching storage:", error);
+      console.error("Error response:", error?.response?.data);
+      console.error("Error status:", error?.response?.status);
       setStorage([]);
     }
   };
@@ -149,6 +171,17 @@ const BarangayStorage = () => {
 
   const handleCreateBarangay = async (e) => {
     e.preventDefault();
+    // Prevent client-side creation if admin already reached the limit
+    if (user?.role === "Admin") {
+      const createdByThisAdmin = barangays.filter(
+        (b) => b?.chairmanId && String(b.chairmanId) === String(user._id)
+      ).length;
+      if (createdByThisAdmin >= ADMIN_LIMIT) {
+        return alert(
+          `Creation limit reached. Each admin can create up to ${ADMIN_LIMIT} barangays.`
+        );
+      }
+    }
     const isDuplicate = barangays.some((b) => {
       const name = b.barangayName || b.barangay || "";
       return (
@@ -177,7 +210,12 @@ const BarangayStorage = () => {
       fetchBarangays();
     } catch (error) {
       console.error("Error creating barangay:", error);
-      alert("Failed to create barangay.");
+      const serverMsg = error?.response?.data?.message;
+      if (serverMsg) {
+        alert(serverMsg);
+      } else {
+        alert("Failed to create barangay.");
+      }
     }
   };
 
@@ -264,6 +302,58 @@ const BarangayStorage = () => {
     }
   };
 
+  const handleSendToBarangay = async () => {
+    if (!selectedBarangay) return alert("Select a barangay first");
+    if (!composeSubject || !composeBody)
+      return alert("Subject and message are required");
+    try {
+      const token = localStorage.getItem("token");
+      const fd = new FormData();
+      fd.append("subject", composeSubject);
+      fd.append("body", composeBody);
+      if (composeFile) fd.append("attachment", composeFile);
+
+      await axios.post(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/messages`,
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      alert("Sent to barangay");
+      setComposeSubject("");
+      setComposeBody("");
+      setComposeFile(null);
+      fetchStorageDocuments(selectedBarangay);
+    } catch (error) {
+      console.error("Error sending to barangay:", error);
+      const serverMsg = error?.response?.data?.message;
+      if (serverMsg) alert(serverMsg);
+      else alert("Failed to send.");
+    }
+  };
+
+  const handleUpdateStatus = async (messageId, status) => {
+    if (!messageId) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:5000/api/messages/${messageId}/status`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchStorageDocuments(selectedBarangay);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      alert("Failed to update status.");
+    }
+  };
+
+  const userBarangayId = user?.barangay?._id || user?.barangay || null;
+
   return (
     <Layout>
       <div className="p-6 bg-gray-50 min-h-screen">
@@ -341,7 +431,24 @@ const BarangayStorage = () => {
                 {barangays.map((b) => (
                   <div
                     key={b._id}
-                    onClick={() => fetchStorageDocuments(b._id)}
+                    onClick={() => {
+                      // Re-fetch user from localStorage to ensure current state
+                      let currentUser = user;
+                      if (!currentUser) {
+                        try {
+                          const raw = localStorage.getItem("user");
+                          if (raw && raw !== "undefined" && raw !== "null") {
+                            currentUser = JSON.parse(raw);
+                          }
+                        } catch (err) {
+                          console.warn(
+                            "Failed to parse user from localStorage",
+                            err
+                          );
+                        }
+                      }
+                      fetchStorageDocuments(b._id, currentUser);
+                    }}
                     className={`p-3 rounded-lg cursor-pointer transition ${
                       selectedBarangay === b._id
                         ? "bg-blue-600 text-white"
@@ -375,6 +482,55 @@ const BarangayStorage = () => {
             {selectedBarangay ? (
               <div className="space-y-6 max-h-[70vh] overflow-y-auto">
                 <div>
+                  {/* Compose UI for users to send a message/document to the selected barangay */}
+                  {user &&
+                    user.role !== "Admin" &&
+                    String(userBarangayId) === String(selectedBarangay) && (
+                      <div className="mb-6 bg-gray-50 p-4 rounded border border-gray-200">
+                        <h3 className="font-semibold mb-2">
+                          Compose to Barangay
+                        </h3>
+                        <input
+                          value={composeSubject}
+                          onChange={(e) => setComposeSubject(e.target.value)}
+                          placeholder="Subject"
+                          className="w-full border p-2 rounded mb-2"
+                        />
+                        <textarea
+                          value={composeBody}
+                          onChange={(e) => setComposeBody(e.target.value)}
+                          placeholder="Message body"
+                          className="w-full border p-2 rounded mb-2"
+                          rows={3}
+                        />
+                        <input
+                          type="file"
+                          onChange={(e) =>
+                            setComposeFile(e.target.files?.[0] || null)
+                          }
+                          className="mb-2"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSendToBarangay}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                          >
+                            Send
+                          </button>
+                          <button
+                            onClick={() => {
+                              setComposeSubject("");
+                              setComposeBody("");
+                              setComposeFile(null);
+                            }}
+                            className="bg-gray-300 px-3 py-1 rounded"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                   <h2 className="text-2xl font-bold mb-4">Stored Documents</h2>
                   {storage.length === 0 ? (
                     <p className="text-gray-500">No documents stored yet.</p>
@@ -388,11 +544,23 @@ const BarangayStorage = () => {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <p className="font-semibold text-lg">
-                                {item.documentName || "Document"}
+                                {item.documentName ||
+                                  item.document?.subject ||
+                                  "Document"}
+                              </p>
+                              <p className="text-sm text-gray-600 font-medium">
+                                From:{" "}
+                                {item.document?.sender?.username ||
+                                  item.uploadedBy?.username}{" "}
+                                (
+                                {item.document?.sender?.firstname ||
+                                  item.uploadedBy?.firstname}{" "}
+                                {item.document?.sender?.lastname ||
+                                  item.uploadedBy?.lastname}
+                                )
                               </p>
                               <p className="text-sm text-gray-600">
-                                From: {item.uploadedBy?.firstname}{" "}
-                                {item.uploadedBy?.lastname}
+                                Status: {item.document?.status || item.status}
                               </p>
                               <p className="text-sm text-gray-500">
                                 {new Date(item.createdAt).toLocaleString()}
@@ -413,6 +581,84 @@ const BarangayStorage = () => {
                               >
                                 Download
                               </a>
+                            )}
+                          </div>
+
+                          <div className="mt-3 flex gap-2">
+                            {String(item.document?.sender?._id) ===
+                              String(user?._id) && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleUpdateStatus(
+                                      item.document?._id,
+                                      "ongoing"
+                                    )
+                                  }
+                                  className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+                                >
+                                  Mark Ongoing
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleUpdateStatus(
+                                      item.document?._id,
+                                      "completed"
+                                    )
+                                  }
+                                  className="text-sm bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded"
+                                >
+                                  Mark Completed
+                                </button>
+                              </>
+                            )}
+
+                            {user?.role === "Admin" && (
+                              <button
+                                onClick={async () => {
+                                  if (
+                                    !window.confirm(
+                                      "Remove this message from the barangay?"
+                                    )
+                                  )
+                                    return;
+                                  try {
+                                    const token = localStorage.getItem("token");
+                                    const docId =
+                                      item.document?._id || item.document;
+                                    await axios.delete(
+                                      `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`,
+                                      {
+                                        headers: {
+                                          Authorization: `Bearer ${token}`,
+                                        },
+                                      }
+                                    );
+                                    // remove from UI
+                                    setStorage((prev) =>
+                                      prev.filter(
+                                        (s) =>
+                                          String(s._id) !== String(item._id)
+                                      )
+                                    );
+                                    // notify other components (dashboard) to refresh inbox
+                                    window.dispatchEvent(
+                                      new Event("messageDetached")
+                                    );
+                                    alert(
+                                      "Message removed from barangay and returned to inbox"
+                                    );
+                                  } catch (err) {
+                                    console.error("Detach failed", err);
+                                    alert(
+                                      "Failed to remove message from barangay"
+                                    );
+                                  }
+                                }}
+                                className="text-sm bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                              >
+                                Remove from Barangay
+                              </button>
                             )}
                           </div>
                         </div>

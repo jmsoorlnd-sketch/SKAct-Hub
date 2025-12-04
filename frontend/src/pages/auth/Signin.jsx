@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { useToast } from "../../components/Toast";
 
 const Signin = () => {
+  const { error: errorToast } = useToast();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -32,15 +34,13 @@ const Signin = () => {
       localStorage.setItem("user", JSON.stringify(user));
       console.log(res.data.user);
 
-      alert("Login successful!");
+      // Redirect immediately without alert
       window.location.href = "/dashboard";
-
-      // Redirect based on role
     } catch (err) {
       if (err.response?.data?.message) {
-        alert(err.response.data.message);
+        errorToast(err.response.data.message);
       } else {
-        alert("Something went wrong. Please try again.");
+        errorToast("Something went wrong. Please try again.");
       }
     }
   };

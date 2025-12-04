@@ -8,6 +8,8 @@ const BarangayManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [user, setUser] = useState(null);
+  const ADMIN_LIMIT = 5;
   const [formData, setFormData] = useState({
     barangay: "",
     city: "",
@@ -16,15 +18,26 @@ const BarangayManagement = () => {
   });
 
   useEffect(() => {
-    fetchBarangays();
+    let u = null;
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw && raw !== "undefined" && raw !== "null") u = JSON.parse(raw);
+    } catch (err) {
+      u = null;
+    }
+    setUser(u);
+    fetchBarangays(u);
   }, []);
 
   const fetchBarangays = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/barangays", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/barangays/all-barangays",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setBarangays(res.data.barangays || []);
     } catch (error) {
       console.error("Error fetching barangays:", error);
@@ -56,18 +69,35 @@ const BarangayManagement = () => {
 
   const handleCreateBarangay = async (e) => {
     e.preventDefault();
+    // client-side guard: admins can only create up to ADMIN_LIMIT barangays
+    if (user?.role === "Admin") {
+      const createdCount = barangays.filter(
+        (b) => String(b.chairmanId) === String(user._id)
+      ).length;
+      if (createdCount >= ADMIN_LIMIT) {
+        return alert(
+          `Creation limit reached. Each admin can create up to ${ADMIN_LIMIT} barangays.`
+        );
+      }
+    }
     try {
       const token = localStorage.getItem("token");
-      await axios.post("http://localhost:5000/api/barangays", formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(
+        "http://localhost:5000/api/barangays/add-barangay",
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       alert("Barangay created successfully!");
       setFormData({ barangay: "", city: "", province: "", region: "" });
       setShowForm(false);
       fetchBarangays();
     } catch (error) {
       console.error("Error creating barangay:", error);
-      alert("Failed to create barangay.");
+      const serverMsg = error?.response?.data?.message;
+      if (serverMsg) alert(serverMsg);
+      else alert("Failed to create barangay.");
     }
   };
 
@@ -94,12 +124,26 @@ const BarangayManagement = () => {
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Barangay Management</h1>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-          >
-            {showForm ? "Cancel" : "+ Add Barangay"}
-          </button>
+          {(() => {
+            // Calculate how many barangays this admin has created
+            const adminBarangayCount = barangays.filter(
+              (b) => String(b.chairmanId) === String(user?._id)
+            ).length;
+            const hasReachedLimit = adminBarangayCount >= ADMIN_LIMIT;
+
+            return hasReachedLimit ? (
+              <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium">
+                Limit reached (5/5 barangays)
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              >
+                {showForm ? "Cancel" : "+ Add Barangay"}
+              </button>
+            );
+          })()}
         </div>
 
         {/* Create Form */}

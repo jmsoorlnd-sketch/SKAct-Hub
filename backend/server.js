@@ -15,9 +15,11 @@ app.use(express.json());
 import UserRoute from "./routes/UserRoute.js";
 import MessageRoute from "./routes/MessageRoute.js";
 import BarangayRoute from "./routes/BarangayRoute.js";
+import SearchRoute from "./routes/SearchRoute.js";
 app.use("/api/users", UserRoute);
 app.use("/api/messages", MessageRoute);
 app.use("/api/barangays", BarangayRoute);
+app.use("/api/search", SearchRoute);
 
 import AdminRoute from "./routes/AdminRoute.js";
 app.use("/api/admins", AdminRoute);

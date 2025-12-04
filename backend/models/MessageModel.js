@@ -35,15 +35,25 @@ const messageSchema = new mongoose.Schema(
     endDate: {
       type: Date,
     },
-    // status: pending | approved | ongoing | rejected
+    // status: pending | approved | ongoing | rejected | completed
     status: {
       type: String,
-      enum: ["pending", "approved", "ongoing", "rejected"],
+      enum: ["pending", "approved", "ongoing", "rejected", "completed"],
       default: "pending",
     },
     isRead: {
       type: Boolean,
       default: false,
+    },
+    // attachedToBarangay: if message was moved/attached into a barangay storage
+    isAttached: {
+      type: Boolean,
+      default: false,
+    },
+    attachedToBarangay: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Barangay",
+      default: null,
     },
   },
   { timestamps: true }

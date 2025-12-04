@@ -109,6 +109,14 @@ const App = () => {
           />
 
           {/* Sent messages */}
+          <Route
+            path="/sent"
+            element={
+              <ProtectedRoute>
+                <Sent />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Profile */}
           <Route

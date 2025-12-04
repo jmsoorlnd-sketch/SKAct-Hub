@@ -6,6 +6,12 @@ const Dashboard = () => {
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [showBarangayModal, setShowBarangayModal] = useState(false);
+  const [barangays, setBarangays] = useState([]);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [messageToAttach, setMessageToAttach] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Fetch inbox messages
   useEffect(() => {
@@ -28,6 +34,45 @@ const Dashboard = () => {
     };
 
     fetchMessages();
+
+    // load current user from localStorage defensively
+    try {
+      const raw = localStorage.getItem("user");
+      setCurrentUser(raw ? JSON.parse(raw) : null);
+    } catch (err) {
+      setCurrentUser(null);
+    }
+  }, []);
+
+  // close context menu on click anywhere
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+
+  // Listen for detached messages and refresh inbox
+  useEffect(() => {
+    const onDetached = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          "http://localhost:5000/api/messages/inbox",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setMessages(res.data.messages || []);
+      } catch (err) {
+        console.error("Failed to refresh inbox after detach", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener("messageDetached", onDetached);
+    return () => window.removeEventListener("messageDetached", onDetached);
   }, []);
 
   // Delete message
@@ -89,6 +134,10 @@ const Dashboard = () => {
                 <div
                   key={msg._id}
                   onClick={() => setSelectedMessage(msg)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.pageX, y: e.pageY, message: msg });
+                  }}
                   className={`p-4 border-b cursor-pointer hover:bg-blue-50 transition ${
                     selectedMessage?._id === msg._id ? "bg-blue-100" : ""
                   }`}
@@ -116,6 +165,46 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Context menu */}
+        {contextMenu && (
+          <div
+            className="absolute bg-white border rounded shadow-md z-50"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              className="px-4 py-2 hover:bg-gray-100 w-full text-left"
+              onClick={(e) => {
+                e.stopPropagation();
+                // store the message separately then open modal
+                setMessageToAttach(contextMenu?.message || null);
+                setShowBarangayModal(true);
+                setContextMenu(null);
+                // fetch barangays when opening modal
+                (async () => {
+                  try {
+                    setModalLoading(true);
+                    const token = localStorage.getItem("token");
+                    const res = await axios.get(
+                      "http://localhost:5000/api/barangays/all-barangays",
+                      {
+                        headers: { Authorization: `Bearer ${token}` },
+                      }
+                    );
+                    setBarangays(res.data.barangays || res.data || []);
+                  } catch (err) {
+                    console.error("Failed to load barangays", err);
+                    setBarangays([]);
+                  } finally {
+                    setModalLoading(false);
+                  }
+                })();
+              }}
+            >
+              Insert in a brgy
+            </button>
+          </div>
+        )}
 
         {/* RIGHT SIDE - MESSAGE DETAILS */}
         <div className="w-2/3 bg-white rounded-xl shadow-md p-6 overflow-auto max-h-[80vh]">
@@ -202,6 +291,31 @@ const Dashboard = () => {
                 </p>
               </div>
 
+              {/* Status controls (only visible to sender) */}
+              {currentUser &&
+                selectedMessage.sender &&
+                String(currentUser._id) ===
+                  String(selectedMessage.sender._id) && (
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      className="px-3 py-1 bg-yellow-500 text-white rounded"
+                      onClick={() =>
+                        handleUpdateStatus(selectedMessage._id, "ongoing")
+                      }
+                    >
+                      Mark Ongoing
+                    </button>
+                    <button
+                      className="px-3 py-1 bg-green-600 text-white rounded"
+                      onClick={() =>
+                        handleUpdateStatus(selectedMessage._id, "completed")
+                      }
+                    >
+                      Mark Completed
+                    </button>
+                  </div>
+                )}
+
               {/* ATTACHMENT SECTION */}
               {selectedMessage.attachmentName && (
                 <div className="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-300">
@@ -232,6 +346,86 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      {/* Barangay Modal */}
+      {showBarangayModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black opacity-40" />
+          <div className="bg-white rounded-lg shadow-lg z-50 w-11/12 md:w-1/2 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Select Barangay</h3>
+              <button
+                onClick={() => setShowBarangayModal(false)}
+                className="text-gray-600 hover:text-black"
+              >
+                ✕
+              </button>
+            </div>
+
+            {modalLoading ? (
+              <div className="text-center text-gray-600">Loading...</div>
+            ) : (
+              <div className="max-h-80 overflow-auto">
+                {barangays.length === 0 ? (
+                  <div className="text-gray-500">No barangays found</div>
+                ) : (
+                  barangays.map((b) => (
+                    <div
+                      key={b._id}
+                      className="flex items-center justify-between p-3 border-b"
+                    >
+                      <div>
+                        <div className="font-semibold">
+                          {b.barangayName || b.name}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {b.city ? `${b.city} • ${b.region}` : b.region || ""}
+                        </div>
+                      </div>
+                      <div>
+                        <button
+                          className="bg-blue-600 text-white px-3 py-1 rounded"
+                          onClick={async () => {
+                            try {
+                              const token = localStorage.getItem("token");
+                              const messageId = messageToAttach?._id || null;
+                              if (!messageId)
+                                return alert("No message selected");
+
+                              await axios.post(
+                                `http://localhost:5000/api/barangays/${b._id}/attach-message`,
+                                { messageId },
+                                {
+                                  headers: { Authorization: `Bearer ${token}` },
+                                }
+                              );
+
+                              // remove the message from inbox view
+                              setMessages((prev) =>
+                                prev.filter((m) => m._id !== messageId)
+                              );
+                              if (selectedMessage?._id === messageId)
+                                setSelectedMessage(null);
+
+                              alert("Message attached to barangay");
+                              setShowBarangayModal(false);
+                              setMessageToAttach(null);
+                            } catch (err) {
+                              console.error("Attach failed", err);
+                              alert("Failed to attach message");
+                            }
+                          }}
+                        >
+                          Insert
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

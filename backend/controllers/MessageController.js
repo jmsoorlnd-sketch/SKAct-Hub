@@ -53,7 +53,11 @@ export const getInbox = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const messages = await Message.find({ recipient: userId })
+    // Exclude messages that have already been attached/moved into a barangay
+    const messages = await Message.find({
+      recipient: userId,
+      isAttached: { $ne: true },
+    })
       .populate("sender", "username email role")
       .sort({ createdAt: -1 });
 
@@ -72,17 +76,29 @@ export const updateStatus = async (req, res) => {
     const { messageId } = req.params;
     const { status } = req.body;
 
-    if (!["pending", "approved", "ongoing", "rejected"].includes(status)) {
+    if (
+      !["pending", "approved", "ongoing", "rejected", "completed"].includes(
+        status
+      )
+    ) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
-    const message = await Message.findByIdAndUpdate(
-      messageId,
-      { status },
-      { new: true }
-    ).populate("sender", "username email role");
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ message: "Message not found" });
 
-    res.status(200).json({ message: "Status updated", data: message });
+    // Only the original sender can change the status (admins cannot)
+    if (String(msg.sender) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: "Only the message sender can update status" });
+    }
+
+    msg.status = status;
+    await msg.save();
+    await msg.populate("sender", "username email role");
+
+    res.status(200).json({ message: "Status updated", data: msg });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

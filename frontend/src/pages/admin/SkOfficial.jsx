@@ -3,8 +3,10 @@ import Layout from "../../layout/Layout";
 import CreateOfficialModal from "../../components/popforms/official/AddOfficial";
 import EditOfficial from "../../components/popforms/official/EditOfficial";
 import axios from "axios";
+import { useToast } from "../../components/Toast";
 
 const SkOfficial = () => {
+  const { success, error } = useToast();
   const [officials, setOfficials] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [barangay, setBarangay] = useState([]);
@@ -96,9 +98,9 @@ const SkOfficial = () => {
           o._id === official._id ? { ...o, status: newStatus } : o
         )
       );
-    } catch (error) {
-      console.error(error);
-      alert(error.response?.data?.message || "Failed to update status");
+    } catch (err) {
+      console.error(err);
+      error(err.response?.data?.message || "Failed to update status");
     }
   };
   const handleUpdateOfficial = (updatedOfficial) => {
