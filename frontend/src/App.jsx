@@ -8,7 +8,6 @@ import Calendar from "./pages/Calendar";
 import PublicRoute from "./utils/PublicRoute";
 import SkOfficial from "./pages/admin/SkOfficial";
 import Dashboard from "./pages/Dashboard";
-import YouthProfiles from "./pages/admin/YouthProfiles";
 import Profiles from "./pages/admin/Profiles";
 import Sent from "./pages/Sent";
 import BarangayManagement from "./pages/admin/BarangayManagement";

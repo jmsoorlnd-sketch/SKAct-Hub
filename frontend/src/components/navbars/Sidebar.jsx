@@ -35,7 +35,7 @@ const Sidebar = () => {
             </a>
 
             <a
-              href="/admin/youth-profiles"
+              href="/sk-official"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
             >
               <span>🧑‍🤝‍🧑</span>

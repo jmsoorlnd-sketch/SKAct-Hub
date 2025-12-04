@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Layout from "../../layout/Layout";
+import { useToast } from "../../components/Toast";
 
-const Dashboard = () => {
-  const [openCompose, setOpenCompose] = useState(false);
+const OfficialDashboard = () => {
+  const { success, error } = useToast();
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeMode, setComposeMode] = useState("admin"); // "admin" or "barangay"
   const [attachedFile, setAttachedFile] = useState(null);
   const [adminRecipient, setAdminRecipient] = useState("");
   const [admins, setAdmins] = useState([]);
+  const [user, setUser] = useState(null);
+  const [userBarangay, setUserBarangay] = useState(null);
   const [formData, setFormData] = useState({
     subject: "",
     body: "",
   });
   const [loading, setLoading] = useState(false);
 
-  // Fetch admins on mount
+  // Fetch admins and user's barangay on mount
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
@@ -25,21 +30,51 @@ const Dashboard = () => {
           }
         );
         setAdmins(res.data.admins);
-      } catch (error) {
-        console.error("Failed to fetch admins:", error);
+      } catch (err) {
+        console.error("Failed to fetch admins:", err);
+        error("Failed to fetch admins");
       }
     };
+
+    const fetchUserBarangay = async () => {
+      try {
+        let userData = null;
+        try {
+          const raw = localStorage.getItem("user");
+          if (raw && raw !== "undefined" && raw !== "null") {
+            userData = JSON.parse(raw);
+          }
+        } catch (err) {
+          userData = null;
+        }
+        setUser(userData);
+
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          "http://localhost:5000/api/barangays/me/barangay",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setUserBarangay(res.data.barangay);
+      } catch (err) {
+        console.error("Failed to fetch user barangay:", err);
+      }
+    };
+
     fetchAdmins();
-  }, []);
+    fetchUserBarangay();
+  }, [error]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSendMessage = async () => {
+  const handleSendToAdmin = async (e) => {
+    e.preventDefault();
     if (!adminRecipient || !formData.subject || !formData.body) {
-      alert("Please fill in all fields");
+      error("Please fill in all required fields");
       return;
     }
 
@@ -47,7 +82,6 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
 
-      // Use FormData when uploading a file
       const payload = new FormData();
       payload.append("recipientId", adminRecipient);
       payload.append("subject", formData.subject);
@@ -60,14 +94,58 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert("Message sent successfully!");
-      setOpenCompose(false);
+      success("Message sent to admin successfully!");
+      setShowCompose(false);
       setFormData({ subject: "", body: "" });
       setAttachedFile(null);
       setAdminRecipient("");
-    } catch (error) {
-      console.error("Send failed:", error);
-      alert(error.response?.data?.message || "Failed to send message");
+    } catch (err) {
+      console.error("Send failed:", err);
+      error(err.response?.data?.message || "Failed to send message");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendToBarangay = async (e) => {
+    e.preventDefault();
+    if (!userBarangay) {
+      error("You are not assigned to any barangay");
+      return;
+    }
+    if (!formData.subject || !formData.body) {
+      error("Subject and message are required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const fd = new FormData();
+      fd.append("subject", formData.subject);
+      fd.append("body", formData.body);
+      if (attachedFile) fd.append("attachment", attachedFile);
+
+      await axios.post(
+        `http://localhost:5000/api/barangays/${userBarangay._id}/messages`,
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      success("Message sent to barangay storage successfully!");
+      setShowCompose(false);
+      setFormData({ subject: "", body: "" });
+      setAttachedFile(null);
+    } catch (err) {
+      console.error("Send to barangay failed:", err);
+      error(
+        err.response?.data?.message || "Failed to send message to barangay"
+      );
     } finally {
       setLoading(false);
     }
@@ -81,15 +159,295 @@ const Dashboard = () => {
 
         {/* CENTER */}
         <div className="w-2/4 bg-white rounded-xl p-6 shadow min-h-[600px]">
-          <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-          <p>Your main content will appear here.</p>
+          {!showCompose ? (
+            <>
+              <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+              <p className="text-gray-600 mb-6">
+                Welcome to your dashboard. Click "Compose" to send a message.
+              </p>
+              {userBarangay && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-semibold text-blue-900">
+                    Your Assigned Barangay:
+                  </p>
+                  <p className="text-lg font-bold text-blue-600">
+                    {userBarangay.barangayName}
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    {userBarangay.city}, {userBarangay.province}
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Compose Message</h2>
+                <button
+                  onClick={() => {
+                    setShowCompose(false);
+                    setAttachedFile(null);
+                    setFormData({ subject: "", body: "" });
+                    setAdminRecipient("");
+                    setComposeMode("admin");
+                  }}
+                  className="text-gray-500 hover:text-black text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Mode Selection Tabs */}
+              <div className="flex gap-2 mb-6 border-b">
+                <button
+                  onClick={() => setComposeMode("admin")}
+                  className={`pb-3 px-4 font-semibold transition ${
+                    composeMode === "admin"
+                      ? "border-b-2 border-blue-600 text-blue-600"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                >
+                  Message to Admin
+                </button>
+                {userBarangay && (
+                  <button
+                    onClick={() => setComposeMode("barangay")}
+                    className={`pb-3 px-4 font-semibold transition ${
+                      composeMode === "barangay"
+                        ? "border-b-2 border-blue-600 text-blue-600"
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                  >
+                    Message to Barangay
+                  </button>
+                )}
+              </div>
+
+              {/* Admin Compose Form */}
+              {composeMode === "admin" && (
+                <form onSubmit={handleSendToAdmin}>
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Send To
+                    </label>
+                    <select
+                      value={adminRecipient}
+                      onChange={(e) => setAdminRecipient(e.target.value)}
+                      className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Admin Recipient</option>
+                      {admins.map((admin) => (
+                        <option key={admin._id} value={admin._id}>
+                          {admin.username} ({admin.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      placeholder="Enter subject"
+                      className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Dates (Optional)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={formData.startDate || ""}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            startDate: e.target.value,
+                          }))
+                        }
+                        className="flex-1 border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={formData.endDate || ""}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            endDate: e.target.value,
+                          }))
+                        }
+                        className="flex-1 border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Message Body
+                    </label>
+                    <textarea
+                      name="body"
+                      value={formData.body}
+                      onChange={handleChange}
+                      placeholder="Enter your message"
+                      rows={6}
+                      className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Attachment (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        if (e.target.files.length > 0) {
+                          setAttachedFile(e.target.files[0]);
+                        }
+                      }}
+                      className="w-full border rounded-lg p-2"
+                    />
+                    {attachedFile && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        Selected: {attachedFile.name}
+                        <button
+                          type="button"
+                          onClick={() => setAttachedFile(null)}
+                          className="ml-2 text-red-500 hover:text-red-700 text-xs"
+                        >
+                          Remove
+                        </button>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold transition"
+                    >
+                      {loading ? "Sending..." : "Send to Admin"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ subject: "", body: "" });
+                        setAttachedFile(null);
+                        setAdminRecipient("");
+                      }}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-semibold transition"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Barangay Compose Form */}
+              {composeMode === "barangay" && (
+                <form onSubmit={handleSendToBarangay}>
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm font-semibold text-green-900">
+                      Sending to: {userBarangay?.barangayName}
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Subject
+                    </label>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      placeholder="Enter subject"
+                      className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Message Body
+                    </label>
+                    <textarea
+                      name="body"
+                      value={formData.body}
+                      onChange={handleChange}
+                      placeholder="Enter your message"
+                      rows={6}
+                      className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Document (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      onChange={(e) => {
+                        if (e.target.files.length > 0) {
+                          setAttachedFile(e.target.files[0]);
+                        }
+                      }}
+                      className="w-full border rounded-lg p-2"
+                    />
+                    {attachedFile && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        Selected: {attachedFile.name}
+                        <button
+                          type="button"
+                          onClick={() => setAttachedFile(null)}
+                          className="ml-2 text-red-500 hover:text-red-700 text-xs"
+                        >
+                          Remove
+                        </button>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-semibold transition"
+                    >
+                      {loading ? "Sending..." : "Send to Barangay"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ subject: "", body: "" });
+                        setAttachedFile(null);
+                      }}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-semibold transition"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
         </div>
 
         {/* RIGHT SIDE */}
         <div className="w-1/4 flex flex-col gap-4">
           {/* COMPOSE BUTTON */}
           <button
-            onClick={() => setOpenCompose(true)}
+            onClick={() => setShowCompose(true)}
             className="flex items-center gap-3
               bg-[#D9EEFF] 
               hover:bg-[#bfe3ff]
@@ -116,156 +474,10 @@ const Dashboard = () => {
             </svg>
             Compose
           </button>
-
-          {/* INBOX */}
-          <div
-            className="flex items-center bg-blue-100 px-4 py-3 
-            rounded-xl cursor-pointer hover:bg-blue-200 transition shadow"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-5 h-5 mr-2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5a2.25 2.25 0 01-2.25-2.25V6.75M21.75 6.75A2.25 2.25 0 0019.5 4.5H4.5A2.25 2.25 0 002.25 6.75M21.75 6.75v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.583a2.25 2.25 0 01-2.31 0L3.37 8.909a2.25 2.25 0 01-1.12-1.916V6.75"
-              />
-            </svg>
-            <span className="font-medium">Inbox</span>
-          </div>
         </div>
       </div>
-
-      {/* =====================================================
-                   COMPOSE POPUP
-      ===================================================== */}
-      {openCompose && (
-        <div className="fixed bottom-4 right-6 w-[450px] bg-white shadow-xl rounded-lg border">
-          <div className="flex justify-between items-center px-4 py-2 bg-gray-100 rounded-t-lg border-b">
-            <span className="font-medium">New Message</span>
-            <button
-              onClick={() => {
-                setOpenCompose(false);
-                setAttachedFile(null);
-                setFormData({ subject: "", body: "" });
-                setAdminRecipient("");
-              }}
-              className="text-gray-500 hover:text-black"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="flex flex-col px-4 py-3">
-            <select
-              value={adminRecipient}
-              onChange={(e) => setAdminRecipient(e.target.value)}
-              className="border-b py-2 text-sm outline-none mb-2"
-            >
-              <option value="">Select Admin Recipient</option>
-              {admins.map((admin) => (
-                <option key={admin._id} value={admin._id}>
-                  {admin.username} ({admin.email})
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              placeholder="Subject"
-              className="border-b py-2 text-sm outline-none"
-            />
-
-            <div className="flex gap-2 mt-2">
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate || ""}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, startDate: e.target.value }))
-                }
-                className="border px-2 py-1 text-sm outline-none"
-              />
-              <input
-                type="date"
-                name="endDate"
-                value={formData.endDate || ""}
-                onChange={(e) =>
-                  setFormData((p) => ({ ...p, endDate: e.target.value }))
-                }
-                className="border px-2 py-1 text-sm outline-none"
-              />
-            </div>
-
-            <textarea
-              name="body"
-              value={formData.body}
-              onChange={handleChange}
-              placeholder="Message..."
-              className="mt-3 h-40 resize-none outline-none text-sm"
-            />
-
-            {attachedFile && (
-              <div className="mt-2 text-sm bg-gray-100 p-2 rounded border flex justify-between items-center">
-                <span>{attachedFile.name}</span>
-                <button
-                  className="text-red-500 text-xs"
-                  onClick={() => setAttachedFile(null)}
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 px-4 py-3">
-            <button
-              onClick={handleSendMessage}
-              disabled={loading}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? "Sending..." : "Send"}
-            </button>
-
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files.length > 0) {
-                    setAttachedFile(e.target.files[0]);
-                  }
-                }}
-              />
-
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-6 h-6 text-gray-600 hover:text-black transition"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M18.364 5.636l-7.778 7.778a3 3 0 11-4.243-4.243l7.778-7.778a4.5 4.5 0 016.364 6.364l-7.778 7.778a6 6 0 01-8.486-8.486l7.778-7.778"
-                />
-              </svg>
-            </label>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 };
 
-export default Dashboard;
+export default OfficialDashboard;

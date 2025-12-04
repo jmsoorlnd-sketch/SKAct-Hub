@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Layout from "../layout/Layout";
+import { useToast } from "../components/Toast";
 
 const Dashboard = () => {
+  const { success, error } = useToast();
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -87,9 +89,10 @@ const Dashboard = () => {
 
       setMessages((prev) => prev.filter((m) => m._id !== messageId));
       setSelectedMessage(null);
-      alert("Message deleted");
-    } catch (error) {
-      console.error("Delete failed:", error);
+      success("Message deleted");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      error("Failed to delete message");
     }
   };
 
@@ -110,8 +113,8 @@ const Dashboard = () => {
 
       const updated = res.data.messages.find((m) => m._id === messageId);
       setSelectedMessage(updated || null);
-    } catch (error) {
-      console.error("Update status failed:", error);
+    } catch (err) {
+      console.error("Update status failed:", err);
     }
   };
 
@@ -136,7 +139,11 @@ const Dashboard = () => {
                   onClick={() => setSelectedMessage(msg)}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setContextMenu({ x: e.pageX, y: e.pageY, message: msg });
+                    setContextMenu({
+                      x: e.pageX,
+                      y: e.pageY,
+                      message: msg,
+                    });
                   }}
                   className={`p-4 border-b cursor-pointer hover:bg-blue-50 transition ${
                     selectedMessage?._id === msg._id ? "bg-blue-100" : ""
@@ -176,11 +183,9 @@ const Dashboard = () => {
               className="px-4 py-2 hover:bg-gray-100 w-full text-left"
               onClick={(e) => {
                 e.stopPropagation();
-                // store the message separately then open modal
                 setMessageToAttach(contextMenu?.message || null);
                 setShowBarangayModal(true);
                 setContextMenu(null);
-                // fetch barangays when opening modal
                 (async () => {
                   try {
                     setModalLoading(true);
@@ -194,6 +199,7 @@ const Dashboard = () => {
                     setBarangays(res.data.barangays || res.data || []);
                   } catch (err) {
                     console.error("Failed to load barangays", err);
+                    error("Failed to load barangays");
                     setBarangays([]);
                   } finally {
                     setModalLoading(false);
@@ -346,6 +352,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
       {/* Barangay Modal */}
       {showBarangayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -388,8 +395,10 @@ const Dashboard = () => {
                             try {
                               const token = localStorage.getItem("token");
                               const messageId = messageToAttach?._id || null;
-                              if (!messageId)
-                                return alert("No message selected");
+                              if (!messageId) {
+                                error("No message selected");
+                                return;
+                              }
 
                               await axios.post(
                                 `http://localhost:5000/api/barangays/${b._id}/attach-message`,
@@ -399,19 +408,21 @@ const Dashboard = () => {
                                 }
                               );
 
-                              // remove the message from inbox view
                               setMessages((prev) =>
                                 prev.filter((m) => m._id !== messageId)
                               );
                               if (selectedMessage?._id === messageId)
                                 setSelectedMessage(null);
 
-                              alert("Message attached to barangay");
+                              success("Message attached to barangay");
                               setShowBarangayModal(false);
                               setMessageToAttach(null);
                             } catch (err) {
                               console.error("Attach failed", err);
-                              alert("Failed to attach message");
+                              error(
+                                err.response?.data?.message ||
+                                  "Failed to attach message"
+                              );
                             }
                           }}
                         >
