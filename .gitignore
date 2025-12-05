@@ -1,5 +1,5 @@
 node_modules/
-.env
+
 
 # Logs
 logs
@@ -14,14 +14,14 @@ node_modules
 dist
 dist-ssr
 *.local
-
+git push
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
-*.ntvs*
+*.ntvs* 
 *.njsproj
-*.sln
+*.slngit 
 *.sw?
