@@ -129,9 +129,9 @@ const SkOfficial = () => {
   }, []);
   return (
     <Layout>
-      <div className="bg-gray-200 p-2">
+      <div className="bg-white h-full rounded-2xl p-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-3">
           <h1 className="text-3xl font-bold text-gray-800">
             SK Officials Management
           </h1>
@@ -151,7 +151,7 @@ const SkOfficial = () => {
         </div>
 
         {/* Search + Filters */}
-        <div className="p-2 rounded-lg mb-6 flex items-center gap-4">
+        <div className="p-2   rounded-lg mb-6 flex items-center gap-4">
           <input
             type="text"
             placeholder="Search SK officials..."
@@ -198,10 +198,10 @@ const SkOfficial = () => {
         </div>
 
         {/* Officials Table */}
-        <div className="rounded-lg shadow overflow-hidden">
+        <div className="rounded-lg  overflow-auto">
           <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
+            <table className="min-w-full ">
+              <thead className="bg-gray-300">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Last Name
@@ -237,7 +237,7 @@ const SkOfficial = () => {
                     className={`transition-colors duration-500 ${
                       official.status === "Inactive"
                         ? "bg-red-100"
-                        : "bg-green-100"
+                        : "bg-blue-100"
                     }`}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -262,7 +262,7 @@ const SkOfficial = () => {
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           official.status === "Active"
-                            ? "bg-green-200 text-green-800"
+                            ? "bg-blue-200 text-blue-800"
                             : "bg-red-200 text-red-800"
                         }`}
                       >
@@ -285,7 +285,7 @@ const SkOfficial = () => {
                           className={`font-medium ${
                             official.status === "Active"
                               ? "text-red-600 hover:text-red-800"
-                              : "text-green-600 hover:text-green-800"
+                              : "text-blue-600 hover:text-blue-800"
                           }`}
                           onClick={() => handleToggleStatus(official)}
                         >

@@ -1,148 +1,76 @@
 import React from "react";
+import SideProfile from "../SideProfile";
 
 const Sidebar = () => {
   let user = null;
   try {
     user = JSON.parse(localStorage.getItem("user"));
-  } catch {
-    user = null;
-  }
+  } catch {}
 
   const role = user?.role || "Guest";
 
-  // Admin sidebar
   if (role === "Admin") {
     return (
-      <div className="flex">
-        <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6">
-          <h1 className="text-2xl font-bold tracking-wide">Admin Panel</h1>
+      <div className="flex ">
+        <div className=" bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] ">
+          <h1 className="text-2xl font-bold tracking-wide ">Admin Panel</h1>
 
-          <nav className="flex flex-col gap-4">
+          {/* MENU */}
+          <nav className="flex flex-col gap-2">
             <a
               href="/dashboard"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📊</span>
-              <span>Dashboard</span>
+              <span>📊</span> Dashboard
             </a>
 
             <a
               href="/barangay-storage"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>🏘️</span>
-              <span>Barangays</span>
+              <span>🏘️</span> Barangays
             </a>
 
             <a
               href="/sk-official"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>🧑‍🤝‍🧑</span>
-              <span>Youth Profiles</span>
+              <span>🧑‍🤝‍🧑</span> Youth Profiles
             </a>
 
             <a
               href="/admin/events"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📅</span>
-              <span>Event Scheduling</span>
+              <span>📅</span> Event Scheduling
             </a>
 
             <a
               href="/admin/monitoring"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📊</span>
-              <span>Monitoring & Evaluation</span>
+              <span>📊</span> Monitoring & Evaluation
             </a>
 
             <a
               href="/admin/reports"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📑</span>
-              <span>Reports</span>
-            </a>
-
-            <a
-              href="/profile"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>👤</span>
-              <span>Profile</span>
+              <span>📑</span> Reports
             </a>
 
             <a
               href="/admin/settings"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>⚙️</span>
-              <span>Settings</span>
+              <span>⚙️</span> Settings
             </a>
           </nav>
-        </div>
-      </div>
-    );
-  }
 
-  // SK Official sidebar
-  if (role === "Official") {
-    return (
-      <div className="flex">
-        <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6">
-          <h1 className="text-2xl font-bold tracking-wide">SKOfficial Panel</h1>
-
-          <nav className="flex flex-col gap-4">
-            <a
-              href="/official-dashboard"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>✉️</span>
-              <span>Compose</span>
-            </a>
-
-            <a
-              href="/dashboard"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>📥</span>
-              <span>Inbox</span>
-            </a>
-
-            <a
-              href="/sent"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>📤</span>
-              <span>Sent</span>
-            </a>
-
-            <a
-              href="/calendar"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>📅</span>
-              <span>Event Scheduling</span>
-            </a>
-
-            <a
-              href="/barangay-storage"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>🏘️</span>
-              <span>Barangays</span>
-            </a>
-
-            <a
-              href="/profile"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>👤</span>
-              <span>Profile</span>
-            </a>
-          </nav>
+          {/* PUSH TO BOTTOM */}
+          <div className="mt-auto">
+            <SideProfile user={user} />
+          </div>
         </div>
       </div>
     );
@@ -158,7 +86,7 @@ const Sidebar = () => {
           <nav className="flex flex-col gap-4">
             <a
               href="/official-dashboard"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-800"
             >
               <span>✉️</span>
               <span>Compose</span>

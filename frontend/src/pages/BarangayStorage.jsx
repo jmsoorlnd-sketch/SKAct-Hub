@@ -22,6 +22,9 @@ const BarangayStorage = () => {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [composeFile, setComposeFile] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterProvince, setFilterProvince] = useState("");
+  const [filterCity, setFilterCity] = useState("");
 
   useEffect(() => {
     let userData = null;
@@ -37,7 +40,6 @@ const BarangayStorage = () => {
     (async () => {
       await fetchBarangays(userData);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchBarangays = async (currentUser = user) => {
@@ -89,16 +91,6 @@ const BarangayStorage = () => {
 
   const fetchStorageDocuments = async (barangayId, currentUser = user) => {
     const token = localStorage.getItem("token");
-
-    // Debug: log token info
-    console.log("fetchStorageDocuments - token exists:", !!token);
-    console.log(
-      "fetchStorageDocuments - token starts with Bearer:",
-      token?.startsWith("Bearer")
-    );
-    console.log("fetchStorageDocuments - currentUser:", currentUser);
-    console.log("fetchStorageDocuments - currentUser.role:", currentUser?.role);
-
     if (!token) {
       console.error("No token found in localStorage");
       setStorage([]);
@@ -128,8 +120,6 @@ const BarangayStorage = () => {
       }
     } catch (error) {
       console.error("Error fetching storage:", error);
-      console.error("Error response:", error?.response?.data);
-      console.error("Error status:", error?.response?.status);
       setStorage([]);
     }
   };
@@ -171,7 +161,6 @@ const BarangayStorage = () => {
 
   const handleCreateBarangay = async (e) => {
     e.preventDefault();
-    // Prevent client-side creation if admin already reached the limit
     if (user?.role === "Admin") {
       const createdByThisAdmin = barangays.filter(
         (b) => b?.chairmanId && String(b.chairmanId) === String(user._id)
@@ -240,7 +229,6 @@ const BarangayStorage = () => {
     if (!selectedUserToAdd || !selectedBarangay)
       return alert("Please select a user to assign.");
 
-    // find the selected user's previous barangay (if any)
     const prevUser = availableUsers.find((u) => u._id === selectedUserToAdd);
     const prevBarangayId = prevUser?.barangay
       ? String(prevUser.barangay)
@@ -249,17 +237,15 @@ const BarangayStorage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post(
+      await axios.post(
         "http://localhost:5000/api/barangays/assign-user",
         { userId: selectedUserToAdd, barangayId: selectedBarangay },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // refresh lists
       await fetchUsersInBarangay(selectedBarangay);
       await fetchAvailableUsers();
 
-      // find the target barangay display name
       const targetBarangay =
         barangays.find((b) => b._id === selectedBarangay) || {};
       const targetName =
@@ -353,401 +339,560 @@ const BarangayStorage = () => {
   };
 
   const userBarangayId = user?.barangay?._id || user?.barangay || null;
+  const filteredBarangays = barangays.filter((b) => {
+    const matchesSearch = b.barangayName
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+    const matchesProvince = filterProvince
+      ? b.province === filterProvince
+      : true;
+    const matchesCity = filterCity ? b.city === filterCity : true;
+    return matchesSearch && matchesProvince && matchesCity;
+  });
 
   return (
     <Layout>
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Barangay Management</h1>
-          {user?.role === "Admin" && (
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-            >
-              {showForm ? "Cancel" : "+ Create"}
-            </button>
-          )}
-        </div>
-
-        {showForm && user?.role === "Admin" && (
-          <div className="bg-white p-6 rounded-lg shadow mb-6">
-            <h2 className="text-xl font-bold mb-4">Create New Barangay</h2>
-            <form
-              className="grid grid-cols-2 gap-4"
-              onSubmit={handleCreateBarangay}
-            >
-              <input
-                type="text"
-                name="barangay"
-                placeholder="Barangay Name"
-                value={formData.barangay}
-                onChange={handleChange}
-                required
-                className="border border-gray-300 rounded px-3 py-2"
-              />
-              <input
-                type="text"
-                name="city"
-                placeholder="City"
-                value="Ormoc City"
-                readOnly
-                className="border border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-              <input
-                type="text"
-                name="province"
-                placeholder="Province"
-                value="Leyte"
-                readOnly
-                className="border border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-              <input
-                type="text"
-                name="region"
-                placeholder="Region"
-                value="Region 8"
-                readOnly
-                className="border border-gray-300 rounded px-3 py-2 bg-gray-100"
-              />
-              <button
-                type="submit"
-                className="col-span-2 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-medium"
-              >
-                Create Barangay
-              </button>
-            </form>
-          </div>
-        )}
-
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-1 bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-4">Barangays</h2>
-            {loading ? (
-              <p className="text-gray-500">Loading...</p>
-            ) : barangays.length === 0 ? (
-              <p className="text-gray-500">No barangays yet.</p>
-            ) : (
-              <div className="space-y-3 overflow-y-auto max-h-[70vh]">
-                {barangays.map((b) => (
-                  <div
-                    key={b._id}
-                    onClick={() => {
-                      // Re-fetch user from localStorage to ensure current state
-                      let currentUser = user;
-                      if (!currentUser) {
-                        try {
-                          const raw = localStorage.getItem("user");
-                          if (raw && raw !== "undefined" && raw !== "null") {
-                            currentUser = JSON.parse(raw);
-                          }
-                        } catch (err) {
-                          console.warn(
-                            "Failed to parse user from localStorage",
-                            err
-                          );
-                        }
-                      }
-                      fetchStorageDocuments(b._id, currentUser);
-                    }}
-                    className={`p-3 rounded-lg cursor-pointer transition ${
-                      selectedBarangay === b._id
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 hover:bg-gray-200"
-                    }`}
-                  >
-                    <p className="font-semibold text-sm">
-                      {b.barangayName || b.barangay || "—"}
-                    </p>
-                    <p className="text-xs opacity-75">
-                      {b.city}, {b.province}
-                    </p>
-                    {user?.role === "Admin" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteBarangay(b._id);
-                        }}
-                        className="mt-2 text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                ))}
+      <div className="min-h-full bg-gray-50 p-10">
+        <div className="max-w-full mx-auto ">
+          {/* Header */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Barangay Management
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  Manage barangays and their documents
+                </p>
               </div>
-            )}
+              {user?.role === "Admin" && (
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                >
+                  Add Barangay
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="col-span-2 bg-white p-6 rounded-lg shadow">
-            {selectedBarangay ? (
-              <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-                <div>
-                  {/* Compose UI for users to send a message/document to the selected barangay */}
-                  {user &&
-                    user.role !== "Admin" &&
-                    String(userBarangayId) === String(selectedBarangay) && (
-                      <div className="mb-6 bg-gray-50 p-4 rounded border border-gray-200">
-                        <h3 className="font-semibold mb-2">
-                          Compose to Barangay
-                        </h3>
-                        <input
-                          value={composeSubject}
-                          onChange={(e) => setComposeSubject(e.target.value)}
-                          placeholder="Subject"
-                          className="w-full border p-2 rounded mb-2"
-                        />
-                        <textarea
-                          value={composeBody}
-                          onChange={(e) => setComposeBody(e.target.value)}
-                          placeholder="Message body"
-                          className="w-full border p-2 rounded mb-2"
-                          rows={3}
-                        />
-                        <input
-                          type="file"
-                          onChange={(e) =>
-                            setComposeFile(e.target.files?.[0] || null)
-                          }
-                          className="mb-2"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSendToBarangay}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-                          >
-                            Send
-                          </button>
-                          <button
-                            onClick={() => {
-                              setComposeSubject("");
-                              setComposeBody("");
-                              setComposeFile(null);
-                            }}
-                            className="bg-gray-300 px-3 py-1 rounded"
-                          >
-                            Clear
-                          </button>
-                        </div>
-                      </div>
-                    )}
+          {/* Create Form */}
+          {/* {showForm && user?.role === "Admin" && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Create New Barangay
+              </h2>
+              <form onSubmit={handleCreateBarangay} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Barangay Name
+                    </label>
+                    <input
+                      type="text"
+                      name="barangay"
+                      placeholder="Enter barangay name"
+                      value={formData.barangay}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value="Ormoc City"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Province
+                    </label>
+                    <input
+                      type="text"
+                      value="Leyte"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Region
+                    </label>
+                    <input
+                      type="text"
+                      value="Region 8"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
+                >
+                  Create Barangay
+                </button>
+              </form>
+            </div>
+          )} */}
 
-                  <h2 className="text-2xl font-bold mb-4">Stored Documents</h2>
-                  {storage.length === 0 ? (
-                    <p className="text-gray-500">No documents stored yet.</p>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            {/* Barangay List */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-4 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                    Barangays
+                  </h2>
+                  <input
+                    type="text"
+                    placeholder="Search barangay..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div
+                  className="overflow-y-auto"
+                  style={{ maxHeight: "calc(100vh - 300px)" }}
+                >
+                  {loading ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="mt-2 text-sm">Loading...</p>
+                    </div>
+                  ) : filteredBarangays.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <p className="text-sm">No barangays found</p>
+                    </div>
                   ) : (
-                    <div className="space-y-4">
-                      {storage.map((item) => (
-                        <div
-                          key={item._id}
-                          className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <p className="font-semibold text-lg">
-                                {item.documentName ||
-                                  item.document?.subject ||
-                                  "Document"}
-                              </p>
-                              <p className="text-sm text-gray-600 font-medium">
-                                From:{" "}
-                                {item.document?.sender?.username ||
-                                  item.uploadedBy?.username}{" "}
-                                (
-                                {item.document?.sender?.firstname ||
-                                  item.uploadedBy?.firstname}{" "}
-                                {item.document?.sender?.lastname ||
-                                  item.uploadedBy?.lastname}
-                                )
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Status: {item.document?.status || item.status}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {new Date(item.createdAt).toLocaleString()}
-                              </p>
-                              {item.description && (
-                                <p className="text-sm text-gray-700 mt-2">
-                                  {item.description}
+                    <div className="divide-y divide-gray-200">
+                      {filteredBarangays.map((b) => {
+                        const isSelected = selectedBarangay === b._id;
+                        return (
+                          <div
+                            key={b._id}
+                            onClick={() => {
+                              let currentUser = user;
+                              if (!currentUser) {
+                                try {
+                                  const raw = localStorage.getItem("user");
+                                  if (
+                                    raw &&
+                                    raw !== "undefined" &&
+                                    raw !== "null"
+                                  ) {
+                                    currentUser = JSON.parse(raw);
+                                  }
+                                } catch {}
+                              }
+                              fetchStorageDocuments(b._id, currentUser);
+                            }}
+                            className={`p-4 cursor-pointer transition-colors duration-150 ${
+                              isSelected
+                                ? "bg-blue-200 border-l-4 border-blue-100"
+                                : "hover:bg-blue-100"
+                            }`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h3
+                                  className={`font-medium ${
+                                    isSelected
+                                      ? "text-blue-900"
+                                      : "text-gray-900"
+                                  }`}
+                                >
+                                  {b.barangayName || b.barangay || "—"}
+                                </h3>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {b.city}, {b.province}
                                 </p>
+                              </div>
+                              {user?.role === "Admin" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteBarangay(b._id);
+                                  }}
+                                  className="ml-2 px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors duration-150"
+                                >
+                                  Delete
+                                </button>
                               )}
                             </div>
-                            {item.documentUrl && (
-                              <a
-                                href={`http://localhost:5000${item.documentUrl}`}
-                                download={item.documentName}
-                                className="text-blue-600 hover:underline text-sm"
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Download
-                              </a>
-                            )}
                           </div>
-
-                          <div className="mt-3 flex gap-2">
-                            {String(item.document?.sender?._id) ===
-                              String(user?._id) && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    handleUpdateStatus(
-                                      item.document?._id,
-                                      "ongoing"
-                                    )
-                                  }
-                                  className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
-                                >
-                                  Mark Ongoing
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleUpdateStatus(
-                                      item.document?._id,
-                                      "completed"
-                                    )
-                                  }
-                                  className="text-sm bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded"
-                                >
-                                  Mark Completed
-                                </button>
-                              </>
-                            )}
-
-                            {user?.role === "Admin" && (
-                              <button
-                                onClick={async () => {
-                                  if (
-                                    !window.confirm(
-                                      "Remove this message from the barangay?"
-                                    )
-                                  )
-                                    return;
-                                  try {
-                                    const token = localStorage.getItem("token");
-                                    const docId =
-                                      item.document?._id || item.document;
-                                    await axios.delete(
-                                      `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`,
-                                      {
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                      }
-                                    );
-                                    // remove from UI
-                                    setStorage((prev) =>
-                                      prev.filter(
-                                        (s) =>
-                                          String(s._id) !== String(item._id)
-                                      )
-                                    );
-                                    // notify other components (dashboard) to refresh inbox
-                                    window.dispatchEvent(
-                                      new Event("messageDetached")
-                                    );
-                                    alert(
-                                      "Message removed from barangay and returned to inbox"
-                                    );
-                                  } catch (err) {
-                                    console.error("Detach failed", err);
-                                    alert(
-                                      "Failed to remove message from barangay"
-                                    );
-                                  }
-                                }}
-                                className="text-sm bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
-                              >
-                                Remove from Barangay
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
 
-                {user?.role === "Admin" && (
-                  <div className="border-t pt-6">
-                    <h2 className="text-2xl font-bold mb-4">Assigned Users</h2>
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4 border border-gray-200">
-                      <label className="block text-sm font-semibold mb-2">
-                        Add User to Barangay
-                      </label>
-                      <div className="flex gap-2">
-                        <select
-                          value={selectedUserToAdd}
-                          onChange={(e) => setSelectedUserToAdd(e.target.value)}
-                          className="flex-1 border border-gray-300 rounded px-3 py-2"
-                        >
-                          <option value="">Select a user...</option>
-                          {availableUsers
-                            .filter((u) => u.role !== "Admin")
-                            .map((u) => (
-                              <option key={u._id} value={u._id}>
-                                {u.firstname} {u.lastname} ({u.username}) -{" "}
-                                {u.role}
-                              </option>
-                            ))}
-                        </select>
-                        <button
-                          onClick={handleAssignUser}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium"
-                        >
-                          Add
-                        </button>
-                      </div>
+            {/* Details Panel */}
+            <div className="lg:col-span-2 ">
+              <div className="bg-white  rounded-xl shadow-sm border border-gray-200 p-6">
+                {selectedBarangay ? (
+                  <div className="space-y-6">
+                    {/* Compose Section */}
+                    {user &&
+                      user.role !== "Admin" &&
+                      String(userBarangayId) === String(selectedBarangay) && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <h3 className="font-semibold text-gray-900 mb-3">
+                            Compose Message
+                          </h3>
+                          <div className="space-y-3">
+                            <input
+                              value={composeSubject}
+                              onChange={(e) =>
+                                setComposeSubject(e.target.value)
+                              }
+                              placeholder="Subject"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <textarea
+                              value={composeBody}
+                              onChange={(e) => setComposeBody(e.target.value)}
+                              placeholder="Message body"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              rows={3}
+                            />
+                            <input
+                              type="file"
+                              onChange={(e) =>
+                                setComposeFile(e.target.files?.[0] || null)
+                              }
+                              className="text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleSendToBarangay}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                              >
+                                Send
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setComposeSubject("");
+                                  setComposeBody("");
+                                  setComposeFile(null);
+                                }}
+                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                              >
+                                Clear
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Documents Section */}
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                        Stored Documents
+                      </h2>
+                      {storage.length === 0 ? (
+                        <div className="text-center py-12 text-gray-500">
+                          <svg
+                            className="mx-auto h-12 w-12 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <p className="mt-2 text-sm">
+                            No documents stored yet
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {storage.map((item) => (
+                            <div
+                              key={item._id}
+                              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
+                            >
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-gray-900">
+                                    {item.documentName ||
+                                      item.document?.subject ||
+                                      "Document"}
+                                  </h3>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    From:{" "}
+                                    {item.document?.sender?.username ||
+                                      item.uploadedBy?.username}{" "}
+                                    (
+                                    {item.document?.sender?.firstname ||
+                                      item.uploadedBy?.firstname}{" "}
+                                    {item.document?.sender?.lastname ||
+                                      item.uploadedBy?.lastname}
+                                    )
+                                  </p>
+                                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                    <span
+                                      className={`px-2 py-1 rounded-full ${
+                                        (item.document?.status ||
+                                          item.status) === "completed"
+                                          ? "bg-green-100 text-green-700"
+                                          : (item.document?.status ||
+                                              item.status) === "ongoing"
+                                          ? "bg-yellow-100 text-yellow-700"
+                                          : "bg-gray-100 text-gray-700"
+                                      }`}
+                                    >
+                                      {item.document?.status || item.status}
+                                    </span>
+                                    <span>
+                                      {new Date(
+                                        item.createdAt
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  {item.description && (
+                                    <p className="text-sm text-gray-700 mt-2">
+                                      {item.description}
+                                    </p>
+                                  )}
+                                </div>
+                                {item.documentUrl && (
+                                  <a
+                                    href={`http://localhost:5000${item.documentUrl}`}
+                                    download={item.documentName}
+                                    className="ml-3 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-sm font-medium transition-colors duration-150"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Download
+                                  </a>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {String(item.document?.sender?._id) ===
+                                  String(user?._id) && (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateStatus(
+                                          item.document?._id,
+                                          "ongoing"
+                                        )
+                                      }
+                                      className="px-3 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded text-sm font-medium transition-colors duration-150"
+                                    >
+                                      Mark Ongoing
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleUpdateStatus(
+                                          item.document?._id,
+                                          "completed"
+                                        )
+                                      }
+                                      className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded text-sm font-medium transition-colors duration-150"
+                                    >
+                                      Mark Completed
+                                    </button>
+                                  </>
+                                )}
+
+                                {user?.role === "Admin" && (
+                                  <button
+                                    onClick={async () => {
+                                      if (
+                                        !window.confirm(
+                                          "Remove this message from the barangay?"
+                                        )
+                                      )
+                                        return;
+                                      try {
+                                        const token =
+                                          localStorage.getItem("token");
+                                        const docId =
+                                          item.document?._id || item.document;
+                                        await axios.delete(
+                                          `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`,
+                                          {
+                                            headers: {
+                                              Authorization: `Bearer ${token}`,
+                                            },
+                                          }
+                                        );
+                                        setStorage((prev) =>
+                                          prev.filter(
+                                            (s) =>
+                                              String(s._id) !== String(item._id)
+                                          )
+                                        );
+                                        window.dispatchEvent(
+                                          new Event("messageDetached")
+                                        );
+                                        alert(
+                                          "Message removed from barangay and returned to inbox"
+                                        );
+                                      } catch (err) {
+                                        console.error("Detach failed", err);
+                                        alert(
+                                          "Failed to remove message from barangay"
+                                        );
+                                      }
+                                    }}
+                                    className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-sm font-medium transition-colors duration-150"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {usersInBarangay.length === 0 ? (
-                      <p className="text-gray-500">No users assigned yet.</p>
-                    ) : (
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="bg-gray-200">
-                            <th className="border p-2 text-left">Username</th>
-                            <th className="border p-2 text-left">First Name</th>
-                            <th className="border p-2 text-left">Last Name</th>
-                            <th className="border p-2 text-left">Role</th>
-                            <th className="border p-2 text-left">Position</th>
-                            <th className="border p-2 text-left">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {usersInBarangay.map((u) => (
-                            <tr key={u._id} className="border hover:bg-gray-50">
-                              <td className="border p-2">{u.username}</td>
-                              <td className="border p-2">
-                                {u.firstname || "—"}
-                              </td>
-                              <td className="border p-2">
-                                {u.lastname || "—"}
-                              </td>
-                              <td className="border p-2">{u.role}</td>
-                              <td className="border p-2">
-                                {u.position || "—"}
-                              </td>
-                              <td className="border p-2 text-right">
-                                <button
-                                  onClick={() => handleRemoveUser(u._id)}
-                                  className="text-sm bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
-                                >
-                                  Remove
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    {/* Users Section */}
+                    {user?.role === "Admin" && (
+                      <div className="border-t pt-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                          Assigned Users
+                        </h2>
+
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Add User to Barangay
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              value={selectedUserToAdd}
+                              onChange={(e) =>
+                                setSelectedUserToAdd(e.target.value)
+                              }
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="">Select a user...</option>
+                              {availableUsers
+                                .filter((u) => u.role !== "Admin")
+                                .map((u) => (
+                                  <option key={u._id} value={u._id}>
+                                    {u.firstname} {u.lastname} ({u.username}) -{" "}
+                                    {u.role}
+                                  </option>
+                                ))}
+                            </select>
+                            <button
+                              onClick={handleAssignUser}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+
+                        {usersInBarangay.length === 0 ? (
+                          <p className="text-sm text-gray-500 text-center py-6">
+                            No users assigned yet
+                          </p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                    Username
+                                  </th>
+                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                    First Name
+                                  </th>
+                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                    Last Name
+                                  </th>
+                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                    Role
+                                  </th>
+                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                    Position
+                                  </th>
+                                  <th className="px-4 py-3 text-center font-medium text-gray-700">
+                                    Actions
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200">
+                                {usersInBarangay.map((u) => (
+                                  <tr key={u._id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3 text-gray-900">
+                                      {u.username}
+                                    </td>
+                                    <td className="px-4 py-3 text-gray-700">
+                                      {u.firstname || "—"}
+                                    </td>
+                                    <td className="px-4 py-3 text-gray-700">
+                                      {u.lastname || "—"}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                        {u.role}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-gray-700">
+                                      {u.position || "—"}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <button
+                                        onClick={() => handleRemoveUser(u._id)}
+                                        className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs font-medium transition-colors duration-150"
+                                      >
+                                        Remove
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
                     )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                    <svg
+                      className="h-16 w-16 text-gray-300 mb-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <p className="text-lg font-medium">Select a barangay</p>
+                    <p className="text-sm mt-1">
+                      Choose a barangay from the list to view documents
+                    </p>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <p>Select a barangay to view documents</p>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
