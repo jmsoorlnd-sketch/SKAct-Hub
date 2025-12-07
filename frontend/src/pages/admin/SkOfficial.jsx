@@ -4,6 +4,7 @@ import CreateOfficialModal from "../../components/popforms/official/AddOfficial"
 import EditOfficial from "../../components/popforms/official/EditOfficial";
 import axios from "axios";
 import { useToast } from "../../components/Toast";
+import { UserPlus } from "lucide-react";
 
 const SkOfficial = () => {
   const { success, error } = useToast();
@@ -137,9 +138,10 @@ const SkOfficial = () => {
           </h1>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md"
+            className="px-4 py-2 bg-blue-600 flex gap-2 text-white rounded-md"
           >
-            + Add Official
+            <UserPlus size={20} />
+            Add Official
           </button>
           <CreateOfficialModal
             isOpen={isModalOpen}

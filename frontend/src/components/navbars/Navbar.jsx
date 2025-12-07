@@ -103,7 +103,7 @@ const Navbar = () => {
     <nav className=" bg-white p-2 border-green-50 flex justify-between items-center shadow-2xs">
       {/* LEFT SIDE / LOGO */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold">
+        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
           SK
         </div>
         <h1 className="text-xl font-bold tracking-wide">SKhub</h1>

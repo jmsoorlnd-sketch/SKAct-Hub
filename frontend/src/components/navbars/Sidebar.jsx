@@ -1,73 +1,139 @@
 import React from "react";
 import SideProfile from "../SideProfile";
+import {
+  CalendarDays,
+  Home,
+  LayoutDashboard,
+  Users,
+  UserRound,
+  CalendarClock,
+  Settings,
+  BarChart2,
+  FileText,
+  Inbox,
+  Send,
+  MailPlus,
+} from "lucide-react";
 
 const Sidebar = () => {
   let user = null;
   try {
     user = JSON.parse(localStorage.getItem("user"));
+    console.log(user);
   } catch {}
 
   const role = user?.role || "Guest";
 
+  /* ================== ADMIN SIDEBAR ================== */
   if (role === "Admin") {
     return (
-      <div className="flex ">
-        <div className=" bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] ">
-          <h1 className="text-2xl font-bold tracking-wide ">Admin Panel</h1>
+      <div className="flex">
+        <div className="bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] w-64 shadow-md">
+          <h1 className="text-2xl font-bold tracking-wide mb-4">Admin Panel</h1>
 
-          {/* MENU */}
           <nav className="flex flex-col gap-2">
             <a
               href="/dashboard"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📊</span> Dashboard
+              <LayoutDashboard size={20} /> Dashboard
             </a>
 
             <a
               href="/barangay-storage"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>🏘️</span> Barangays
+              <Home size={20} /> Barangays
             </a>
 
             <a
               href="/sk-official"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>🧑‍🤝‍🧑</span> Youth Profiles
+              <Users size={20} /> Youth Profiles
             </a>
 
             <a
               href="/admin/events"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📅</span> Event Scheduling
+              <CalendarDays size={20} /> Event Scheduling
             </a>
 
             <a
               href="/admin/monitoring"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📊</span> Monitoring & Evaluation
+              <BarChart2 size={20} /> Monitoring & Evaluation
             </a>
 
             <a
               href="/admin/reports"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>📑</span> Reports
+              <FileText size={20} /> Reports
             </a>
 
             <a
               href="/admin/settings"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>⚙️</span> Settings
+              <Settings size={20} /> Settings
             </a>
           </nav>
 
-          {/* PUSH TO BOTTOM */}
+          <div className="mt-auto">
+            <SideProfile user={user} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (role === "Official") {
+    return (
+      <div className="flex">
+        <div className="bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] w-64 shadow-md">
+          <h1 className="text-2xl font-bold tracking-wide mb-4">
+            Officials Panel
+          </h1>
+
+          <nav className="flex flex-col gap-2">
+            <a
+              href="/official-dashboard"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <MailPlus size={20} /> Compose
+            </a>
+
+            <a
+              href="/dashboard"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <Inbox size={20} /> Inbox
+            </a>
+
+            <a
+              href="/sent"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <Send size={20} /> Sent
+            </a>
+
+            <a
+              href="/calendar"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <CalendarClock size={20} /> Event Scheduling
+            </a>
+
+            <a
+              href="/barangay-storage"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <Home size={20} /> Barangays
+            </a>
+          </nav>
+
           <div className="mt-auto">
             <SideProfile user={user} />
           </div>
@@ -76,71 +142,59 @@ const Sidebar = () => {
     );
   }
 
-  // Youth sidebar
-  if (role === "Youth") {
+  if (role === "") {
     return (
       <div className="flex">
-        <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6">
+        <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6 shadow-lg">
           <h1 className="text-2xl font-bold tracking-wide">Youth Member</h1>
 
           <nav className="flex flex-col gap-4">
             <a
               href="/official-dashboard"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-800"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <span>✉️</span>
-              <span>Compose</span>
+              <MailPlus size={20} /> Compose
             </a>
 
             <a
               href="/dashboard"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
             >
-              <span>📥</span>
-              <span>Inbox</span>
+              <Inbox size={20} /> Inbox
             </a>
 
             <a
               href="/sent"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
             >
-              <span>📤</span>
-              <span>Sent</span>
+              <Send size={20} /> Sent
             </a>
 
             <a
               href="/calendar"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
             >
-              <span>📅</span>
-              <span>Event Scheduling</span>
+              <CalendarClock size={20} /> Event Scheduling
             </a>
 
             <a
               href="/barangay-storage"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
             >
-              <span>🏘️</span>
-              <span>Barangays</span>
-            </a>
-
-            <a
-              href="/profile"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
-            >
-              <span>👤</span>
-              <span>Profile</span>
+              <Home size={20} /> Barangays
             </a>
           </nav>
+          <div className="mt-auto">
+            <SideProfile user={user} />
+          </div>
         </div>
       </div>
     );
   }
 
-  // Default / Guest
   return (
     <div className="flex">
-      <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6">
+      <div className="w-64 h-screen bg-gray-900 text-white p-5 flex flex-col gap-6 shadow-lg">
         <h1 className="text-2xl font-bold tracking-wide">SKhub</h1>
 
         <nav className="flex flex-col gap-4">
@@ -148,7 +202,7 @@ const Sidebar = () => {
             href="/"
             className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-gray-800"
           >
-            Home
+            <Home size={20} /> Home
           </a>
         </nav>
       </div>

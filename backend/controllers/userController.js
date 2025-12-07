@@ -120,6 +120,8 @@ const signinUser = async (req, res) => {
     res.status(200).json({
       token,
       user: {
+        firstname: user.firstname,
+        lastname: user.lastname,
         _id: user._id,
         username: user.username,
         email: user.email,
@@ -222,15 +224,32 @@ const createProfile = async (req, res) => {
 //get profile
 const getUserProfile = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const user = await User.findById(userId);
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res
+        .status(400)
+        .json({ message: "Invalid request. User ID missing." });
+    }
+
+    const user = await User.findById(userId)
+      .select("-password") // hide password for security
+      .populate("barangay");
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.status(200).json({ user });
+
+    return res.status(200).json({
+      message: "Profile fetched successfully",
+      user,
+    });
   } catch (error) {
     console.error("Error fetching profile:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 

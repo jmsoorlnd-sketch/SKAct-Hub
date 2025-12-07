@@ -17,7 +17,7 @@ const Layout = ({ children }) => {
         </aside>
 
         {/* Main scrollable */}
-        <main className=" flex-1 bg-gray-200 overflow-hidden p-5 h-[calc(100vh-4rem)]">
+        <main className=" flex-1 bg-gray-200 overflow-hidden p-5 h-[calc(100vh-4rem)] overflow-y-auto">
           {children}
         </main>
       </div>

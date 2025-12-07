@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../layout/Layout";
+import { Trash2, HousePlus } from "lucide-react";
 
 const BarangayStorage = () => {
   const [user, setUser] = useState(null);
@@ -370,7 +371,7 @@ const BarangayStorage = () => {
                   onClick={() => setShowForm(!showForm)}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                 >
-                  Add Barangay
+                  <HousePlus size={20} /> Add Barangay
                 </button>
               )}
             </div>
@@ -523,9 +524,9 @@ const BarangayStorage = () => {
                                     e.stopPropagation();
                                     handleDeleteBarangay(b._id);
                                   }}
-                                  className="ml-2 px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors duration-150"
+                                  className="ml-2 px-2 py-1 text-xs bg-red-50 hover:bg-red-300 text-red-600 rounded transition-colors duration-150"
                                 >
-                                  Delete
+                                  <Trash2 size={20} />
                                 </button>
                               )}
                             </div>
