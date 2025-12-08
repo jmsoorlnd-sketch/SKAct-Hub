@@ -12,6 +12,7 @@ import {
   updateStatus,
   getSentMessages,
   getActivities,
+  getMessagesByUser,
 } from "../controllers/MessageController.js";
 
 const router = express.Router();
@@ -51,6 +52,9 @@ router.get("/admins/list", requireAuth, getAdmins);
 
 // Get sent messages for logged in user
 router.get("/sent", requireAuth, getSentMessages);
+
+// Admin: get messages sent by a specific user
+router.get("/user/:userId", requireAuth, getMessagesByUser);
 
 // Update status (approve/reject/ongoing)
 router.put("/:messageId/status", requireAuth, updateStatus);

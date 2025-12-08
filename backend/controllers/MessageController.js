@@ -135,6 +135,22 @@ export const getSentMessages = async (req, res) => {
   }
 };
 
+// Get messages sent by a specific user (for admin view of user profile)
+export const getMessagesByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const messages = await Message.find({ sender: userId })
+      .populate("recipient", "username email role")
+      .populate("sender", "username email role")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ messages, total: messages.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Mark message as read
 export const markAsRead = async (req, res) => {
   try {
