@@ -28,7 +28,7 @@ const Sidebar = () => {
   if (role === "Admin") {
     return (
       <div className="flex">
-        <div className="bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] w-64 shadow-md">
+        <div className="bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] w-55 shadow-md">
           <h1 className="text-2xl font-bold tracking-wide mb-4">Admin Panel</h1>
 
           <nav className="flex flex-col gap-2">

@@ -203,7 +203,7 @@ const SkOfficial = () => {
         <div className="rounded-lg  overflow-auto">
           <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
             <table className="min-w-full ">
-              <thead className="bg-gray-300">
+              <thead className="bg-gray-300 sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Last Name
