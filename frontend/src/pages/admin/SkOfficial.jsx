@@ -13,6 +13,9 @@ const SkOfficial = () => {
   const [barangay, setBarangay] = useState([]);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [selectedOfficial, setSelectedOfficial] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileMessages, setProfileMessages] = useState([]);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const [filters, setFilters] = useState({
     status: "",
@@ -108,6 +111,25 @@ const SkOfficial = () => {
     setOfficials((prev) =>
       prev.map((o) => (o._id === updatedOfficial._id ? updatedOfficial : o))
     );
+  };
+
+  const handleViewProfile = async (official) => {
+    setSelectedOfficial(official);
+    setProfileOpen(true);
+    setProfileLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/messages/user/${official._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setProfileMessages(res.data.messages || []);
+    } catch (err) {
+      console.error("Error fetching profile messages:", err);
+      setProfileMessages([]);
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
   //fetch barangay
@@ -284,6 +306,13 @@ const SkOfficial = () => {
                         </button>
 
                         <button
+                          className="text-indigo-600 hover:text-indigo-800 font-medium"
+                          onClick={() => handleViewProfile(official)}
+                        >
+                          View
+                        </button>
+
+                        <button
                           className={`font-medium ${
                             official.status === "Active"
                               ? "text-red-600 hover:text-red-800"
@@ -314,6 +343,105 @@ const SkOfficial = () => {
           official={selectedOfficial}
           onSubmit={handleUpdateOfficial}
         />
+
+        {/* Profile Modal */}
+        {profileOpen && selectedOfficial && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-2xl font-semibold">
+                    {selectedOfficial.firstname} {selectedOfficial.lastname}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {selectedOfficial.username} • {selectedOfficial.email}
+                  </p>
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm">
+                      <strong>Position:</strong>{" "}
+                      {selectedOfficial.position || "—"}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Role:</strong>{" "}
+                      {selectedOfficial.role || "Official"}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Status:</strong>{" "}
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                          selectedOfficial.status === "Active"
+                            ? "bg-green-200 text-green-800"
+                            : "bg-red-200 text-red-800"
+                        }`}
+                      >
+                        {selectedOfficial.status}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <strong>Barangay:</strong>{" "}
+                      {selectedOfficial.barangay?.barangayName || "None"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setSelectedOfficial(null);
+                    setProfileMessages([]);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <hr className="my-4" />
+
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Messages Sent</h4>
+                {profileLoading ? (
+                  <p className="text-gray-600">Loading messages...</p>
+                ) : profileMessages.length === 0 ? (
+                  <p className="text-sm text-gray-600">
+                    No messages sent by this user.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {profileMessages.map((msg) => (
+                      <div
+                        key={msg._id}
+                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {msg.subject}
+                            </div>
+                            <div className="text-sm text-gray-700 mt-1">
+                              {msg.body}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500 whitespace-nowrap ml-4">
+                            {new Date(msg.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                        {msg.attachmentName && (
+                          <div className="text-xs text-gray-500 mt-2">
+                            📎 {msg.attachmentName}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500 mt-2">
+                          Status:{" "}
+                          <span className="font-medium">{msg.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
