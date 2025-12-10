@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "../layout/Layout";
 import { Trash2, HousePlus } from "lucide-react";
+import AddBarangay from "../components/popforms/barangay/AddBarangay";
 
 const BarangayStorage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [barangays, setBarangays] = useState([]);
   const [selectedBarangay, setSelectedBarangay] = useState(null);
@@ -368,12 +370,20 @@ const BarangayStorage = () => {
               </div>
               {user?.role === "Admin" && (
                 <button
-                  onClick={() => setShowForm(!showForm)}
+                  onClick={() => setIsModalOpen(true)}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                 >
                   <HousePlus size={20} /> Add Barangay
                 </button>
               )}
+              <AddBarangay
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={(newBarangay) => {
+                  alert("Barangay added successfully!");
+                  fetchBarangays(); // refresh list
+                }}
+              />
             </div>
           </div>
 

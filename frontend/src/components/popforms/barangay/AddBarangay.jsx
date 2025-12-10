@@ -3,10 +3,10 @@ import axios from "axios";
 
 const AddBarangay = ({ onSubmit, isOpen, onClose }) => {
   const [formData, setFormData] = useState({
-    city: "",
     barangayName: "",
+    city: "Ormoc City",
     province: "Leyte",
-    region: "Region VIII",
+    region: "Region 8",
   });
 
   const [error, setError] = useState("");
@@ -59,10 +59,10 @@ const AddBarangay = ({ onSubmit, isOpen, onClose }) => {
               <label>City</label>
               <input
                 name="city"
-                value={formData.city}
+                value="Ormoc City"
                 onChange={handleChange}
-                required
                 className="w-full px-3 py-2 border rounded-md"
+                readOnly
               />
             </div>
 
@@ -77,13 +77,35 @@ const AddBarangay = ({ onSubmit, isOpen, onClose }) => {
               />
             </div>
           </div>
+          <div className="flex gap-3">
+            <div className="w-1/2">
+              <label>Province</label>
+              <input
+                name="city"
+                value="Leyte"
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded-md"
+                readOnly
+              />
+            </div>
+            <div className="w-1/2">
+              <label>Region</label>
+              <input
+                name="city"
+                value="Region VIII"
+                onChange={handleChange}
+                className="w-full px-3 py-2 border rounded-md"
+                readOnly
+              />
+            </div>
+          </div>
 
           {/* <div>
             <label>Province</label>
             <select
-              name="province"
-              value={formData.province}
-              onChange={handleChange}
+            name="province"
+            value="Leyte"
+            onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
             >
               <option value="">Select Province</option>
@@ -97,7 +119,7 @@ const AddBarangay = ({ onSubmit, isOpen, onClose }) => {
             <label>Region</label>
             <select
               name="region"
-              value={formData.region}
+              value="Region VIII"
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
             >
