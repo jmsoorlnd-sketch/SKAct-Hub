@@ -2,6 +2,7 @@ import Barangay from "../models/BarangayModel.js";
 import User from "../models/UserModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 import Message from "../models/MessageModel.js";
+import Folder from "../models/FolderModel.js";
 import mongoose from "mongoose";
 
 // GET /api/admins/officials/:barangayId
@@ -227,6 +228,7 @@ export const getBarangayStorage = async (req, res) => {
 
     const storage = await BarangayStorage.find({ barangay: barangayId })
       .populate("uploadedBy", "username firstname lastname")
+      .populate("folder", "name")
       .populate({
         path: "document",
         populate: { path: "sender", select: "username firstname lastname" },
@@ -292,6 +294,7 @@ export const getMyBarangayStorage = async (req, res) => {
     // Query storage for this barangay without strict validation (let mongo handle it)
     const storage = await BarangayStorage.find({ barangay: barangayId })
       .populate("uploadedBy", "username firstname lastname")
+      .populate("folder", "name")
       .populate({
         path: "document",
         populate: { path: "sender", select: "username firstname lastname" },
@@ -511,6 +514,70 @@ export const detachMessageFromBarangay = async (req, res) => {
       .json({ message: "Message detached from barangay", messageDoc: message });
   } catch (error) {
     console.error("Error detaching message from barangay:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Create a folder in a barangay
+export const createFolder = async (req, res) => {
+  try {
+    const { barangayId } = req.params;
+    const { name } = req.body;
+    const createdBy = req.user._id;
+
+    if (!name) {
+      return res.status(400).json({ message: "Folder name is required" });
+    }
+
+    const folder = new Folder({
+      name,
+      barangay: barangayId,
+      createdBy,
+    });
+
+    await folder.save();
+
+    res.status(201).json({ folder });
+  } catch (error) {
+    console.error("Error creating folder:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Get folders for a barangay
+export const getFolders = async (req, res) => {
+  try {
+    const { barangayId } = req.params;
+
+    const folders = await Folder.find({ barangay: barangayId }).populate(
+      "createdBy",
+      "firstname lastname username"
+    );
+
+    res.status(200).json({ folders });
+  } catch (error) {
+    console.error("Error fetching folders:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Move a document to a folder
+export const moveDocumentToFolder = async (req, res) => {
+  try {
+    const { barangayId, storageId } = req.params;
+    const { folderId } = req.body;
+
+    const storage = await BarangayStorage.findById(storageId);
+    if (!storage) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    storage.folder = folderId || null;
+    await storage.save();
+
+    res.status(200).json({ message: "Document moved to folder" });
+  } catch (error) {
+    console.error("Error moving document:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

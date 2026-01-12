@@ -57,6 +57,14 @@ const SkOfficial = () => {
     const fetchOfficials = async () => {
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          console.warn(
+            "No token found in localStorage — redirecting to signin"
+          );
+          window.location.href = "/";
+          return;
+        }
+
         const res = await axios.get(
           "http://localhost:5000/api/admins/getofficials",
           {
@@ -65,7 +73,18 @@ const SkOfficial = () => {
         );
         setOfficials(res.data);
       } catch (err) {
-        console.error("Error fetching officials:", err);
+        console.error(
+          "Error fetching officials:",
+          err?.response?.status,
+          err?.response?.data || err.message || err
+        );
+        // If unauthorized, clear local storage and redirect to signin
+        if (err?.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          alert("Session expired or unauthorized. Please sign in again.");
+          window.location.href = "/";
+        }
       }
     };
     fetchOfficials();

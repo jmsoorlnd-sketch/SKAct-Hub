@@ -10,6 +10,8 @@ const BarangayStorage = () => {
   const [barangays, setBarangays] = useState([]);
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const [storage, setStorage] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [usersInBarangay, setUsersInBarangay] = useState([]);
@@ -120,10 +122,27 @@ const BarangayStorage = () => {
         setSelectedBarangay(barangayId);
         await fetchUsersInBarangay(barangayId);
         await fetchAvailableUsers();
+        await fetchFolders(barangayId);
       }
     } catch (error) {
       console.error("Error fetching storage:", error);
       setStorage([]);
+    }
+  };
+
+  const fetchFolders = async (barangayId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/barangays/${barangayId}/folders`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setFolders(res.data.folders || []);
+    } catch (error) {
+      console.error("Error fetching folders:", error);
+      setFolders([]);
     }
   };
 
@@ -322,6 +341,39 @@ const BarangayStorage = () => {
       const serverMsg = error?.response?.data?.message;
       if (serverMsg) alert(serverMsg);
       else alert("Failed to send.");
+    }
+  };
+
+  const handleCreateFolder = async (folderName) => {
+    if (!selectedBarangay || !folderName.trim()) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/folders`,
+        { name: folderName },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Folder created successfully!");
+      fetchFolders(selectedBarangay);
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      alert("Failed to create folder.");
+    }
+  };
+
+  const handleMoveToFolder = async (storageId, folderId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/storage/${storageId}/move`,
+        { folderId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Document moved to folder!");
+      fetchStorageDocuments(selectedBarangay);
+    } catch (error) {
+      console.error("Error moving document:", error);
+      alert("Failed to move document.");
     }
   };
 
@@ -609,171 +661,169 @@ const BarangayStorage = () => {
 
                     {/* Documents Section */}
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                        Stored Documents
-                      </h2>
-                      {storage.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500">
-                          <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Stored Documents
+                        </h2>
+                        {user?.role === "Admin" && (
+                          <button
+                            onClick={() => {
+                              const folderName = prompt("Enter folder name:");
+                              if (folderName) handleCreateFolder(folderName);
+                            }}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <p className="mt-2 text-sm">
-                            No documents stored yet
-                          </p>
+                            Create Folder
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Folders List */}
+                      {folders.length > 0 && (
+                        <div className="mb-6">
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-md font-semibold text-gray-900">
+                              Folders
+                            </h3>
+                            {selectedFolder && (
+                              <button
+                                onClick={() => setSelectedFolder(null)}
+                                className="text-sm text-blue-600 hover:text-blue-800"
+                              >
+                                ← Back to All Documents
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {folders.map((folder) => {
+                              const folderDocuments = storage.filter(
+                                (item) =>
+                                  item.folder && item.folder._id === folder._id
+                              );
+                              return (
+                                <div
+                                  key={folder._id}
+                                  className={`border border-gray-200 rounded-lg p-4 cursor-pointer transition-colors ${
+                                    selectedFolder &&
+                                    selectedFolder._id === folder._id
+                                      ? "bg-blue-50 border-blue-300"
+                                      : "bg-gray-50 hover:bg-gray-100"
+                                  }`}
+                                  onClick={() => setSelectedFolder(folder)}
+                                >
+                                  <h4 className="font-medium text-gray-900">
+                                    {folder.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {folderDocuments.length} document
+                                    {folderDocuments.length !== 1 ? "s" : ""}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    Created by: {folder.createdBy?.firstname}{" "}
+                                    {folder.createdBy?.lastname}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(
+                                      folder.createdAt
+                                    ).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Folder Contents or All Documents */}
+                      {selectedFolder ? (
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            Documents in "{selectedFolder.name}"
+                          </h3>
+                          {(() => {
+                            const folderDocuments = storage.filter(
+                              (item) =>
+                                item.folder &&
+                                item.folder._id === selectedFolder._id
+                            );
+                            return folderDocuments.length === 0 ? (
+                              <div className="text-center py-12 text-gray-500">
+                                <svg
+                                  className="mx-auto h-12 w-12 text-gray-400"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  />
+                                </svg>
+                                <p className="mt-2 text-sm">
+                                  No documents in this folder
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {folderDocuments.map((item) => (
+                                  <DocumentItem
+                                    key={item._id}
+                                    item={item}
+                                    user={user}
+                                    folders={folders}
+                                    handleUpdateStatus={handleUpdateStatus}
+                                    handleMoveToFolder={handleMoveToFolder}
+                                    selectedBarangay={selectedBarangay}
+                                  />
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          {storage.map((item) => (
-                            <div
-                              key={item._id}
-                              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
-                            >
-                              <div className="flex justify-between items-start mb-3">
-                                <div className="flex-1">
-                                  <h3 className="font-semibold text-gray-900">
-                                    {item.documentName ||
-                                      item.document?.subject ||
-                                      "Document"}
-                                  </h3>
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    From:{" "}
-                                    {item.document?.sender?.username ||
-                                      item.uploadedBy?.username}{" "}
-                                    (
-                                    {item.document?.sender?.firstname ||
-                                      item.uploadedBy?.firstname}{" "}
-                                    {item.document?.sender?.lastname ||
-                                      item.uploadedBy?.lastname}
-                                    )
-                                  </p>
-                                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                                    <span
-                                      className={`px-2 py-1 rounded-full ${
-                                        (item.document?.status ||
-                                          item.status) === "completed"
-                                          ? "bg-green-100 text-green-700"
-                                          : (item.document?.status ||
-                                              item.status) === "ongoing"
-                                          ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-gray-100 text-gray-700"
-                                      }`}
-                                    >
-                                      {item.document?.status || item.status}
-                                    </span>
-                                    <span>
-                                      {new Date(
-                                        item.createdAt
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  {item.description && (
-                                    <p className="text-sm text-gray-700 mt-2">
-                                      {item.description}
-                                    </p>
-                                  )}
-                                </div>
-                                {item.documentUrl && (
-                                  <a
-                                    href={`http://localhost:5000${item.documentUrl}`}
-                                    download={item.documentName}
-                                    className="ml-3 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-sm font-medium transition-colors duration-150"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                  >
-                                    Download
-                                  </a>
-                                )}
+                        <>
+                          {(() => {
+                            const unassignedDocuments = storage.filter(
+                              (item) => !item.folder
+                            );
+                            return unassignedDocuments.length === 0 ? (
+                              <div className="text-center py-12 text-gray-500">
+                                <svg
+                                  className="mx-auto h-12 w-12 text-gray-400"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  />
+                                </svg>
+                                <p className="mt-2 text-sm">
+                                  No documents stored yet
+                                </p>
                               </div>
-
-                              <div className="flex flex-wrap gap-2">
-                                {String(item.document?.sender?._id) ===
-                                  String(user?._id) && (
-                                  <>
-                                    <button
-                                      onClick={() =>
-                                        handleUpdateStatus(
-                                          item.document?._id,
-                                          "ongoing"
-                                        )
-                                      }
-                                      className="px-3 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded text-sm font-medium transition-colors duration-150"
-                                    >
-                                      Mark Ongoing
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleUpdateStatus(
-                                          item.document?._id,
-                                          "completed"
-                                        )
-                                      }
-                                      className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded text-sm font-medium transition-colors duration-150"
-                                    >
-                                      Mark Completed
-                                    </button>
-                                  </>
-                                )}
-
-                                {user?.role === "Admin" && (
-                                  <button
-                                    onClick={async () => {
-                                      if (
-                                        !window.confirm(
-                                          "Remove this message from the barangay?"
-                                        )
-                                      )
-                                        return;
-                                      try {
-                                        const token =
-                                          localStorage.getItem("token");
-                                        const docId =
-                                          item.document?._id || item.document;
-                                        await axios.delete(
-                                          `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`,
-                                          {
-                                            headers: {
-                                              Authorization: `Bearer ${token}`,
-                                            },
-                                          }
-                                        );
-                                        setStorage((prev) =>
-                                          prev.filter(
-                                            (s) =>
-                                              String(s._id) !== String(item._id)
-                                          )
-                                        );
-                                        window.dispatchEvent(
-                                          new Event("messageDetached")
-                                        );
-                                        alert(
-                                          "Message removed from barangay and returned to inbox"
-                                        );
-                                      } catch (err) {
-                                        console.error("Detach failed", err);
-                                        alert(
-                                          "Failed to remove message from barangay"
-                                        );
-                                      }
-                                    }}
-                                    className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-sm font-medium transition-colors duration-150"
-                                  >
-                                    Remove
-                                  </button>
-                                )}
+                            ) : (
+                              <div className="space-y-3">
+                                {unassignedDocuments.map((item) => (
+                                  <DocumentItem
+                                    key={item._id}
+                                    item={item}
+                                    user={user}
+                                    folders={folders}
+                                    handleUpdateStatus={handleUpdateStatus}
+                                    handleMoveToFolder={handleMoveToFolder}
+                                    selectedBarangay={selectedBarangay}
+                                  />
+                                ))}
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            );
+                          })()}
+                        </>
                       )}
                     </div>
 
@@ -908,6 +958,127 @@ const BarangayStorage = () => {
         </div>
       </div>
     </Layout>
+  );
+};
+
+// Reusable Document Item Component
+const DocumentItem = ({
+  item,
+  user,
+  folders,
+  handleUpdateStatus,
+  handleMoveToFolder,
+  selectedBarangay,
+}) => {
+  return (
+    <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900">
+            {item.documentName || item.document?.subject || "Document"}
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            From: {item.document?.sender?.username || item.uploadedBy?.username}{" "}
+            ({item.document?.sender?.firstname || item.uploadedBy?.firstname}{" "}
+            {item.document?.sender?.lastname || item.uploadedBy?.lastname})
+          </p>
+          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+            <span
+              className={`px-2 py-1 rounded-full ${
+                (item.document?.status || item.status) === "completed"
+                  ? "bg-green-100 text-green-700"
+                  : (item.document?.status || item.status) === "ongoing"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {item.document?.status || item.status}
+            </span>
+            <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+          </div>
+          {item.description && (
+            <p className="text-sm text-gray-700 mt-2">{item.description}</p>
+          )}
+        </div>
+        {item.documentUrl && (
+          <a
+            href={`http://localhost:5000${item.documentUrl}`}
+            download={item.documentName}
+            className="ml-3 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-sm font-medium transition-colors duration-150"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Download
+          </a>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {String(item.document?.sender?._id) === String(user?._id) && (
+          <>
+            <button
+              onClick={() => handleUpdateStatus(item.document?._id, "ongoing")}
+              className="px-3 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded text-sm font-medium transition-colors duration-150"
+            >
+              Mark Ongoing
+            </button>
+            <button
+              onClick={() =>
+                handleUpdateStatus(item.document?._id, "completed")
+              }
+              className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded text-sm font-medium transition-colors duration-150"
+            >
+              Mark Completed
+            </button>
+          </>
+        )}
+
+        {user?.role === "Admin" && (
+          <>
+            <select
+              onChange={(e) => {
+                const folderId = e.target.value;
+                handleMoveToFolder(item._id, folderId || null);
+                e.target.value = "";
+              }}
+              className="px-3 py-1 border border-gray-300 rounded text-sm"
+              defaultValue=""
+            >
+              <option value="">Move to Folder</option>
+              <option value="">No Folder</option>
+              {folders.map((folder) => (
+                <option key={folder._id} value={folder._id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={async () => {
+                if (!window.confirm("Remove this message from the barangay?"))
+                  return;
+                try {
+                  const token = localStorage.getItem("token");
+                  const docId = item.document?._id || item.document;
+                  await axios.delete(
+                    `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`,
+                    {
+                      headers: { Authorization: `Bearer ${token}` },
+                    }
+                  );
+                  alert("Message removed from barangay and returned to inbox");
+                } catch (err) {
+                  console.error("Detach failed", err);
+                  alert("Failed to remove message from barangay");
+                }
+              }}
+              className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-sm font-medium transition-colors duration-150"
+            >
+              Remove
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 

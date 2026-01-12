@@ -17,6 +17,9 @@ import {
   getBarangayMessages,
   attachMessageToBarangay,
   detachMessageFromBarangay,
+  createFolder,
+  getFolders,
+  moveDocumentToFolder,
 } from "../controllers/BarangayController.js";
 
 const router = express.Router();
@@ -85,4 +88,14 @@ router.delete(
 
 router.get("/get-barangay/:id", requireAuth, getBarangayById);
 router.get("/officials/:id", getOfficialsByBarangay);
+
+// Folder routes
+router.post("/:barangayId/folders", requireAuth, adminOnly, createFolder);
+router.get("/:barangayId/folders", requireAuth, getFolders);
+router.put(
+  "/:barangayId/storage/:storageId/move",
+  requireAuth,
+  moveDocumentToFolder
+);
+
 export default router;

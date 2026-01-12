@@ -11,6 +11,11 @@ const barangayStorageSchema = new mongoose.Schema({
     ref: "Message",
     required: true,
   },
+  folder: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Folder",
+    default: null,
+  },
   uploadedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
