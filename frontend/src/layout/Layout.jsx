@@ -12,12 +12,12 @@ const Layout = ({ children }) => {
 
       <div className="flex flex-1 pt-14">
         {/* Sidebar fixed */}
-        <aside className="  top-16 left-0 h-[calc(100vh-4rem)] bg-white text-white">
+        <aside className="fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-white text-white z-10 overflow-y-auto">
           <Sidebar />
         </aside>
 
         {/* Main scrollable */}
-        <main className=" flex-1 bg-gray-200 overflow-hidden p-5 h-[calc(100vh-4rem)] overflow-y-auto">
+        <main className="ml-64 flex-1 bg-white p-8 h-[calc(100vh-4rem)] overflow-y-auto">
           {children}
         </main>
       </div>

@@ -55,8 +55,13 @@ const messageSchema = new mongoose.Schema(
       ref: "Barangay",
       default: null,
     },
+    // isAdminScheduled: true if this is an event scheduled by the admin (not from an official)
+    isAdminScheduled: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Message = mongoose.model("Message", messageSchema);

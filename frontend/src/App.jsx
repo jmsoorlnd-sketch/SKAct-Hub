@@ -3,11 +3,12 @@ import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
 import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute, { RoleProtectedRoute } from "./utils/Auth";
-import OfficialDashboard from "./pages/officials/officialDashboard";
-import Calendar from "./pages/Calendar";
 import PublicRoute from "./utils/PublicRoute";
-import SkOfficial from "./pages/admin/SkOfficial";
+import OfficialDashboard from "./pages/officials/OfficialDashboard";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import SkOfficial from "./pages/admin/SkOfficial";
+import Calendar from "./pages/Calendar";
 import Profiles from "./pages/admin/Profiles";
 import Sent from "./pages/Sent";
 import BarangayManagement from "./pages/admin/BarangayManagement";
@@ -16,6 +17,7 @@ import Inbox from "./pages/Inbox";
 import BarangayPage from "./pages/barangay/BarangayPage";
 import BarangayView from "./pages/barangay/BarangayView";
 import BarangayViewPage from "./pages/barangay/BarangayViewPage";
+import AdminCalendar from "./pages/admin/AdminCalendar";
 const App = () => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
@@ -39,8 +41,6 @@ const App = () => {
               </PublicRoute>
             }
           />
-          {/* Debug route: render Signin directly (no guard) to help troubleshoot rendering issues */}
-          <Route path="/debug-signin" element={<Signin />} />
           <Route
             path="/signup"
             element={
@@ -49,8 +49,7 @@ const App = () => {
               </PublicRoute>
             }
           />
-
-          {/* ADMIN */}
+          <Route path="/debug-signin" element={<Signin />} />
           <Route
             path="/dashboard"
             element={
@@ -80,19 +79,50 @@ const App = () => {
 
           {/* Admin Dashboard */}
           <Route
-            path="/admin-dashboard"
+            path="/admin/dashboard"
             element={
               <RoleProtectedRoute role={["Admin"]}>
-                <Dashboard />
+                <AdminDashboard />
               </RoleProtectedRoute>
             }
           />
 
+          {/* Admin Barangays Management */}
           <Route
-            path="/admin/youth-profiles"
+            path="/admin/barangays"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <BarangayManagement />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin Profiles */}
+          <Route
+            path="/admin/profiles"
             element={
               <RoleProtectedRoute role={["Admin"]}>
                 <Profiles />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin SK Official */}
+          <Route
+            path="/admin/officials"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <SkOfficial />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin Events */}
+          <Route
+            path="/admin/events"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <AdminCalendar />
               </RoleProtectedRoute>
             }
           />
@@ -101,7 +131,7 @@ const App = () => {
           <Route
             path="/calendar"
             element={
-              <RoleProtectedRoute role={["Admin", "Official", "Youth"]}>
+              <RoleProtectedRoute role={["Official", "Youth"]}>
                 <Calendar />
               </RoleProtectedRoute>
             }

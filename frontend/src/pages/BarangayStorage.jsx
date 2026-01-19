@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import Layout from "../layout/Layout";
 import { Trash2, HousePlus } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 
 const BarangayStorage = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [barangays, setBarangays] = useState([]);
@@ -331,7 +333,9 @@ const BarangayStorage = () => {
           },
         }
       );
-      alert("Sent to barangay");
+      alert(
+        "Message sent to admin for approval. It will be stored after approval."
+      );
       setComposeSubject("");
       setComposeBody("");
       setComposeFile(null);
@@ -666,15 +670,23 @@ const BarangayStorage = () => {
                           Stored Documents
                         </h2>
                         {user?.role === "Admin" && (
-                          <button
-                            onClick={() => {
-                              const folderName = prompt("Enter folder name:");
-                              if (folderName) handleCreateFolder(folderName);
-                            }}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
-                          >
-                            Create Folder
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => navigate("/admin/dashboard")}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                            >
+                              To Approved
+                            </button>
+                            <button
+                              onClick={() => {
+                                const folderName = prompt("Enter folder name:");
+                                if (folderName) handleCreateFolder(folderName);
+                              }}
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                            >
+                              Create Folder
+                            </button>
+                          </div>
                         )}
                       </div>
 

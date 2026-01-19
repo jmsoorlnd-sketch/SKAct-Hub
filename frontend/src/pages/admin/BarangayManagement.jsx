@@ -11,7 +11,7 @@ const BarangayManagement = () => {
   const [user, setUser] = useState(null);
   const ADMIN_LIMIT = 5;
   const [formData, setFormData] = useState({
-    barangay: "",
+    barangayName: "",
     city: "",
     province: "",
     region: "",
@@ -82,15 +82,23 @@ const BarangayManagement = () => {
     }
     try {
       const token = localStorage.getItem("token");
+      // Ensure payload matches backend expected field names
+      const payload = {
+        barangayName: formData.barangayName || formData.barangay,
+        city: formData.city,
+        province: formData.province,
+        region: formData.region,
+      };
+
       await axios.post(
         "http://localhost:5000/api/barangays/add-barangay",
-        formData,
+        payload,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       alert("Barangay created successfully!");
-      setFormData({ barangay: "", city: "", province: "", region: "" });
+      setFormData({ barangayName: "", city: "", province: "", region: "" });
       setShowForm(false);
       fetchBarangays();
     } catch (error) {
@@ -124,26 +132,34 @@ const BarangayManagement = () => {
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Barangay Management</h1>
-          {(() => {
-            // Calculate how many barangays this admin has created
-            const adminBarangayCount = barangays.filter(
-              (b) => String(b.chairmanId) === String(user?._id)
-            ).length;
-            const hasReachedLimit = adminBarangayCount >= ADMIN_LIMIT;
+          <div className="flex gap-3">
+            <button
+              onClick={() => (window.location.href = "/admin-dashboard")}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+            >
+              To Approved
+            </button>
+            {(() => {
+              // Calculate how many barangays this admin has created
+              const adminBarangayCount = barangays.filter(
+                (b) => String(b.chairmanId) === String(user?._id)
+              ).length;
+              const hasReachedLimit = adminBarangayCount >= ADMIN_LIMIT;
 
-            return hasReachedLimit ? (
-              <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium">
-                Limit reached (5/5 barangays)
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowForm(!showForm)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
-              >
-                {showForm ? "Cancel" : "+ Add Barangay"}
-              </button>
-            );
-          })()}
+              return hasReachedLimit ? (
+                <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium">
+                  Limit reached (5/5 barangays)
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowForm(!showForm)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  {showForm ? "Cancel" : "+ Add Barangay"}
+                </button>
+              );
+            })()}
+          </div>
         </div>
 
         {/* Create Form */}
@@ -156,9 +172,9 @@ const BarangayManagement = () => {
             >
               <input
                 type="text"
-                name="barangay"
+                name="barangayName"
                 placeholder="Barangay Name"
-                value={formData.barangay}
+                value={formData.barangayName}
                 onChange={handleChange}
                 required
                 className="border border-gray-300 rounded px-3 py-2"
@@ -209,7 +225,9 @@ const BarangayManagement = () => {
           ) : (
             barangays.map((b) => (
               <div key={b._id} className="bg-white p-4 rounded-lg shadow">
-                <h3 className="text-lg font-bold">{b.barangay}</h3>
+                <h3 className="text-lg font-bold">
+                  {b.barangayName || b.barangay || b.name}
+                </h3>
                 <p className="text-sm text-gray-600">
                   {b.city}, {b.province} - {b.region}
                 </p>

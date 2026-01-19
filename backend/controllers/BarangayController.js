@@ -366,6 +366,7 @@ export const createBarangayMessage = async (req, res) => {
     const s = startDate ? new Date(startDate) : null;
     const e = endDate ? new Date(endDate) : null;
 
+    // Create message with pending status - DO NOT store directly to barangay yet
     const message = await Message.create({
       sender: senderId,
       recipient: recipientId,
@@ -376,25 +377,15 @@ export const createBarangayMessage = async (req, res) => {
       startDate: s,
       endDate: e,
       status: "pending",
-      isAttached: true,
+      isAttached: false,
       attachedToBarangay: barangayId,
-    });
-
-    // create barangay storage entry linking the message
-    const storage = await BarangayStorage.create({
-      barangay: barangayId,
-      document: message._id,
-      uploadedBy: senderId,
-      documentName: attachmentName || subject,
-      documentUrl: attachmentUrl || null,
-      description: body,
     });
 
     await message.populate("sender", "username firstname lastname");
 
     res.status(201).json({
-      message: "Message sent to barangay",
-      data: { message, storage },
+      message: "Message sent to admin for approval",
+      data: message,
     });
   } catch (error) {
     console.error("Error creating barangay message:", error);

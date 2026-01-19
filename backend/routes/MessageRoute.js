@@ -13,6 +13,8 @@ import {
   getSentMessages,
   getActivities,
   getMessagesByUser,
+  approveMessageForBarangay,
+  rejectMessage,
 } from "../controllers/MessageController.js";
 
 const router = express.Router();
@@ -58,6 +60,12 @@ router.get("/user/:userId", requireAuth, getMessagesByUser);
 
 // Update status (approve/reject/ongoing)
 router.put("/:messageId/status", requireAuth, updateStatus);
+
+// Admin: approve message and store to barangay
+router.post("/admin/approve", requireAuth, approveMessageForBarangay);
+
+// Admin: reject message
+router.post("/admin/reject", requireAuth, rejectMessage);
 
 // Activities for calendar
 router.get("/activities", requireAuth, getActivities);
