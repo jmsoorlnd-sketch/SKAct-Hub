@@ -120,10 +120,10 @@ const Sidebar = () => {
             </a>
 
             <a
-              href="/calendar"
+              href="/event-calendar"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
-              <CalendarClock size={20} /> Event Scheduling
+              <CalendarClock size={20} /> Event Calendar
             </a>
 
             <a

@@ -18,6 +18,8 @@ import BarangayPage from "./pages/barangay/BarangayPage";
 import BarangayView from "./pages/barangay/BarangayView";
 import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import AdminCalendar from "./pages/admin/AdminCalendar";
+import AdminSettings from "./pages/admin/AdminSettings";
+import EventCalendar from "./pages/officials/EventCalendar";
 const App = () => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
@@ -123,6 +125,26 @@ const App = () => {
             element={
               <RoleProtectedRoute role={["Admin"]}>
                 <AdminCalendar />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin Settings */}
+          <Route
+            path="/admin/settings"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <AdminSettings />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Official Event Calendar */}
+          <Route
+            path="/event-calendar"
+            element={
+              <RoleProtectedRoute role={["Official"]}>
+                <EventCalendar />
               </RoleProtectedRoute>
             }
           />

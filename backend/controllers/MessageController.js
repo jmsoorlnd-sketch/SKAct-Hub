@@ -15,6 +15,7 @@ export const sendMessage = async (req, res) => {
       endDate,
       recipient,
       status,
+      barangayId,
     } = req.body;
 
     // For admin events, if recipient is "admin", find the first admin user
@@ -62,6 +63,7 @@ export const sendMessage = async (req, res) => {
       endDate: e,
       status: messageStatus,
       isAdminScheduled: isAdminEvent,
+      attachedToBarangay: barangayId || null,
     });
 
     await message.populate("sender", "username email role");

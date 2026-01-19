@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, X, Plus } from "lucide-react";
 const EventScheduler = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
+  const [barangays, setBarangays] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -12,13 +13,26 @@ const EventScheduler = () => {
     body: "",
     startDate: "",
     endDate: "",
+    barangayId: "",
   });
 
-  // Fetch events
+  // Fetch events and barangays
   useEffect(() => {
     console.log("EventScheduler mounted, fetching events...");
     fetchEvents();
+    fetchBarangays();
   }, []);
+
+  const fetchBarangays = async () => {
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/barangays/all-barangays",
+      );
+      setBarangays(res.data.barangays || []);
+    } catch (error) {
+      console.error("Failed to fetch barangays:", error);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -51,6 +65,7 @@ const EventScheduler = () => {
           body: formData.body,
           startDate: formData.startDate,
           endDate: formData.endDate,
+          barangayId: formData.barangayId || null,
           recipient: "admin",
         },
         {
@@ -58,7 +73,13 @@ const EventScheduler = () => {
         },
       );
       alert("Event scheduled successfully!");
-      setFormData({ subject: "", body: "", startDate: "", endDate: "" });
+      setFormData({
+        subject: "",
+        body: "",
+        startDate: "",
+        endDate: "",
+        barangayId: "",
+      });
       setShowForm(false);
       fetchEvents();
     } catch (error) {
@@ -205,6 +226,25 @@ const EventScheduler = () => {
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Barangay (Optional)
+              </label>
+              <select
+                value={formData.barangayId}
+                onChange={(e) =>
+                  setFormData({ ...formData, barangayId: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a Barangay</option>
+                {barangays.map((barangay) => (
+                  <option key={barangay._id} value={barangay._id}>
+                    {barangay.barangayName}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -329,6 +369,13 @@ const EventScheduler = () => {
                     {event.subject}
                   </h4>
                   <p className="text-sm text-blue-700 mt-1">{event.body}</p>
+                  {event.attachedToBarangay && (
+                    <div className="mt-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded inline-block">
+                      📍{" "}
+                      {barangays.find((b) => b._id === event.attachedToBarangay)
+                        ?.barangayName || "Loading..."}
+                    </div>
+                  )}
                   <div className="mt-3 text-sm text-blue-700 space-y-1">
                     {event.startDate && (
                       <p>

@@ -6,11 +6,7 @@ import { useToast } from "../../components/Toast";
 const OfficialDashboard = () => {
   const { success, error } = useToast();
   const [showCompose, setShowCompose] = useState(false);
-  const [composeMode, setComposeMode] = useState("admin"); // "admin" or "barangay"
   const [attachedFile, setAttachedFile] = useState(null);
-  const [adminRecipient, setAdminRecipient] = useState("");
-  const [admins, setAdmins] = useState([]);
-  const [user, setUser] = useState(null);
   const [userBarangay, setUserBarangay] = useState(null);
   const [formData, setFormData] = useState({
     subject: "",
@@ -18,37 +14,10 @@ const OfficialDashboard = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Fetch admins and user's barangay on mount
+  // Fetch user's barangay on mount
   useEffect(() => {
-    const fetchAdmins = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(
-          "http://localhost:5000/api/messages/admins/list",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        setAdmins(res.data.admins);
-      } catch (err) {
-        console.error("Failed to fetch admins:", err);
-        error("Failed to fetch admins");
-      }
-    };
-
     const fetchUserBarangay = async () => {
       try {
-        let userData = null;
-        try {
-          const raw = localStorage.getItem("user");
-          if (raw && raw !== "undefined" && raw !== "null") {
-            userData = JSON.parse(raw);
-          }
-        } catch (err) {
-          userData = null;
-        }
-        setUser(userData);
-
         const token = localStorage.getItem("token");
         const res = await axios.get(
           "http://localhost:5000/api/barangays/me/barangay",
@@ -57,54 +26,17 @@ const OfficialDashboard = () => {
           },
         );
         setUserBarangay(res.data.barangay);
-      } catch (err) {
-        console.error("Failed to fetch user barangay:", err);
+      } catch {
+        console.error("Failed to fetch user barangay");
       }
     };
 
-    fetchAdmins();
     fetchUserBarangay();
   }, [error]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSendToAdmin = async (e) => {
-    e.preventDefault();
-    if (!adminRecipient || !formData.subject || !formData.body) {
-      error("Please fill in all required fields");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-
-      const payload = new FormData();
-      payload.append("recipientId", adminRecipient);
-      payload.append("subject", formData.subject);
-      payload.append("body", formData.body);
-      if (formData.startDate) payload.append("startDate", formData.startDate);
-      if (formData.endDate) payload.append("endDate", formData.endDate);
-      if (attachedFile) payload.append("attachment", attachedFile);
-
-      await axios.post("http://localhost:5000/api/messages/send", payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      success("Message sent to admin successfully!");
-      setShowCompose(false);
-      setFormData({ subject: "", body: "" });
-      setAttachedFile(null);
-      setAdminRecipient("");
-    } catch (err) {
-      console.error("Send failed:", err);
-      error(err.response?.data?.message || "Failed to send message");
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleSendToBarangay = async (e) => {
@@ -188,8 +120,6 @@ const OfficialDashboard = () => {
                     setShowCompose(false);
                     setAttachedFile(null);
                     setFormData({ subject: "", body: "" });
-                    setAdminRecipient("");
-                    setComposeMode("admin");
                   }}
                   className="text-gray-500 hover:text-black text-2xl"
                 >

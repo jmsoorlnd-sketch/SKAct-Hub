@@ -58,7 +58,7 @@ const BarangayStorage = () => {
           "http://localhost:5000/api/barangays/all-barangays",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setBarangays(res.data.barangays || []);
       } else {
@@ -67,7 +67,7 @@ const BarangayStorage = () => {
             "http://localhost:5000/api/barangays/me/barangay",
             {
               headers: { Authorization: `Bearer ${token}` },
-            }
+            },
           );
           const myBarangay = meRes.data.barangay;
           if (myBarangay) {
@@ -82,7 +82,7 @@ const BarangayStorage = () => {
         } catch (err) {
           console.warn(
             "No assigned barangay for user or fetch failed",
-            err?.response?.data || err.message
+            err?.response?.data || err.message,
           );
           setBarangays([]);
           setStorage([]);
@@ -110,7 +110,7 @@ const BarangayStorage = () => {
           "http://localhost:5000/api/barangays/me/storage",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setStorage(res.data.storage || []);
       } else {
@@ -118,7 +118,7 @@ const BarangayStorage = () => {
           `http://localhost:5000/api/barangays/${barangayId}/storage`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setStorage(res.data.storage || []);
         setSelectedBarangay(barangayId);
@@ -139,7 +139,7 @@ const BarangayStorage = () => {
         `http://localhost:5000/api/barangays/${barangayId}/folders`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       setFolders(res.data.folders || []);
     } catch (error) {
@@ -156,7 +156,7 @@ const BarangayStorage = () => {
         `http://localhost:5000/api/barangays/${barangayId}/users`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       setUsersInBarangay(res.data.users || []);
     } catch (error) {
@@ -187,11 +187,11 @@ const BarangayStorage = () => {
     e.preventDefault();
     if (user?.role === "Admin") {
       const createdByThisAdmin = barangays.filter(
-        (b) => b?.chairmanId && String(b.chairmanId) === String(user._id)
+        (b) => b?.chairmanId && String(b.chairmanId) === String(user._id),
       ).length;
       if (createdByThisAdmin >= ADMIN_LIMIT) {
         return alert(
-          `Creation limit reached. Each admin can create up to ${ADMIN_LIMIT} barangays.`
+          `Creation limit reached. Each admin can create up to ${ADMIN_LIMIT} barangays.`,
         );
       }
     }
@@ -215,7 +215,7 @@ const BarangayStorage = () => {
       await axios.post(
         "http://localhost:5000/api/barangays/add-barangay",
         dataToSubmit,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       alert("Barangay created successfully!");
       setFormData({ barangay: "", city: "", province: "", region: "" });
@@ -239,8 +239,9 @@ const BarangayStorage = () => {
       await axios.delete(`http://localhost:5000/api/barangays/${barangayId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      // Remove from state immediately
+      setBarangays(barangays.filter((b) => b._id !== barangayId));
       alert("Barangay deleted successfully!");
-      fetchBarangays();
       setSelectedBarangay(null);
       setStorage([]);
     } catch (error) {
@@ -264,7 +265,7 @@ const BarangayStorage = () => {
       await axios.post(
         "http://localhost:5000/api/barangays/assign-user",
         { userId: selectedUserToAdd, barangayId: selectedBarangay },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       await fetchUsersInBarangay(selectedBarangay);
@@ -281,7 +282,7 @@ const BarangayStorage = () => {
         alert(
           `User reassigned from "${
             prevBarangayName || prevBarangayId
-          }" to "${targetName}". Previous access revoked.`
+          }" to "${targetName}". Previous access revoked.`,
         );
       } else {
         alert("User assigned successfully!");
@@ -302,10 +303,11 @@ const BarangayStorage = () => {
       await axios.post(
         "http://localhost:5000/api/barangays/remove-user",
         { userId, barangayId: selectedBarangay },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
+      // Remove from state immediately
+      setUsersInBarangay(usersInBarangay.filter((u) => u._id !== userId));
       alert("User removed from barangay");
-      fetchUsersInBarangay(selectedBarangay);
     } catch (error) {
       console.error("Error removing user:", error);
       alert("Failed to remove user from barangay.");
@@ -331,10 +333,10 @@ const BarangayStorage = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       alert(
-        "Message sent to admin for approval. It will be stored after approval."
+        "Message sent to admin for approval. It will be stored after approval.",
       );
       setComposeSubject("");
       setComposeBody("");
@@ -355,7 +357,7 @@ const BarangayStorage = () => {
       await axios.post(
         `http://localhost:5000/api/barangays/${selectedBarangay}/folders`,
         { name: folderName },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       alert("Folder created successfully!");
       fetchFolders(selectedBarangay);
@@ -371,7 +373,7 @@ const BarangayStorage = () => {
       await axios.put(
         `http://localhost:5000/api/barangays/${selectedBarangay}/storage/${storageId}/move`,
         { folderId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       alert("Document moved to folder!");
       fetchStorageDocuments(selectedBarangay);
@@ -388,7 +390,7 @@ const BarangayStorage = () => {
       await axios.put(
         `http://localhost:5000/api/messages/${messageId}/status`,
         { status },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       fetchStorageDocuments(selectedBarangay);
     } catch (error) {
@@ -710,7 +712,7 @@ const BarangayStorage = () => {
                             {folders.map((folder) => {
                               const folderDocuments = storage.filter(
                                 (item) =>
-                                  item.folder && item.folder._id === folder._id
+                                  item.folder && item.folder._id === folder._id,
                               );
                               return (
                                 <div
@@ -736,7 +738,7 @@ const BarangayStorage = () => {
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     {new Date(
-                                      folder.createdAt
+                                      folder.createdAt,
                                     ).toLocaleDateString()}
                                   </p>
                                 </div>
@@ -756,7 +758,7 @@ const BarangayStorage = () => {
                             const folderDocuments = storage.filter(
                               (item) =>
                                 item.folder &&
-                                item.folder._id === selectedFolder._id
+                                item.folder._id === selectedFolder._id,
                             );
                             return folderDocuments.length === 0 ? (
                               <div className="text-center py-12 text-gray-500">
@@ -788,6 +790,8 @@ const BarangayStorage = () => {
                                     handleUpdateStatus={handleUpdateStatus}
                                     handleMoveToFolder={handleMoveToFolder}
                                     selectedBarangay={selectedBarangay}
+                                    setStorage={setStorage}
+                                    storage={storage}
                                   />
                                 ))}
                               </div>
@@ -798,7 +802,7 @@ const BarangayStorage = () => {
                         <>
                           {(() => {
                             const unassignedDocuments = storage.filter(
-                              (item) => !item.folder
+                              (item) => !item.folder,
                             );
                             return unassignedDocuments.length === 0 ? (
                               <div className="text-center py-12 text-gray-500">
@@ -830,6 +834,8 @@ const BarangayStorage = () => {
                                     handleUpdateStatus={handleUpdateStatus}
                                     handleMoveToFolder={handleMoveToFolder}
                                     selectedBarangay={selectedBarangay}
+                                    setStorage={setStorage}
+                                    storage={storage}
                                   />
                                 ))}
                               </div>
@@ -981,6 +987,8 @@ const DocumentItem = ({
   handleUpdateStatus,
   handleMoveToFolder,
   selectedBarangay,
+  setStorage,
+  storage,
 }) => {
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
@@ -1000,8 +1008,8 @@ const DocumentItem = ({
                 (item.document?.status || item.status) === "completed"
                   ? "bg-green-100 text-green-700"
                   : (item.document?.status || item.status) === "ongoing"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-100 text-gray-700"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-gray-100 text-gray-700"
               }`}
             >
               {item.document?.status || item.status}
@@ -1071,15 +1079,25 @@ const DocumentItem = ({
                 try {
                   const token = localStorage.getItem("token");
                   const docId = item.document?._id || item.document;
-                  await axios.delete(
-                    `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`,
-                    {
-                      headers: { Authorization: `Bearer ${token}` },
-                    }
+                  const url = `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`;
+                  console.log("Deleting from URL:", url);
+                  await axios.delete(url, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  // Remove from state immediately
+                  setStorage(
+                    storage.filter(
+                      (s) => (s.document?._id || s.document) !== docId,
+                    ),
                   );
                   alert("Message removed from barangay and returned to inbox");
                 } catch (err) {
-                  console.error("Detach failed", err);
+                  console.error("Detach failed - Full Error:", {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    message: err.message,
+                    error: err,
+                  });
                   alert("Failed to remove message from barangay");
                 }
               }}

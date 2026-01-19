@@ -7,7 +7,6 @@ const AdminDashboard = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [barangays, setBarangays] = useState([]);
-  const [selectedBarangay, setSelectedBarangay] = useState(null);
 
   // Fetch inbox messages
   useEffect(() => {
@@ -20,11 +19,14 @@ const AdminDashboard = () => {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        // Filter to show only messages from Officials, exclude admin-scheduled events
-        const officialMessages = res.data.messages.filter(
-          (msg) => msg.sender?.role === "Official" && !msg.isAdminScheduled,
+        // Filter to show only PENDING messages that need approval
+        const pendingMessages = res.data.messages.filter(
+          (msg) =>
+            msg.sender?.role === "Official" &&
+            !msg.isAdminScheduled &&
+            msg.status === "pending",
         );
-        setMessages(officialMessages);
+        setMessages(pendingMessages);
       } catch (error) {
         console.error("Failed to fetch messages:", error);
       } finally {
@@ -48,6 +50,24 @@ const AdminDashboard = () => {
     fetchBarangays();
   }, []);
 
+  const refreshMessages = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const pendingMessages = res.data.messages.filter(
+        (msg) =>
+          msg.sender?.role === "Official" &&
+          !msg.isAdminScheduled &&
+          msg.status === "pending",
+      );
+      setMessages(pendingMessages);
+    } catch (error) {
+      console.error("Failed to refresh messages:", error);
+    }
+  };
+
   const handleDeleteMessage = async (messageId) => {
     if (!window.confirm("Delete this message?")) return;
 
@@ -64,30 +84,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleUpdateStatus = async (messageId, status) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/api/messages/${messageId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      // Refresh messages
-      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const officialMessages = res.data.messages.filter(
-        (msg) => msg.sender?.role === "Official" && !msg.isAdminScheduled,
-      );
-      setMessages(officialMessages);
-      // if the selected message was updated, refresh it
-      const updated = res.data.messages.find((m) => m._id === messageId);
-      setSelectedMessage(updated || null);
-    } catch (error) {
-      console.error("Update status failed:", error);
-    }
-  };
-
   const handleApproveMessage = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -101,15 +97,8 @@ const AdminDashboard = () => {
       alert("Message approved and stored to barangay!");
 
       // Refresh messages
-      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const officialMessages = res.data.messages.filter(
-        (msg) => msg.sender?.role === "Official" && !msg.isAdminScheduled,
-      );
-      setMessages(officialMessages);
+      await refreshMessages();
       setSelectedMessage(null);
-      setSelectedBarangay(null);
     } catch (error) {
       console.error("Approve failed:", error);
       const errorMsg =
@@ -132,13 +121,7 @@ const AdminDashboard = () => {
       alert("Message rejected and will be returned to the official");
 
       // Refresh messages
-      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const officialMessages = res.data.messages.filter(
-        (msg) => msg.sender?.role === "Official" && !msg.isAdminScheduled,
-      );
-      setMessages(officialMessages);
+      await refreshMessages();
       setSelectedMessage(null);
     } catch (error) {
       console.error("Reject failed:", error);
@@ -155,15 +138,15 @@ const AdminDashboard = () => {
             Messages for Approval
           </h1>
           <p className="text-gray-600 mt-2">
-            Review messages from officials and approve them to store in barangay
-            storage
+            Review pending messages from officials and approve them to store in
+            barangay storage
           </p>
         </div>
 
         <div className="flex w-full gap-6 bg-gray-50">
           {/* LEFT SIDE - MESSAGE LIST */}
           <div className="w-1/3 bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="p-4 border-b bg-linear-to-r from-blue-50 to-indigo-50">
               <h2 className="text-lg font-bold text-gray-900">
                 Pending Messages ({messages.length})
               </h2>
