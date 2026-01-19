@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../layout/Layout";
-import { Trash2, HousePlus } from "lucide-react";
+import { Trash2, HousePlus, MoreVertical } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 
 const BarangayStorage = () => {
@@ -990,6 +990,64 @@ const DocumentItem = ({
   setStorage,
   storage,
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [calendarFormData, setCalendarFormData] = useState({
+    startDate: "",
+    endDate: "",
+  });
+  const [addingToCalendar, setAddingToCalendar] = useState(false);
+
+  const handleAddToCalendar = async (e) => {
+    e.preventDefault();
+    if (!calendarFormData.startDate) {
+      alert("Please fill in the start date and time");
+      return;
+    }
+
+    try {
+      setAddingToCalendar(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Authentication token not found. Please log in again.");
+        return;
+      }
+
+      const documentSubject =
+        item.documentName || item.document?.subject || "Document";
+
+      await axios.post(
+        "http://localhost:5000/api/messages/send",
+        {
+          recipientId: user?._id,
+          subject: `Document: ${documentSubject}`,
+          body:
+            item.description ||
+            item.document?.body ||
+            "Document scheduled from storage",
+          startDate: calendarFormData.startDate,
+          endDate: calendarFormData.endDate,
+          barangayId: selectedBarangay,
+          status: "approved",
+          isAdminScheduled: true,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      alert("Document added to calendar successfully");
+      setShowCalendarModal(false);
+      setCalendarFormData({ startDate: "", endDate: "" });
+      setShowMenu(false);
+    } catch (error) {
+      console.error("Failed to add to calendar:", error);
+      alert("Failed to add document to calendar");
+    } finally {
+      setAddingToCalendar(false);
+    }
+  };
+
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
       <div className="flex justify-between items-start mb-3">
@@ -1020,17 +1078,41 @@ const DocumentItem = ({
             <p className="text-sm text-gray-700 mt-2">{item.description}</p>
           )}
         </div>
-        {item.documentUrl && (
-          <a
-            href={`http://localhost:5000${item.documentUrl}`}
-            download={item.documentName}
-            className="ml-3 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-sm font-medium transition-colors duration-150"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Download
-          </a>
-        )}
+        <div className="ml-3 flex items-center gap-2">
+          {item.documentUrl && (
+            <a
+              href={`http://localhost:5000${item.documentUrl}`}
+              download={item.documentName}
+              className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-sm font-medium transition-colors duration-150"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Download
+            </a>
+          )}
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              title="More options"
+            >
+              <MoreVertical size={18} className="text-gray-600" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <button
+                  onClick={() => {
+                    setShowCalendarModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 font-medium border-b border-gray-200 last:border-b-0"
+                >
+                  Add to Calendar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -1108,6 +1190,76 @@ const DocumentItem = ({
           </>
         )}
       </div>
+
+      {/* Add to Calendar Modal */}
+      {showCalendarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                Add to Calendar
+              </h3>
+              <button
+                onClick={() => setShowCalendarModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleAddToCalendar} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Start Date & Time *
+                </label>
+                <input
+                  type="datetime-local"
+                  value={calendarFormData.startDate}
+                  onChange={(e) =>
+                    setCalendarFormData({
+                      ...calendarFormData,
+                      startDate: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  End Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={calendarFormData.endDate}
+                  onChange={(e) =>
+                    setCalendarFormData({
+                      ...calendarFormData,
+                      endDate: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={addingToCalendar}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  {addingToCalendar ? "Adding..." : "Add to Calendar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCalendarModal(false)}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
