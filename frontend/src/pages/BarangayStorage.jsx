@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../layout/Layout";
-import { Trash2, HousePlus, MoreVertical } from "lucide-react";
+import { Check, Trash2, HousePlus, MoreVertical } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 
 const BarangayStorage = () => {
@@ -441,9 +441,9 @@ const BarangayStorage = () => {
 
                 <button
                   onClick={() => navigate("/admin/dashboard")}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 "
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                 >
-                  To Approved
+                  <Check size={20} /> To Approved
                 </button>
               </div>
 
