@@ -20,6 +20,7 @@ import {
   createFolder,
   getFolders,
   moveDocumentToFolder,
+  deleteFolder,
 } from "../controllers/BarangayController.js";
 
 const router = express.Router();
@@ -63,27 +64,27 @@ router.post(
   "/:barangayId/messages",
   requireAuth,
   upload.single("attachment"),
-  createBarangayMessage
+  createBarangayMessage,
 );
 router.get(
   "/:barangayId/messages",
   requireAuth,
   adminOnly,
-  getBarangayMessages
+  getBarangayMessages,
 );
 
 // Attach an existing message (by messageId) to a barangay
 router.post(
   "/:barangayId/attach-message",
   requireAuth,
-  attachMessageToBarangay
+  attachMessageToBarangay,
 );
 
 // Detach a message from a barangay (remove storage entry and mark message un-attached)
 router.delete(
   "/:barangayId/attach-message/:messageId",
   requireAuth,
-  detachMessageFromBarangay
+  detachMessageFromBarangay,
 );
 
 router.get("/get-barangay/:id", requireAuth, getBarangayById);
@@ -95,7 +96,13 @@ router.get("/:barangayId/folders", requireAuth, getFolders);
 router.put(
   "/:barangayId/storage/:storageId/move",
   requireAuth,
-  moveDocumentToFolder
+  moveDocumentToFolder,
+);
+router.delete(
+  "/:barangayId/folders/:folderId",
+  requireAuth,
+  adminOnly,
+  deleteFolder,
 );
 
 export default router;

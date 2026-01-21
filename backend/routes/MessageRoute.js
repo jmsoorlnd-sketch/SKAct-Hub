@@ -15,6 +15,9 @@ import {
   getMessagesByUser,
   approveMessageForBarangay,
   rejectMessage,
+  uploadActivityUpdate,
+  getActivityUpdates,
+  deleteActivityUpdate,
 } from "../controllers/MessageController.js";
 
 const router = express.Router();
@@ -55,6 +58,19 @@ router.get("/admins/list", requireAuth, getAdmins);
 // Get sent messages for logged in user
 router.get("/sent", requireAuth, getSentMessages);
 
+// Activities for calendar
+router.get("/activities", requireAuth, getActivities);
+
+// Activity Updates for documents (must come BEFORE /:documentId routes)
+router.post(
+  "/:documentId/activity-updates",
+  requireAuth,
+  upload.single("photo"),
+  uploadActivityUpdate,
+);
+router.get("/:documentId/activity-updates", requireAuth, getActivityUpdates);
+router.delete("/activity-updates/:updateId", requireAuth, deleteActivityUpdate);
+
 // Admin: get messages sent by a specific user
 router.get("/user/:userId", requireAuth, getMessagesByUser);
 
@@ -66,8 +82,5 @@ router.post("/admin/approve", requireAuth, approveMessageForBarangay);
 
 // Admin: reject message
 router.post("/admin/reject", requireAuth, rejectMessage);
-
-// Activities for calendar
-router.get("/activities", requireAuth, getActivities);
 
 export default router;
