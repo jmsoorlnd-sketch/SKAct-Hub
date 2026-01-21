@@ -417,7 +417,8 @@ const BarangayStorage = () => {
         <div className="max-w-full mx-auto ">
           {/* Header */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-4">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              {/* LEFT SIDE */}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   Barangay Management
@@ -426,20 +427,32 @@ const BarangayStorage = () => {
                   Manage barangays and their documents
                 </p>
               </div>
-              {user?.role === "Admin" && (
+
+              {/* RIGHT SIDE */}
+              <div className="ml-auto flex items-center gap-3">
+                {user?.role === "Admin" && (
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                  >
+                    <HousePlus size={20} /> Add Barangay
+                  </button>
+                )}
+
                 <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                  onClick={() => navigate("/admin/dashboard")}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 "
                 >
-                  <HousePlus size={20} /> Add Barangay
+                  To Approved
                 </button>
-              )}
+              </div>
+
               <AddBarangay
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSubmit={(newBarangay) => {
+                onSubmit={() => {
                   alert("Barangay added successfully!");
-                  fetchBarangays(); // refresh list
+                  fetchBarangays();
                 }}
               />
             </div>
@@ -673,12 +686,6 @@ const BarangayStorage = () => {
                         </h2>
                         {user?.role === "Admin" && (
                           <div className="flex gap-2">
-                            <button
-                              onClick={() => navigate("/admin/dashboard")}
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
-                            >
-                              To Approved
-                            </button>
                             <button
                               onClick={() => {
                                 const folderName = prompt("Enter folder name:");
