@@ -2,6 +2,7 @@ import Message from "../models/MessageModel.js";
 import User from "../models/UserModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 import Barangay from "../models/BarangayModel.js";
+import ActivityUpdate from "../models/ActivityUpdateModel.js";
 
 // Send a message
 export const sendMessage = async (req, res) => {
@@ -314,5 +315,103 @@ export const getAdmins = async (req, res) => {
     res.status(200).json({ admins });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Upload activity photo update (Officials only)
+export const uploadActivityUpdate = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const { barangayId, caption } = req.body;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    // Only officials can upload activity photos
+    if (userRole !== "Official") {
+      return res
+        .status(403)
+        .json({ message: "Only officials can upload activity photos" });
+    }
+
+    // Check if file exists
+    if (!req.file) {
+      return res.status(400).json({ message: "Photo file is required" });
+    }
+
+    // Verify document exists
+    const document = await Message.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Verify barangay exists
+    const barangay = await Barangay.findById(barangayId);
+    if (!barangay) {
+      return res.status(404).json({ message: "Barangay not found" });
+    }
+
+    // Create activity update
+    const activityUpdate = new ActivityUpdate({
+      document: documentId,
+      barangay: barangayId,
+      uploadedBy: userId,
+      photoUrl: `/uploads/${req.file.filename}`,
+      photoName: req.file.originalname,
+      caption: caption || "",
+    });
+
+    await activityUpdate.save();
+    await activityUpdate.populate("uploadedBy", "firstname lastname username");
+
+    res.status(201).json({
+      message: "Activity photo uploaded successfully",
+      activityUpdate,
+    });
+  } catch (error) {
+    console.error("Error uploading activity update:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Get activity updates for a document
+export const getActivityUpdates = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+
+    const updates = await ActivityUpdate.find({ document: documentId })
+      .populate("uploadedBy", "firstname lastname username")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ updates });
+  } catch (error) {
+    console.error("Error fetching activity updates:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Delete activity update (Official who uploaded it only)
+export const deleteActivityUpdate = async (req, res) => {
+  try {
+    const { updateId } = req.params;
+    const userId = req.user._id;
+
+    const update = await ActivityUpdate.findById(updateId);
+    if (!update) {
+      return res.status(404).json({ message: "Activity update not found" });
+    }
+
+    // Only the official who uploaded it can delete
+    if (String(update.uploadedBy) !== String(userId)) {
+      return res
+        .status(403)
+        .json({ message: "You can only delete your own updates" });
+    }
+
+    await ActivityUpdate.findByIdAndDelete(updateId);
+
+    res.status(200).json({ message: "Activity update deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting activity update:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

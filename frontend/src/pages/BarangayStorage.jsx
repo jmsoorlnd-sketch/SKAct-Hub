@@ -32,6 +32,11 @@ const BarangayStorage = () => {
   const [search, setSearch] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
   const [filterCity, setFilterCity] = useState("");
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [activityUpdates, setActivityUpdates] = useState([]);
+  const [activityPhotoFile, setActivityPhotoFile] = useState(null);
+  const [activityCaption, setActivityCaption] = useState("");
+  const [uploadingActivity, setUploadingActivity] = useState(false);
 
   useEffect(() => {
     let userData = null;
@@ -399,6 +404,113 @@ const BarangayStorage = () => {
     }
   };
 
+  const handleDeleteFolder = async (folderId, folderName) => {
+    const documentsInFolder = storage.filter(
+      (item) => item.folder && item.folder._id === folderId,
+    );
+
+    let confirmMessage = `Delete folder "${folderName}"?`;
+    if (documentsInFolder.length > 0) {
+      confirmMessage += `\n\nThis folder contains ${documentsInFolder.length} document(s). They will be moved to stored documents.`;
+    }
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      alert(
+        `Folder deleted successfully${
+          documentsInFolder.length > 0
+            ? `! ${documentsInFolder.length} document(s) returned to stored documents.`
+            : "!"
+        }`,
+      );
+      if (selectedFolder && selectedFolder._id === folderId) {
+        setSelectedFolder(null);
+      }
+      fetchFolders(selectedBarangay);
+      fetchStorageDocuments(selectedBarangay);
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      alert("Failed to delete folder.");
+    }
+  };
+
+  const fetchActivityUpdates = async (documentId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/messages/${documentId}/activity-updates`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setActivityUpdates(res.data.updates || []);
+    } catch (error) {
+      console.error("Error fetching activity updates:", error);
+      setActivityUpdates([]);
+    }
+  };
+
+  const handleUploadActivityPhoto = async (e) => {
+    e.preventDefault();
+    if (!selectedDocument) return alert("Select a document first");
+    if (!activityPhotoFile) return alert("Please select a photo");
+
+    try {
+      setUploadingActivity(true);
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("photo", activityPhotoFile);
+      formData.append("caption", activityCaption);
+      formData.append("barangayId", selectedBarangay);
+
+      const messageId = selectedDocument.document?._id || selectedDocument._id;
+      await axios.post(
+        `http://localhost:5000/api/messages/${messageId}/activity-updates`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      alert("Activity photo uploaded successfully!");
+      setActivityPhotoFile(null);
+      setActivityCaption("");
+      fetchActivityUpdates(messageId);
+    } catch (error) {
+      console.error("Error uploading activity photo:", error);
+      const serverMsg = error?.response?.data?.message;
+      alert(serverMsg || "Failed to upload activity photo");
+    } finally {
+      setUploadingActivity(false);
+    }
+  };
+
+  const handleDeleteActivityUpdate = async (updateId) => {
+    if (!window.confirm("Delete this activity photo?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `http://localhost:5000/api/messages/activity-updates/${updateId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      alert("Activity photo deleted successfully!");
+      const messageId = selectedDocument.document?._id || selectedDocument._id;
+      fetchActivityUpdates(messageId);
+    } catch (error) {
+      console.error("Error deleting activity update:", error);
+      alert("Failed to delete activity photo");
+    }
+  };
+
   const userBarangayId = user?.barangay?._id || user?.barangay || null;
   const filteredBarangays = barangays.filter((b) => {
     const matchesSearch = b.barangayName
@@ -431,20 +543,31 @@ const BarangayStorage = () => {
               {/* RIGHT SIDE */}
               <div className="ml-auto flex items-center gap-3">
                 {user?.role === "Admin" && (
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                  >
-                    <HousePlus size={20} /> Add Barangay
-                  </button>
-                )}
+                  <>
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <HousePlus size={20} /> Add Barangay
+                    </button>
 
+<<<<<<< HEAD
                 <button
                   onClick={() => navigate("/admin/dashboard")}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                 >
                   <Check size={20} /> To Approved
                 </button>
+=======
+                    <button
+                      onClick={() => navigate("/admin/dashboard")}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 "
+                    >
+                      To Approve
+                    </button>
+                  </>
+                )}
+>>>>>>> 0216638a65e4b5d57c4a86e12e67046e75d73b05
               </div>
 
               <AddBarangay
@@ -724,30 +847,50 @@ const BarangayStorage = () => {
                               return (
                                 <div
                                   key={folder._id}
-                                  className={`border border-gray-200 rounded-lg p-4 cursor-pointer transition-colors ${
+                                  className={`border border-gray-200 rounded-lg p-4 cursor-pointer transition-colors relative group ${
                                     selectedFolder &&
                                     selectedFolder._id === folder._id
                                       ? "bg-blue-50 border-blue-300"
                                       : "bg-gray-50 hover:bg-gray-100"
                                   }`}
-                                  onClick={() => setSelectedFolder(folder)}
                                 >
-                                  <h4 className="font-medium text-gray-900">
-                                    {folder.name}
-                                  </h4>
-                                  <p className="text-sm text-gray-600">
-                                    {folderDocuments.length} document
-                                    {folderDocuments.length !== 1 ? "s" : ""}
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    Created by: {folder.createdBy?.firstname}{" "}
-                                    {folder.createdBy?.lastname}
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    {new Date(
-                                      folder.createdAt,
-                                    ).toLocaleDateString()}
-                                  </p>
+                                  {/* Delete button */}
+                                  {user?.role === "Admin" && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteFolder(
+                                          folder._id,
+                                          folder.name,
+                                        );
+                                      }}
+                                      className="absolute top-2 right-2 p-2 text-red-600 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                      title="Delete folder"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  )}
+
+                                  <div
+                                    onClick={() => setSelectedFolder(folder)}
+                                  >
+                                    <h4 className="font-medium text-gray-900">
+                                      {folder.name}
+                                    </h4>
+                                    <p className="text-sm text-gray-600">
+                                      {folderDocuments.length} document
+                                      {folderDocuments.length !== 1 ? "s" : ""}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Created by: {folder.createdBy?.firstname}{" "}
+                                      {folder.createdBy?.lastname}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(
+                                        folder.createdAt,
+                                      ).toLocaleDateString()}
+                                    </p>
+                                  </div>
                                 </div>
                               );
                             })}
@@ -799,6 +942,8 @@ const BarangayStorage = () => {
                                     selectedBarangay={selectedBarangay}
                                     setStorage={setStorage}
                                     storage={storage}
+                                    setSelectedDocument={setSelectedDocument}
+                                    fetchActivityUpdates={fetchActivityUpdates}
                                   />
                                 ))}
                               </div>
@@ -843,6 +988,8 @@ const BarangayStorage = () => {
                                     selectedBarangay={selectedBarangay}
                                     setStorage={setStorage}
                                     storage={storage}
+                                    setSelectedDocument={setSelectedDocument}
+                                    fetchActivityUpdates={fetchActivityUpdates}
                                   />
                                 ))}
                               </div>
@@ -955,6 +1102,156 @@ const BarangayStorage = () => {
                         )}
                       </div>
                     )}
+
+                    {/* Activity Updates Sub-Storage (Officials can upload, Admins can view) */}
+                    {selectedDocument &&
+                      user?.role &&
+                      (user.role === "Official" || user.role === "Admin") && (
+                        <div className="border-t pt-6">
+                          <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                              Activity Updates -{" "}
+                              {selectedDocument.documentName ||
+                                selectedDocument.document?.subject ||
+                                "Document"}
+                            </h2>
+                            <button
+                              onClick={() => setSelectedDocument(null)}
+                              className="text-sm text-gray-500 hover:text-gray-700"
+                            >
+                              ✕ Close
+                            </button>
+                          </div>
+
+                          {/* Upload Photo Form - Officials only */}
+                          {user?.role === "Official" && (
+                            <form
+                              onSubmit={handleUploadActivityPhoto}
+                              className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
+                            >
+                              <h3 className="font-semibold text-gray-900 mb-3">
+                                Post Activity Photo Update
+                              </h3>
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Photo
+                                  </label>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) =>
+                                      setActivityPhotoFile(
+                                        e.target.files?.[0] || null,
+                                      )
+                                    }
+                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Caption
+                                  </label>
+                                  <textarea
+                                    value={activityCaption}
+                                    onChange={(e) =>
+                                      setActivityCaption(e.target.value)
+                                    }
+                                    placeholder="Add a caption for this update..."
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    rows={2}
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="submit"
+                                    disabled={uploadingActivity}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                                  >
+                                    {uploadingActivity
+                                      ? "Uploading..."
+                                      : "Upload Photo"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActivityPhotoFile(null);
+                                      setActivityCaption("");
+                                    }}
+                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                                  >
+                                    Clear
+                                  </button>
+                                </div>
+                              </div>
+                            </form>
+                          )}
+
+                          {/* Activity Updates Display */}
+                          <div>
+                            <h3 className="text-md font-semibold text-gray-900 mb-3">
+                              Updates ({activityUpdates.length})
+                            </h3>
+                            {activityUpdates.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                <p className="text-sm">
+                                  No activity updates yet
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                {activityUpdates.map((update) => (
+                                  <div
+                                    key={update._id}
+                                    className="border border-gray-200 rounded-lg p-4"
+                                  >
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900">
+                                          {update.uploadedBy?.firstname}{" "}
+                                          {update.uploadedBy?.lastname}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {new Date(
+                                            update.createdAt,
+                                          ).toLocaleDateString()}{" "}
+                                          {new Date(
+                                            update.createdAt,
+                                          ).toLocaleTimeString()}
+                                        </p>
+                                      </div>
+                                      {String(update.uploadedBy?._id) ===
+                                        String(user?._id) && (
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteActivityUpdate(
+                                              update._id,
+                                            )
+                                          }
+                                          className="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors"
+                                        >
+                                          Delete
+                                        </button>
+                                      )}
+                                    </div>
+                                    <img
+                                      src={`http://localhost:5000${update.photoUrl}`}
+                                      alt="Activity update"
+                                      className="w-full h-auto rounded-md mb-2 max-h-96 object-cover"
+                                    />
+                                    {update.caption && (
+                                      <p className="text-sm text-gray-700">
+                                        {update.caption}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 text-gray-500">
@@ -996,6 +1293,8 @@ const DocumentItem = ({
   selectedBarangay,
   setStorage,
   storage,
+  setSelectedDocument,
+  fetchActivityUpdates,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -1086,6 +1385,18 @@ const DocumentItem = ({
           )}
         </div>
         <div className="ml-3 flex items-center gap-2">
+          {user?.role &&
+            (user.role === "Official" || user.role === "Admin") && (
+              <button
+                onClick={() => {
+                  setSelectedDocument(item);
+                  fetchActivityUpdates(item.document?._id || item._id);
+                }}
+                className="px-3 py-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded text-sm font-medium transition-colors duration-150"
+              >
+                Activity Updates
+              </button>
+            )}
           {item.documentUrl && (
             <a
               href={`http://localhost:5000${item.documentUrl}`}

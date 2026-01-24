@@ -107,7 +107,7 @@ export const updateBarangay = async (req, res) => {
     const updatedBarangay = await Barangay.findByIdAndUpdate(
       id,
       { barangay, city, province, region },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedBarangay) {
@@ -147,7 +147,7 @@ export const getUsersByBarangay = async (req, res) => {
     const { barangayId } = req.params;
 
     const users = await User.find({ barangay: barangayId }).select(
-      "username email firstname lastname role position"
+      "username email firstname lastname role position",
     );
 
     res.status(200).json({ users });
@@ -542,7 +542,7 @@ export const getFolders = async (req, res) => {
 
     const folders = await Folder.find({ barangay: barangayId }).populate(
       "createdBy",
-      "firstname lastname username"
+      "firstname lastname username",
     );
 
     res.status(200).json({ folders });
@@ -569,6 +569,49 @@ export const moveDocumentToFolder = async (req, res) => {
     res.status(200).json({ message: "Document moved to folder" });
   } catch (error) {
     console.error("Error moving document:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Delete a folder and return documents to stored documents
+export const deleteFolder = async (req, res) => {
+  try {
+    const { barangayId, folderId } = req.params;
+
+    // Find the folder
+    const folder = await Folder.findById(folderId);
+    if (!folder) {
+      return res.status(404).json({ message: "Folder not found" });
+    }
+
+    // Check if folder belongs to the barangay
+    if (String(folder.barangay) !== String(barangayId)) {
+      return res
+        .status(403)
+        .json({ message: "Folder does not belong to this barangay" });
+    }
+
+    // Find all documents in this folder
+    const documentsInFolder = await BarangayStorage.find({ folder: folderId });
+
+    // Remove folder assignment from all documents (return them to stored documents)
+    if (documentsInFolder.length > 0) {
+      await BarangayStorage.updateMany(
+        { folder: folderId },
+        { $set: { folder: null } },
+      );
+    }
+
+    // Delete the folder
+    await Folder.findByIdAndDelete(folderId);
+
+    res.status(200).json({
+      message: "Folder deleted successfully",
+      documentsReturned: documentsInFolder.length,
+      returnedDocuments: documentsInFolder,
+    });
+  } catch (error) {
+    console.error("Error deleting folder:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
