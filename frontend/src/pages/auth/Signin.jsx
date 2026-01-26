@@ -90,7 +90,7 @@ const Signin = () => {
               SKAct-Hub
             </h1>
             <p className="text-lg text-blue-100 mb-8 leading-relaxed">
-              Your centralized platform for barangay management and document
+              Your centralized platform for project management and document
               tracking. Streamline your workflow and enhance collaboration.
             </p>
 
@@ -108,7 +108,7 @@ const Signin = () => {
                   d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
-              <span className="text-sm">Powered by modern technology</span>
+              <span className="text-sm"></span>
             </div>
           </div>
         </div>
