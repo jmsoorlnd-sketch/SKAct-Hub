@@ -92,7 +92,7 @@ const Sidebar = () => {
   if (role === "Official") {
     return (
       <div className="flex">
-        <div className="bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] w-64 shadow-md">
+        <div className="bg-white text-black p-5 flex flex-col left-0 top-14 h-[calc(100vh-4rem)] w-55 shadow-md">
           <h1 className="text-2xl font-bold tracking-wide mb-4">
             Officials Panel
           </h1>

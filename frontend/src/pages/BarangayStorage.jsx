@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../layout/Layout";
-import { Trash2, HousePlus, MoreVertical } from "lucide-react";
+import { Check, Trash2, HousePlus, MoreVertical } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 
 const BarangayStorage = () => {
@@ -543,22 +543,20 @@ const BarangayStorage = () => {
               {/* RIGHT SIDE */}
               <div className="ml-auto flex items-center gap-3">
                 {user?.role === "Admin" && (
-                  <>
-                    <button
-                      onClick={() => setIsModalOpen(true)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
-                    >
-                      <HousePlus size={20} /> Add Barangay
-                    </button>
-
-                    <button
-                      onClick={() => navigate("/admin/dashboard")}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 "
-                    >
-                      To Approve
-                    </button>
-                  </>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                  >
+                    <HousePlus size={20} /> Add Barangay
+                  </button>
                 )}
+
+                <button
+                  onClick={() => navigate("/admin/dashboard")}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Check size={20} /> To Approved
+                </button>
               </div>
 
               <AddBarangay

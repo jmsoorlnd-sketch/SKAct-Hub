@@ -106,7 +106,7 @@ const Navbar = () => {
         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
           SK
         </div>
-        <h1 className="text-xl font-bold tracking-wide">SKhub</h1>
+        <h1 className="text-xl font-bold tracking-wide">SKActhub</h1>
       </div>
       {/* SEARCH + USER + LOGOUT
       <div className="flex items-center gap-4" ref={containerRef}>
