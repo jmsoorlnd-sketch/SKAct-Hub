@@ -30,7 +30,7 @@ const SkOfficial = () => {
       if (filters.status && official.status !== filters.status) return false;
       if (filters.position && official.position !== filters.position)
         return false;
-      if (filters.barangay && official.barangay !== filters.barangay)
+      if (filters.barangay && official.barangay?._id !== filters.barangay)
         return false;
       if (
         filters.search &&
@@ -59,7 +59,7 @@ const SkOfficial = () => {
         const token = localStorage.getItem("token");
         if (!token) {
           console.warn(
-            "No token found in localStorage — redirecting to signin"
+            "No token found in localStorage — redirecting to signin",
           );
           window.location.href = "/";
           return;
@@ -69,14 +69,14 @@ const SkOfficial = () => {
           "http://localhost:5000/api/admins/getofficials",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setOfficials(res.data);
       } catch (err) {
         console.error(
           "Error fetching officials:",
           err?.response?.status,
-          err?.response?.data || err.message || err
+          err?.response?.data || err.message || err,
         );
         // If unauthorized, clear local storage and redirect to signin
         if (err?.response?.status === 401) {
@@ -112,14 +112,14 @@ const SkOfficial = () => {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       // Update UI instantly
       setOfficials((prev) =>
         prev.map((o) =>
-          o._id === official._id ? { ...o, status: newStatus } : o
-        )
+          o._id === official._id ? { ...o, status: newStatus } : o,
+        ),
       );
     } catch (err) {
       console.error(err);
@@ -128,7 +128,7 @@ const SkOfficial = () => {
   };
   const handleUpdateOfficial = (updatedOfficial) => {
     setOfficials((prev) =>
-      prev.map((o) => (o._id === updatedOfficial._id ? updatedOfficial : o))
+      prev.map((o) => (o._id === updatedOfficial._id ? updatedOfficial : o)),
     );
   };
 
@@ -140,7 +140,7 @@ const SkOfficial = () => {
       const token = localStorage.getItem("token");
       const res = await axios.get(
         `http://localhost:5000/api/messages/user/${official._id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setProfileMessages(res.data.messages || []);
     } catch (err) {
@@ -160,7 +160,7 @@ const SkOfficial = () => {
           "http://localhost:5000/api/barangays/all-barangays",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setBarangay(res.data.barangays || []); // ensure it's always an array
       } catch (err) {

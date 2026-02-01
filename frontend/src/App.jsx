@@ -8,6 +8,7 @@ import OfficialDashboard from "./pages/officials/OfficialDashboard";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SkOfficial from "./pages/admin/SkOfficial";
+import SkPersonnelAdmin from "./pages/admin/SkPersonnelAdmin";
 import Calendar from "./pages/Calendar";
 import Profiles from "./pages/admin/Profiles";
 import Sent from "./pages/Sent";
@@ -20,6 +21,7 @@ import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
 import EventCalendar from "./pages/officials/EventCalendar";
+import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
 const App = () => {
   const token = localStorage.getItem("token");
   const user = localStorage.getItem("user");
@@ -119,6 +121,16 @@ const App = () => {
             }
           />
 
+          {/* Admin SK Personnel View */}
+          <Route
+            path="/admin/sk-personnel"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <SkPersonnelAdmin />
+              </RoleProtectedRoute>
+            }
+          />
+
           {/* Admin Events */}
           <Route
             path="/admin/events"
@@ -145,6 +157,16 @@ const App = () => {
             element={
               <RoleProtectedRoute role={["Official"]}>
                 <EventCalendar />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* SK Personnel */}
+          <Route
+            path="/sk-personnel"
+            element={
+              <RoleProtectedRoute role={["Official"]}>
+                <SKPersonnelPage />
               </RoleProtectedRoute>
             }
           />

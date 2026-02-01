@@ -114,7 +114,7 @@ const signinUser = async (req, res) => {
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.status(200).json({
@@ -126,6 +126,7 @@ const signinUser = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        barangay: user.barangay,
       },
     });
   } catch (error) {
@@ -202,7 +203,7 @@ const createProfile = async (req, res) => {
     const updatedProfile = await User.findByIdAndUpdate(
       userId, // find by _id
       update, // update data
-      { new: true } // return the updated document
+      { new: true }, // return the updated document
     );
 
     // if user is not found

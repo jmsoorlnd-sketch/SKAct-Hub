@@ -16,10 +16,12 @@ import UserRoute from "./routes/UserRoute.js";
 import MessageRoute from "./routes/MessageRoute.js";
 import BarangayRoute from "./routes/BarangayRoute.js";
 import SearchRoute from "./routes/SearchRoute.js";
+import SKPersonnelRoute from "./routes/SKPersonnelRoute.js";
 app.use("/api/users", UserRoute);
 app.use("/api/messages", MessageRoute);
 app.use("/api/barangays", BarangayRoute);
 app.use("/api/search", SearchRoute);
+app.use("/api/sk-personnel", SKPersonnelRoute);
 
 import AdminRoute from "./routes/AdminRoute.js";
 app.use("/api/admins", AdminRoute);

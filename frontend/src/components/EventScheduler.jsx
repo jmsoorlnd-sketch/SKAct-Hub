@@ -268,7 +268,7 @@ const EventScheduler = () => {
       <div className="flex justify-between items-center mb-6 pb-4 border-b">
         <div className="flex items-center gap-2">
           <select
-            value={year}
+            value={currentDate.getFullYear()}
             onChange={(e) =>
               setCurrentDate(
                 new Date(parseInt(e.target.value), currentDate.getMonth()),

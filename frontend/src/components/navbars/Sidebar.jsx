@@ -54,6 +54,13 @@ const Sidebar = () => {
             </a>
 
             <a
+              href="/admin/sk-personnel"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <Users size={20} /> SK Personnel
+            </a>
+
+            <a
               href="/admin/events"
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
@@ -65,13 +72,6 @@ const Sidebar = () => {
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
               <BarChart2 size={20} /> Monitoring & Evaluation
-            </a>
-
-            <a
-              href="/admin/reports"
-              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
-            >
-              <FileText size={20} /> Reports
             </a>
 
             <a
@@ -131,6 +131,13 @@ const Sidebar = () => {
               className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
             >
               <Home size={20} /> Barangays
+            </a>
+
+            <a
+              href="/sk-personnel"
+              className="menu-item flex items-center gap-3 py-3 px-2 rounded hover:bg-blue-300"
+            >
+              <Users size={20} /> SK Personnel
             </a>
           </nav>
 
