@@ -171,15 +171,15 @@ const SkOfficial = () => {
   }, []);
   return (
     <Layout>
-      <div className="bg-white h-full rounded-2xl p-10">
+      <div className="bg-white h-full rounded-2xl pt-4 pr-5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-3xl font-bold text-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-gray-800">
             SK Officials Management
           </h1>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 flex gap-2 text-white rounded-md"
+            className="px-4 py-2 bg-blue-600 flex gap-2 text-white text-sm mr-2 rounded-md"
           >
             <UserPlus size={20} />
             Add Official
@@ -194,7 +194,7 @@ const SkOfficial = () => {
         </div>
 
         {/* Search + Filters */}
-        <div className="p-2   rounded-lg mb-6 flex items-center gap-4">
+        <div className="p-2   rounded-lg mb-6 flex items-center gap-4 text-sm">
           <input
             type="text"
             placeholder="Search SK officials..."
@@ -242,7 +242,7 @@ const SkOfficial = () => {
 
         {/* Officials Table */}
         <div className="rounded-lg  overflow-auto">
-          <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+          <div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
             <table className="min-w-full ">
               <thead className="bg-gray-300 sticky top-0 z-10">
                 <tr>

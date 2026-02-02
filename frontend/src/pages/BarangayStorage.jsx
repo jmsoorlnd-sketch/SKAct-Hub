@@ -525,7 +525,7 @@ const BarangayStorage = () => {
 
   return (
     <Layout>
-      <div className="min-h-full bg-gray-50 p-10">
+      <div className="min-h-full bg-gray-50 p-5">
         <div className="max-w-full mx-auto ">
           {/* Header */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-4">

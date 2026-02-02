@@ -125,7 +125,7 @@ const EventCalendar = () => {
             {dayEvents.map((evt) => (
               <div
                 key={evt._id}
-                className="text-xs bg-green-100 text-green-800 p-1 rounded truncate"
+                className="text-xs bg-blue-100 text-blue-800 p-1 rounded truncate"
                 title={evt.subject}
               >
                 {evt.subject}
@@ -151,8 +151,8 @@ const EventCalendar = () => {
 
   return (
     <Layout>
-      <div className="p-6">
-        <h1 className="text-3xl font-bold mb-4">Event Calendar</h1>
+      <div className="p-5">
+        <h1 className="text-2xl font-bold mb-4">Event Calendar</h1>
 
         {!userBarangay ? (
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800">
@@ -207,7 +207,7 @@ const EventCalendar = () => {
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-6">
               <p className="font-semibold text-gray-900 mb-2">Legend:</p>
               <div className="flex items-center gap-2">
-                <div className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm">
+                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm">
                   Events
                 </div>
                 <p className="text-sm text-gray-600">
@@ -233,16 +233,16 @@ const EventCalendar = () => {
                     .map((evt) => (
                       <div
                         key={evt._id}
-                        className="p-3 bg-green-50 border border-green-200 rounded-lg"
+                        className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                       >
-                        <p className="font-semibold text-green-900">
+                        <p className="font-semibold text-blue-900">
                           {evt.subject}
                         </p>
-                        <p className="text-sm text-green-800">
+                        <p className="text-sm text-blue-800">
                           {new Date(evt.startDate).toLocaleString()}
                         </p>
                         {evt.body && (
-                          <p className="text-sm text-green-700 mt-1">
+                          <p className="text-sm text-blue-700 mt-1">
                             {evt.body}
                           </p>
                         )}

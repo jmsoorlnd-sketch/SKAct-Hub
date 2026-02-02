@@ -213,7 +213,7 @@ const AdminCalendar = () => {
             {dayEvents.map((evt) => (
               <div
                 key={evt._id}
-                className="text-xs bg-green-100 text-green-800 p-1 rounded truncate"
+                className="text-xs bg-blue-100 text-blue-800 p-1 rounded truncate"
                 title={evt.subject}
               >
                 {evt.subject}
@@ -239,9 +239,9 @@ const AdminCalendar = () => {
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-5">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Event Calendar</h1>
+          <h1 className="text-2xl font-bold">Event Calendar</h1>
           <button
             onClick={() => setShowForm(!showForm)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold"
@@ -343,7 +343,7 @@ const AdminCalendar = () => {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
                 >
                   Create Event
                 </button>
@@ -400,7 +400,7 @@ const AdminCalendar = () => {
         <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-6">
           <p className="font-semibold text-gray-900 mb-2">Legend:</p>
           <div className="flex items-center gap-2">
-            <div className="bg-green-100 text-green-800 px-3 py-1 rounded text-sm">
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm">
               Events
             </div>
             <p className="text-sm text-gray-600">
@@ -419,22 +419,20 @@ const AdminCalendar = () => {
                 .map((evt) => (
                   <div
                     key={evt._id}
-                    className="p-3 bg-green-50 border border-green-200 rounded-lg"
+                    className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                   >
-                    <p className="font-semibold text-green-900">
-                      {evt.subject}
-                    </p>
-                    <div className="text-sm text-green-800 mt-1">
+                    <p className="font-semibold text-blue-900">{evt.subject}</p>
+                    <div className="text-sm text-blue-800 mt-1">
                       <p>Start: {new Date(evt.startDate).toLocaleString()}</p>
                       {evt.endDate && (
                         <p>End: {new Date(evt.endDate).toLocaleString()}</p>
                       )}
                     </div>
                     {evt.body && (
-                      <p className="text-sm text-green-700 mt-2">{evt.body}</p>
+                      <p className="text-sm text-blue-700 mt-2">{evt.body}</p>
                     )}
                     {evt.attachedToBarangay && (
-                      <p className="text-xs text-green-600 mt-2">
+                      <p className="text-xs text-blue-600 mt-2">
                         Barangay:{" "}
                         <span className="font-semibold">
                           {barangays.find(
@@ -443,7 +441,7 @@ const AdminCalendar = () => {
                         </span>
                       </p>
                     )}
-                    <p className="text-xs text-green-600 mt-2">
+                    <p className="text-xs text-blue-600 mt-2">
                       Status:{" "}
                       <span className="font-semibold">{evt.status}</span>
                     </p>
@@ -474,14 +472,14 @@ const AdminCalendar = () => {
                   {getEventsForDate(selectedDate).map((evt) => (
                     <div
                       key={evt._id}
-                      className="p-3 bg-green-50 border border-green-200 rounded-lg"
+                      className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="font-semibold text-green-900">
+                          <p className="font-semibold text-blue-900">
                             {evt.subject}
                           </p>
-                          <div className="text-sm text-green-800 mt-1">
+                          <div className="text-sm text-blue-800 mt-1">
                             <p>
                               Start:{" "}
                               {new Date(evt.startDate).toLocaleTimeString()}
@@ -494,12 +492,12 @@ const AdminCalendar = () => {
                             )}
                           </div>
                           {evt.body && (
-                            <p className="text-sm text-green-700 mt-2">
+                            <p className="text-sm text-blue-700 mt-2">
                               {evt.body}
                             </p>
                           )}
                           {evt.attachedToBarangay && (
-                            <p className="text-xs text-green-600 mt-2">
+                            <p className="text-xs text-blue-600 mt-2">
                               Barangay:{" "}
                               <span className="font-semibold">
                                 {barangays.find(
@@ -508,7 +506,7 @@ const AdminCalendar = () => {
                               </span>
                             </p>
                           )}
-                          <p className="text-xs text-green-600 mt-2">
+                          <p className="text-xs text-blue-600 mt-2">
                             Status:{" "}
                             <span className="font-semibold">{evt.status}</span>
                           </p>
