@@ -40,9 +40,9 @@ const Sidebar = () => {
       { name: "Settings", icon: Settings, path: "/admin/settings" },
     ],
     Official: [
-      { name: "Compose", icon: MailPlus, path: "/official-dashboard" },
-      { name: "Inbox", icon: Inbox, path: "/dashboard" },
-      { name: "Sent", icon: Send, path: "/sent" },
+      // { name: "Compose", icon: MailPlus, path: "/official-dashboard" },
+      { name: "Inbox", icon: Inbox, path: "/inbox" },
+      //{ name: "Sent", icon: Send, path: "/sent" },
       { name: "Event Calendar", icon: CalendarClock, path: "/event-calendar" },
       { name: "Barangays", icon: Home, path: "/barangay-storage" },
       { name: "SK Personnel", icon: Users, path: "/sk-personnel" },

@@ -160,6 +160,7 @@ export const getSentMessages = async (req, res) => {
 
     const messages = await Message.find({ sender: userId })
       .populate("recipient", "username email role")
+      .populate("attachedToBarangay", "barangayName city province")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ messages, total: messages.length });
