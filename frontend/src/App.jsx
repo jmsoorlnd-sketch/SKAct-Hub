@@ -20,6 +20,7 @@ import BarangayView from "./pages/barangay/BarangayView";
 import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import EventCalendar from "./pages/officials/EventCalendar";
 import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
 const App = () => {
@@ -137,6 +138,16 @@ const App = () => {
             element={
               <RoleProtectedRoute role={["Admin"]}>
                 <AdminCalendar />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin Monitoring */}
+          <Route
+            path="/admin/monitoring"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <AdminMonitoring />
               </RoleProtectedRoute>
             }
           />

@@ -30,6 +30,8 @@ const BarangayStorage = () => {
   const [composeBody, setComposeBody] = useState("");
   const [composeFile, setComposeFile] = useState(null);
   const [search, setSearch] = useState("");
+  const [docSearch, setDocSearch] = useState("");
+  const [docStatusFilter, setDocStatusFilter] = useState(""); // "" = all, "approved", "ongoing", "completed"
   const [filterProvince, setFilterProvince] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -37,6 +39,7 @@ const BarangayStorage = () => {
   const [activityPhotoFile, setActivityPhotoFile] = useState(null);
   const [activityCaption, setActivityCaption] = useState("");
   const [uploadingActivity, setUploadingActivity] = useState(false);
+  const [showUsersModal, setShowUsersModal] = useState(false);
 
   useEffect(() => {
     let userData = null;
@@ -523,6 +526,29 @@ const BarangayStorage = () => {
     return matchesSearch && matchesProvince && matchesCity;
   });
 
+  // Document search helper: matches document name/subject and created date/time
+  const matchesDocSearch = (item) => {
+    if (!docSearch || !docSearch.trim()) return true;
+    const q = docSearch.trim().toLowerCase();
+    const name = (item.documentName || item.document?.subject || "")
+      .toString()
+      .toLowerCase();
+    const created = new Date(item.createdAt).toLocaleString().toLowerCase();
+    return name.includes(q) || created.includes(q);
+  };
+
+  // Document status filter helper
+  const matchesDocStatus = (item) => {
+    if (!docStatusFilter) return true;
+    const status = item.document?.status || item.status || "";
+    return status === docStatusFilter;
+  };
+
+  const filterDocuments = (list) =>
+    (list || []).filter(
+      (item) => matchesDocSearch(item) && matchesDocStatus(item),
+    );
+
   return (
     <Layout>
       <div className="min-h-full bg-gray-50 p-5">
@@ -792,23 +818,52 @@ const BarangayStorage = () => {
 
                     {/* Documents Section */}
                     <div>
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          Stored Documents
-                        </h2>
-                        {user?.role === "Admin" && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                const folderName = prompt("Enter folder name:");
-                                if (folderName) handleCreateFolder(folderName);
-                              }}
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
-                            >
-                              Create Folder
-                            </button>
-                          </div>
-                        )}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <div className="flex-1">
+                          <h2 className="text-lg font-semibold text-gray-900">
+                            Stored Documents
+                          </h2>
+                          <p className="text-sm text-gray-500">
+                            Filter stored documents by name or date/time sent
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Search documents by name or date/time..."
+                            value={docSearch}
+                            onChange={(e) => setDocSearch(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+
+                          <select
+                            value={docStatusFilter}
+                            onChange={(e) => setDocStatusFilter(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          >
+                            <option value="">Filter by Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="completed">Completed</option>
+                          </select>
+
+                          {user?.role === "Admin" && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  const folderName =
+                                    prompt("Enter folder name:");
+                                  if (folderName)
+                                    handleCreateFolder(folderName);
+                                }}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                              >
+                                Create Folder
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Folders List */}
@@ -829,9 +884,12 @@ const BarangayStorage = () => {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {folders.map((folder) => {
-                              const folderDocuments = storage.filter(
-                                (item) =>
-                                  item.folder && item.folder._id === folder._id,
+                              const folderDocuments = filterDocuments(
+                                storage.filter(
+                                  (item) =>
+                                    item.folder &&
+                                    item.folder._id === folder._id,
+                                ),
                               );
                               return (
                                 <div
@@ -894,10 +952,12 @@ const BarangayStorage = () => {
                             Documents in "{selectedFolder.name}"
                           </h3>
                           {(() => {
-                            const folderDocuments = storage.filter(
-                              (item) =>
-                                item.folder &&
-                                item.folder._id === selectedFolder._id,
+                            const folderDocuments = filterDocuments(
+                              storage.filter(
+                                (item) =>
+                                  item.folder &&
+                                  item.folder._id === selectedFolder._id,
+                              ),
                             );
                             return folderDocuments.length === 0 ? (
                               <div className="text-center py-12 text-gray-500">
@@ -933,6 +993,8 @@ const BarangayStorage = () => {
                                     storage={storage}
                                     setSelectedDocument={setSelectedDocument}
                                     fetchActivityUpdates={fetchActivityUpdates}
+                                    showUsersModal={showUsersModal}
+                                    setShowUsersModal={setShowUsersModal}
                                   />
                                 ))}
                               </div>
@@ -942,8 +1004,8 @@ const BarangayStorage = () => {
                       ) : (
                         <>
                           {(() => {
-                            const unassignedDocuments = storage.filter(
-                              (item) => !item.folder,
+                            const unassignedDocuments = filterDocuments(
+                              storage.filter((item) => !item.folder),
                             );
                             return unassignedDocuments.length === 0 ? (
                               <div className="text-center py-12 text-gray-500">
@@ -979,6 +1041,8 @@ const BarangayStorage = () => {
                                     storage={storage}
                                     setSelectedDocument={setSelectedDocument}
                                     fetchActivityUpdates={fetchActivityUpdates}
+                                    showUsersModal={showUsersModal}
+                                    setShowUsersModal={setShowUsersModal}
                                   />
                                 ))}
                               </div>
@@ -1284,6 +1348,8 @@ const DocumentItem = ({
   storage,
   setSelectedDocument,
   fetchActivityUpdates,
+  showUsersModal,
+  setShowUsersModal,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
