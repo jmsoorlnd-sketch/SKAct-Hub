@@ -27,7 +27,11 @@ const Sidebar = () => {
   // Menu Configuration
   const menus = {
     Admin: [
-      { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+      {
+        name: "Notifications",
+        icon: LayoutDashboard,
+        path: "/admin/notifications",
+      },
       { name: "Barangays", icon: Home, path: "/barangay-storage" },
       { name: "Youth Profiles", icon: Users, path: "/sk-official" },
       { name: "SK Personnel", icon: Users, path: "/admin/sk-personnel" },

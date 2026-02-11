@@ -21,6 +21,7 @@ import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
+import AdminNotification from "./pages/admin/AdminNotification";
 import EventCalendar from "./pages/officials/EventCalendar";
 import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
 const App = () => {
@@ -84,7 +85,7 @@ const App = () => {
 
           {/* Admin Dashboard */}
           <Route
-            path="/admin/dashboard"
+            path="/admin-dashboard"
             element={
               <RoleProtectedRoute role={["Admin"]}>
                 <AdminDashboard />
@@ -138,6 +139,16 @@ const App = () => {
             element={
               <RoleProtectedRoute role={["Admin"]}>
                 <AdminCalendar />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin Notifications */}
+          <Route
+            path="/admin/notifications"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <AdminNotification />
               </RoleProtectedRoute>
             }
           />

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../layout/Layout";
 import {
@@ -12,6 +13,8 @@ import {
   Calendar,
   Award,
   Activity,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const AdminMonitoring = () => {
@@ -24,12 +27,25 @@ const AdminMonitoring = () => {
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [timeRange, setTimeRange] = useState("Last 30 Days");
   const [allStorage, setAllStorage] = useState([]);
+  const [carouselIndex, setCarouselIndex] = useState({});
+  const [animatingBarangay, setAnimatingBarangay] = useState(null);
+
+  const location = useLocation();
 
   useEffect(() => {
     (async () => {
       await fetchBarangays();
     })();
   }, []);
+
+  // If navigated with a message/document id (from notifications), open updates
+  useEffect(() => {
+    const messageId = location?.state?.messageId || location?.state?.documentId;
+    if (messageId) {
+      setSelectedMessage({ messageId });
+      fetchActivityUpdates(messageId);
+    }
+  }, [location]);
 
   const fetchBarangays = async () => {
     setLoading(true);
@@ -382,58 +398,124 @@ const AdminMonitoring = () => {
                               </div>
                             </div>
 
-                            {/* Show first ongoing project */}
-                            {hasOngoing && ongoingItems[0] && (
-                              <div className="bg-white rounded-lg p-3 border-2 border-amber-200">
-                                <h4 className="font-semibold text-slate-900 text-sm mb-1 truncate">
-                                  {ongoingItems[0].documentName ||
-                                    ongoingItems[0].document?.subject}
-                                </h4>
-                                <p className="text-xs text-slate-600 mb-2">
-                                  From:{" "}
-                                  {ongoingItems[0].document?.sender
-                                    ?.firstname ||
-                                    ongoingItems[0].uploadedBy?.firstname}{" "}
-                                  {ongoingItems[0].document?.sender?.lastname ||
-                                    ongoingItems[0].uploadedBy?.lastname}
-                                </p>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={async () => {
-                                      const msgId =
-                                        ongoingItems[0].document?._id ||
-                                        ongoingItems[0]._id ||
-                                        ongoingItems[0].document;
-                                      setSelectedMessage({
-                                        barangayId: b._id,
-                                        barangayName:
-                                          b.barangayName || b.barangay,
-                                        messageId: msgId,
-                                        title:
-                                          ongoingItems[0].documentName ||
-                                          ongoingItems[0].document?.subject,
-                                      });
-                                      await fetchActivityUpdates(msgId);
-                                    }}
-                                    className="flex-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
-                                  >
-                                    <ImageIcon size={14} />
-                                    Updates
-                                  </button>
-                                  {ongoingItems[0].documentUrl && (
-                                    <a
-                                      href={`http://localhost:5000${ongoingItems[0].documentUrl}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                            {/* Carousel for ongoing projects */}
+                            {hasOngoing &&
+                              ongoingItems.length > 0 &&
+                              (() => {
+                                const currentIndex = carouselIndex[b._id] || 0;
+                                const currentItem = ongoingItems[currentIndex];
+                                const isAnimating = animatingBarangay === b._id;
+
+                                const handleCarouselChange = (newIndex) => {
+                                  setAnimatingBarangay(b._id);
+                                  setCarouselIndex({
+                                    ...carouselIndex,
+                                    [b._id]: newIndex,
+                                  });
+                                  setTimeout(
+                                    () => setAnimatingBarangay(null),
+                                    250,
+                                  );
+                                };
+
+                                return (
+                                  <div className="relative bg-white rounded-lg p-3 border-2 border-amber-200">
+                                    {/* Previous Button - Left Side */}
+                                    <button
+                                      onClick={() => {
+                                        handleCarouselChange(
+                                          currentIndex === 0
+                                            ? ongoingItems.length - 1
+                                            : currentIndex - 1,
+                                        );
+                                      }}
+                                      disabled={ongoingItems.length <= 1}
+                                      className="absolute left-1 top-1/2 -translate-y-1/2 p-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 rounded-lg transition-colors flex items-center justify-center z-30 ring-1 ring-slate-100"
                                     >
-                                      <Download size={14} />
-                                      Open
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            )}
+                                      <ChevronLeft size={18} />
+                                    </button>
+
+                                    {/* Content */}
+                                    <div
+                                      className={`pr-10 pl-10 py-2 carousel-card ${isAnimating ? "carousel-card-out" : "carousel-card-current"}`}
+                                      key={`${b._id}-${currentIndex}`}
+                                    >
+                                      {/* Project counter */}
+                                      <div className="text-center text-xs text-slate-500 font-semibold mb-2">
+                                        {currentIndex + 1} of{" "}
+                                        {ongoingItems.length}
+                                      </div>
+
+                                      <h4 className="font-semibold text-slate-900 text-sm mb-1 truncate">
+                                        {currentItem.documentName ||
+                                          currentItem.document?.subject}
+                                      </h4>
+                                      <p className="text-xs text-slate-600 mb-2">
+                                        From:{" "}
+                                        {currentItem.document?.sender
+                                          ?.firstname ||
+                                          currentItem.uploadedBy
+                                            ?.firstname}{" "}
+                                        {currentItem.document?.sender
+                                          ?.lastname ||
+                                          currentItem.uploadedBy?.lastname}
+                                      </p>
+
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={async () => {
+                                            const msgId =
+                                              currentItem.document?._id ||
+                                              currentItem._id ||
+                                              currentItem.document;
+                                            setSelectedMessage({
+                                              barangayId: b._id,
+                                              barangayName:
+                                                b.barangayName || b.barangay,
+                                              messageId: msgId,
+                                              title:
+                                                currentItem.documentName ||
+                                                currentItem.document?.subject,
+                                            });
+                                            await fetchActivityUpdates(msgId);
+                                          }}
+                                          className="flex-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                                        >
+                                          <ImageIcon size={14} />
+                                          Updates
+                                        </button>
+                                        {currentItem.documentUrl && (
+                                          <a
+                                            href={`http://localhost:5000${currentItem.documentUrl}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"
+                                          >
+                                            <Download size={14} />
+                                            Open
+                                          </a>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Next Button - Right Side */}
+                                    <button
+                                      onClick={() => {
+                                        handleCarouselChange(
+                                          currentIndex ===
+                                            ongoingItems.length - 1
+                                            ? 0
+                                            : currentIndex + 1,
+                                        );
+                                      }}
+                                      disabled={ongoingItems.length <= 1}
+                                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 bg-slate-200 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 rounded-lg transition-colors flex items-center justify-center z-30 ring-1 ring-slate-100"
+                                    >
+                                      <ChevronRight size={18} />
+                                    </button>
+                                  </div>
+                                );
+                              })()}
 
                             {!hasOngoing && (
                               <p className="text-sm text-slate-500 text-center py-2">
@@ -895,3 +977,65 @@ const AdminMonitoring = () => {
 };
 
 export default AdminMonitoring;
+
+const style = document.createElement("style");
+style.textContent = `
+  @keyframes cardOut {
+    0% {
+      z-index: 20;
+      transform: translateY(0px) rotate(-4deg) translateX(0);
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(-120%) rotate(-8deg) translateX(-60px);
+      opacity: 0.5;
+    }
+    80% {
+      z-index: 1;
+    }
+    100% {
+      transform: translateY(-50px) rotate(8deg) translateX(55px) scale(0.9);
+      opacity: 0;
+      z-index: 1;
+    }
+  }
+
+  @keyframes cardIn {
+    0% {
+      transform: translateY(-50px) rotate(8deg) translateX(55px) scale(0.9);
+      opacity: 0;
+      z-index: 1;
+    }
+    50% {
+      transform: translateY(-30px) rotate(2deg) translateX(20px) scale(0.95);
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateY(0px) rotate(-1deg) translateX(0) scale(1);
+      opacity: 1;
+      z-index: 10;
+    }
+  }
+
+  .carousel-card {
+    border: 1px solid rgba(15,23,42,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(2,6,23,0.06);
+    background: #fff;
+  }
+
+  .carousel-card-current {
+    animation: cardIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    z-index: 10;
+  }
+
+  .carousel-card-out {
+    animation: cardOut 0.25s cubic-bezier(0.8, 0.2, 0.1, 0.8);
+    z-index: 1;
+  }
+`;
+if (typeof document !== "undefined") {
+  document.head.appendChild(style);
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../layout/Layout";
 
@@ -49,6 +50,16 @@ const AdminDashboard = () => {
     };
     fetchBarangays();
   }, []);
+
+  const location = useLocation();
+
+  // If navigated with a messageId (from notifications), pre-select that message
+  useEffect(() => {
+    if (!loading && location?.state?.messageId && messages.length > 0) {
+      const found = messages.find((m) => m._id === location.state.messageId);
+      if (found) setSelectedMessage(found);
+    }
+  }, [loading, messages, location]);
 
   const refreshMessages = async () => {
     try {
