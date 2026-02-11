@@ -4,7 +4,7 @@ import Sidebar from "../components/navbars/Sidebar";
 
 const Layout = ({ children }) => {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-screen">
       {/* Navbar fixed */}
       <header className="fixed top-0 left-0 right-0 z-20">
         <Navbar />
@@ -12,12 +12,12 @@ const Layout = ({ children }) => {
 
       <div className="flex flex-1 pt-14">
         {/* Sidebar fixed */}
-        <aside className="fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-white text-white z-10 overflow-y-auto">
+        <aside className="fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-10 overflow-y-auto">
           <Sidebar />
         </aside>
 
         {/* Main scrollable */}
-        <main className="ml-64 flex-1 bg-white p-2 h-[calc(100vh-4rem)] overflow-y-auto">
+        <main className="ml-64 flex-1 bg-white min-h-[calc(100vh-4rem)] overflow-y-auto">
           {children}
         </main>
       </div>

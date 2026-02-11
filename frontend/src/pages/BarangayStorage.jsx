@@ -585,7 +585,7 @@ const BarangayStorage = () => {
 
                 {user?.role === "Admin" && (
                   <button
-                    onClick={() => navigate("/admin/dashboard")}
+                    onClick={() => navigate("/admin-dashboard")}
                     className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   >
                     <Check size={20} />

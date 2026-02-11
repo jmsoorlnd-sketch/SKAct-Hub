@@ -14,6 +14,10 @@ const BarangayManagement = () => {
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUserToAdd, setSelectedUserToAdd] = useState("");
   const [addingUser, setAddingUser] = useState(false);
+  const [showApprovalsModal, setShowApprovalsModal] = useState(false);
+  const [approvalMessages, setApprovalMessages] = useState([]);
+  const [loadingApprovals, setLoadingApprovals] = useState(false);
+  const [selectedApproval, setSelectedApproval] = useState(null);
   const ADMIN_LIMIT = 5;
   const [formData, setFormData] = useState({
     barangayName: "",
@@ -197,6 +201,73 @@ const BarangayManagement = () => {
     }
   };
 
+  const fetchApprovalMessages = async () => {
+    setLoadingApprovals(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const pendingMessages = res.data.messages.filter(
+        (msg) =>
+          msg.sender?.role === "Official" &&
+          !msg.isAdminScheduled &&
+          msg.status === "pending",
+      );
+      setApprovalMessages(pendingMessages);
+    } catch (error) {
+      console.error("Failed to fetch approval messages:", error);
+      alert("Failed to load approval messages");
+    } finally {
+      setLoadingApprovals(false);
+    }
+  };
+
+  const handleShowApprovals = async () => {
+    setShowApprovalsModal(true);
+    await fetchApprovalMessages();
+  };
+
+  const handleApproveMessage = async (messageId) => {
+    if (!window.confirm("Approve this message?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:5000/api/messages/admin/approve",
+        { messageId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      alert("Message approved and stored to barangay!");
+      await fetchApprovalMessages();
+      setSelectedApproval(null);
+    } catch (error) {
+      console.error("Approve failed:", error);
+      const errorMsg =
+        error?.response?.data?.message || "Failed to approve message";
+      alert(errorMsg);
+    }
+  };
+
+  const handleRejectMessage = async (messageId) => {
+    if (!window.confirm("Reject this message?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        "http://localhost:5000/api/messages/admin/reject",
+        { messageId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      alert("Message rejected and returned to the official");
+      await fetchApprovalMessages();
+      setSelectedApproval(null);
+    } catch (error) {
+      console.error("Reject failed:", error);
+      alert("Failed to reject message");
+    }
+  };
+
   return (
     <Layout>
       <div className="p-6 bg-gray-50 min-h-screen">
@@ -204,7 +275,7 @@ const BarangayManagement = () => {
           <h1 className="text-3xl font-bold">Barangay Management</h1>
           <div className="flex gap-3">
             <button
-              onClick={() => (window.location.href = "/admin-dashboard")}
+              onClick={handleShowApprovals}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
             >
               To Approved
@@ -516,6 +587,105 @@ const BarangayManagement = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Approvals Modal */}
+        {showApprovalsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-96 overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">
+                  Pending Approvals ({approvalMessages.length})
+                </h2>
+                <button
+                  onClick={() => setShowApprovalsModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {loadingApprovals ? (
+                <p className="text-gray-600">Loading approval messages...</p>
+              ) : approvalMessages.length === 0 ? (
+                <p className="text-gray-600">No pending approvals.</p>
+              ) : !selectedApproval ? (
+                <div className="space-y-3">
+                  {approvalMessages.map((msg) => (
+                    <div
+                      key={msg._id}
+                      className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => setSelectedApproval(msg)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900">
+                            {msg.subject}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            From: {msg.sender?.firstname} {msg.sender?.lastname}{" "}
+                            ({msg.sender?.username})
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(msg.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded text-sm font-medium">
+                          Pending
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-lg mb-2">
+                      {selectedApproval.subject}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      <strong>From:</strong>{" "}
+                      {selectedApproval.sender?.firstname}{" "}
+                      {selectedApproval.sender?.lastname} (
+                      {selectedApproval.sender?.username})
+                    </p>
+                    <p className="text-sm text-gray-600 mb-3">
+                      <strong>Date:</strong>{" "}
+                      {new Date(selectedApproval.createdAt).toLocaleString()}
+                    </p>
+                    <div className="border-t pt-3">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {selectedApproval.message ||
+                          selectedApproval.body ||
+                          selectedApproval.content}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => setSelectedApproval(null)}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={() => handleRejectMessage(selectedApproval._id)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => handleApproveMessage(selectedApproval._id)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
