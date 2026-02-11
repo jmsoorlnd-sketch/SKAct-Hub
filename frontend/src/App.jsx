@@ -143,16 +143,6 @@ const App = () => {
             }
           />
 
-          {/* Admin Notifications */}
-          <Route
-            path="/admin/notifications"
-            element={
-              <RoleProtectedRoute role={["Admin"]}>
-                <AdminNotification />
-              </RoleProtectedRoute>
-            }
-          />
-
           {/* Admin Monitoring */}
           <Route
             path="/admin/monitoring"
@@ -169,6 +159,16 @@ const App = () => {
             element={
               <RoleProtectedRoute role={["Admin"]}>
                 <AdminSettings />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Admin Notifications */}
+          <Route
+            path="/admin/notifications"
+            element={
+              <RoleProtectedRoute role={["Admin"]}>
+                <AdminNotification />
               </RoleProtectedRoute>
             }
           />

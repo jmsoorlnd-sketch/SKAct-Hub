@@ -36,8 +36,14 @@ const Signin = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Redirect immediately without alert
-      window.location.href = "/dashboard";
+      // Redirect based on role
+      if (user.role === "Admin") {
+        window.location.href = "/admin/notifications";
+      } else if (user.role === "Official") {
+        window.location.href = "/inbox";
+      } else {
+        window.location.href = "/dashboard";
+      }
     } catch (err) {
       if (err.response?.data?.message) {
         setError(err.response.data.message);

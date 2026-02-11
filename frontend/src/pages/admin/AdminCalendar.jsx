@@ -789,7 +789,7 @@ const AdminCalendar = () => {
                                 <Clock className="w-4 h-4 text-blue-600" />
                                 <span className="font-semibold text-slate-700">
                                   Start:{" "}
-                                  {new Date(evt.startDate).toLocaleTimeString()}
+                                  {new Date(evt.startDate).toLocaleString()}
                                 </span>
                               </div>
                               {evt.endDate && (
@@ -797,7 +797,7 @@ const AdminCalendar = () => {
                                   <Clock className="w-4 h-4 text-purple-600" />
                                   <span className="font-semibold text-slate-700">
                                     End:{" "}
-                                    {new Date(evt.endDate).toLocaleTimeString()}
+                                    {new Date(evt.endDate).toLocaleString()}
                                   </span>
                                 </div>
                               )}

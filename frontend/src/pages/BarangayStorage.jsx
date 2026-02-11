@@ -583,13 +583,15 @@ const BarangayStorage = () => {
                   </button>
                 )}
 
-                <button
-                  onClick={() => navigate("/admin/dashboard")}
-                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                >
-                  <Check size={20} />
-                  <span>Approved</span>
-                </button>
+                {user?.role === "Admin" && (
+                  <button
+                    onClick={() => navigate("/admin/dashboard")}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  >
+                    <Check size={20} />
+                    <span>Approved</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -670,10 +672,10 @@ const BarangayStorage = () => {
                               }
                               fetchStorageDocuments(b._id, currentUser);
                             }}
-                            className={`p-4 cursor-pointer transition-all duration-200 ${
+                            className={`p-4 cursor-pointer transition-all duration-300 ${
                               isSelected
-                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600"
-                                : "hover:bg-slate-50"
+                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600 shadow-md"
+                                : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-slate-50 hover:shadow-md hover:border-l-4 hover:border-blue-300"
                             }`}
                           >
                             <div className="flex justify-between items-start gap-3">
@@ -1443,7 +1445,7 @@ const DocumentItem = ({
   };
 
   return (
-    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
+    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-300 bg-white hover:scale-[1.01] hover:bg-blue-50/30">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-slate-900 text-lg mb-2">
