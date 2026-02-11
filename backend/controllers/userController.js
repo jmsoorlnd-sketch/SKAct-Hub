@@ -127,6 +127,7 @@ const signinUser = async (req, res) => {
         email: user.email,
         role: user.role,
         barangay: user.barangay,
+        position: user.position,
       },
     });
   } catch (error) {

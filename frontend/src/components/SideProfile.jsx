@@ -18,7 +18,9 @@ const SideProfile = ({ user }) => {
             <p className="font-semibold">
               {user?.firstname} {user?.lastname}
             </p>
-            <p className="text-xs opacity-70">{user?.role}</p>
+            <p className="text-xs opacity-70">
+              {user?.role} {user?.position}{" "}
+            </p>
           </div>
         </div>
       </div>

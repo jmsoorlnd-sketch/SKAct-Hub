@@ -2,7 +2,18 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Layout from "../layout/Layout";
-import { Check, Trash2, HousePlus, MoreVertical } from "lucide-react";
+import {
+  Check,
+  Trash2,
+  HousePlus,
+  MoreVertical,
+  FolderPlus,
+  Search,
+  Filter,
+  X,
+  Calendar,
+  Image as ImageIcon,
+} from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 
 const BarangayStorage = () => {
@@ -31,7 +42,7 @@ const BarangayStorage = () => {
   const [composeFile, setComposeFile] = useState(null);
   const [search, setSearch] = useState("");
   const [docSearch, setDocSearch] = useState("");
-  const [docStatusFilter, setDocStatusFilter] = useState(""); // "" = all, "approved", "ongoing", "completed"
+  const [docStatusFilter, setDocStatusFilter] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -247,7 +258,6 @@ const BarangayStorage = () => {
       await axios.delete(`http://localhost:5000/api/barangays/${barangayId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Remove from state immediately
       setBarangays(barangays.filter((b) => b._id !== barangayId));
       alert("Barangay deleted successfully!");
       setSelectedBarangay(null);
@@ -313,7 +323,6 @@ const BarangayStorage = () => {
         { userId, barangayId: selectedBarangay },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      // Remove from state immediately
       setUsersInBarangay(usersInBarangay.filter((u) => u._id !== userId));
       alert("User removed from barangay");
     } catch (error) {
@@ -526,7 +535,6 @@ const BarangayStorage = () => {
     return matchesSearch && matchesProvince && matchesCity;
   });
 
-  // Document search helper: matches document name/subject and created date/time
   const matchesDocSearch = (item) => {
     if (!docSearch || !docSearch.trim()) return true;
     const q = docSearch.trim().toLowerCase();
@@ -537,7 +545,6 @@ const BarangayStorage = () => {
     return name.includes(q) || created.includes(q);
   };
 
-  // Document status filter helper
   const matchesDocStatus = (item) => {
     if (!docStatusFilter) return true;
     const status = item.document?.status || item.status || "";
@@ -551,133 +558,73 @@ const BarangayStorage = () => {
 
   return (
     <Layout>
-      <div className="min-h-full bg-gray-50 p-5">
-        <div className="max-w-full mx-auto ">
-          {/* Header */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 mb-4">
-            <div className="flex items-center">
-              {/* LEFT SIDE */}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Enhanced Header */}
+          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Barangay Management
                 </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Manage barangays and their documents
+                <p className="text-slate-600 mt-2">
+                  Organize and manage barangay documents efficiently
                 </p>
               </div>
 
-              {/* RIGHT SIDE */}
-              <div className="ml-auto flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 {user?.role === "Admin" && (
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   >
-                    <HousePlus size={20} /> Add Barangay
+                    <HousePlus size={20} />
+                    <span>Add Barangay</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => navigate("/admin/dashboard")}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
+                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                 >
-                  <Check size={20} /> To Approved
+                  <Check size={20} />
+                  <span>Approved</span>
                 </button>
               </div>
-
-              <AddBarangay
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={() => {
-                  alert("Barangay added successfully!");
-                  fetchBarangays();
-                }}
-              />
             </div>
+
+            <AddBarangay
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSubmit={() => {
+                alert("Barangay added successfully!");
+                fetchBarangays();
+              }}
+            />
           </div>
 
-          {/* Create Form */}
-          {/* {showForm && user?.role === "Admin" && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Create New Barangay
-              </h2>
-              <form onSubmit={handleCreateBarangay} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Barangay Name
-                    </label>
-                    <input
-                      type="text"
-                      name="barangay"
-                      placeholder="Enter barangay name"
-                      value={formData.barangay}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value="Ormoc City"
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Province
-                    </label>
-                    <input
-                      type="text"
-                      value="Leyte"
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Region
-                    </label>
-                    <input
-                      type="text"
-                      value="Region 8"
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200"
-                >
-                  Create Barangay
-                </button>
-              </form>
-            </div>
-          )} */}
-
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {/* Barangay List */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Barangay Sidebar */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden sticky top-6">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5">
+                  <h2 className="text-lg font-bold text-white mb-3">
                     Barangays
                   </h2>
-                  <input
-                    type="text"
-                    placeholder="Search barangay..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <Search
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-200"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search barangay..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div
@@ -685,16 +632,23 @@ const BarangayStorage = () => {
                   style={{ maxHeight: "calc(100vh - 300px)" }}
                 >
                   {loading ? (
-                    <div className="p-8 text-center text-gray-500">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-sm">Loading...</p>
+                    <div className="p-12 text-center">
+                      <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mx-auto"></div>
+                      <p className="mt-4 text-sm text-slate-500 font-medium">
+                        Loading...
+                      </p>
                     </div>
                   ) : filteredBarangays.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                      <p className="text-sm">No barangays found</p>
+                    <div className="p-12 text-center">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <HousePlus className="text-slate-400" size={32} />
+                      </div>
+                      <p className="text-sm text-slate-500 font-medium">
+                        No barangays found
+                      </p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-gray-200">
+                    <div className="divide-y divide-slate-100">
                       {filteredBarangays.map((b) => {
                         const isSelected = selectedBarangay === b._id;
                         return (
@@ -716,24 +670,24 @@ const BarangayStorage = () => {
                               }
                               fetchStorageDocuments(b._id, currentUser);
                             }}
-                            className={`p-4 cursor-pointer transition-colors duration-150 ${
+                            className={`p-4 cursor-pointer transition-all duration-200 ${
                               isSelected
-                                ? "bg-blue-200 border-l-4 border-blue-100"
-                                : "hover:bg-blue-100"
+                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600"
+                                : "hover:bg-slate-50"
                             }`}
                           >
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
+                            <div className="flex justify-between items-start gap-3">
+                              <div className="flex-1 min-w-0">
                                 <h3
-                                  className={`font-medium ${
+                                  className={`font-semibold truncate ${
                                     isSelected
                                       ? "text-blue-900"
-                                      : "text-gray-900"
+                                      : "text-slate-900"
                                   }`}
                                 >
                                   {b.barangayName || b.barangay || "—"}
                                 </h3>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-slate-500 mt-1 truncate">
                                   {b.city}, {b.province}
                                 </p>
                               </div>
@@ -743,9 +697,10 @@ const BarangayStorage = () => {
                                     e.stopPropagation();
                                     handleDeleteBarangay(b._id);
                                   }}
-                                  className="ml-2 px-2 py-1 text-xs bg-red-50 hover:bg-red-300 text-red-600 rounded transition-colors duration-150"
+                                  className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete barangay"
                                 >
-                                  <Trash2 size={20} />
+                                  <Trash2 size={16} />
                                 </button>
                               )}
                             </div>
@@ -758,48 +713,51 @@ const BarangayStorage = () => {
               </div>
             </div>
 
-            {/* Details Panel */}
-            <div className="lg:col-span-2 ">
-              <div className="bg-white  rounded-xl shadow-sm border border-gray-200 p-6">
+            {/* Main Content Area */}
+            <div className="lg:col-span-3">
+              <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
                 {selectedBarangay ? (
                   <div className="space-y-6">
-                    {/* Compose Section */}
+                    {/* Compose Message Section */}
                     {user &&
                       user.role !== "Admin" &&
                       String(userBarangayId) === String(selectedBarangay) && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <h3 className="font-semibold text-gray-900 mb-3">
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
+                          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                              <span className="text-white text-sm">✉</span>
+                            </div>
                             Compose Message
                           </h3>
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             <input
                               value={composeSubject}
                               onChange={(e) =>
                                 setComposeSubject(e.target.value)
                               }
                               placeholder="Subject"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                             <textarea
                               value={composeBody}
                               onChange={(e) => setComposeBody(e.target.value)}
                               placeholder="Message body"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              rows={3}
+                              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                              rows={4}
                             />
                             <input
                               type="file"
                               onChange={(e) =>
                                 setComposeFile(e.target.files?.[0] || null)
                               }
-                              className="text-sm"
+                              className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-all cursor-pointer"
                             />
-                            <div className="flex gap-2">
+                            <div className="flex gap-3">
                               <button
                                 onClick={handleSendToBarangay}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
                               >
-                                Send
+                                Send Message
                               </button>
                               <button
                                 onClick={() => {
@@ -807,7 +765,7 @@ const BarangayStorage = () => {
                                   setComposeBody("");
                                   setComposeFile(null);
                                 }}
-                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                                className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold transition-all"
                               >
                                 Clear
                               </button>
@@ -818,67 +776,78 @@ const BarangayStorage = () => {
 
                     {/* Documents Section */}
                     <div>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                        <div className="flex-1">
-                          <h2 className="text-lg font-semibold text-gray-900">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                          <h2 className="text-xl font-bold text-slate-900">
                             Stored Documents
                           </h2>
-                          <p className="text-sm text-gray-500">
-                            Filter stored documents by name or date/time sent
+                          <p className="text-sm text-slate-600 mt-1">
+                            Manage and organize your documents
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            placeholder="Search documents by name or date/time..."
-                            value={docSearch}
-                            onChange={(e) => setDocSearch(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="relative flex-1 min-w-[200px]">
+                            <Search
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                              size={18}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Search documents..."
+                              value={docSearch}
+                              onChange={(e) => setDocSearch(e.target.value)}
+                              className="w-full pl-10 pr-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            />
+                          </div>
 
-                          <select
-                            value={docStatusFilter}
-                            onChange={(e) => setDocStatusFilter(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                          >
-                            <option value="">Filter by Status</option>
-                            <option value="approved">Approved</option>
-                            <option value="ongoing">Ongoing</option>
-                            <option value="completed">Completed</option>
-                          </select>
+                          <div className="relative">
+                            <Filter
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                              size={18}
+                            />
+                            <select
+                              value={docStatusFilter}
+                              onChange={(e) =>
+                                setDocStatusFilter(e.target.value)
+                              }
+                              className="pl-10 pr-8 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
+                            >
+                              <option value="">All Status</option>
+                              <option value="approved">Approved</option>
+                              <option value="ongoing">Ongoing</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          </div>
 
                           {user?.role === "Admin" && (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => {
-                                  const folderName =
-                                    prompt("Enter folder name:");
-                                  if (folderName)
-                                    handleCreateFolder(folderName);
-                                }}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
-                              >
-                                Create Folder
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => {
+                                const folderName = prompt("Enter folder name:");
+                                if (folderName) handleCreateFolder(folderName);
+                              }}
+                              className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                            >
+                              <FolderPlus size={18} />
+                              <span>New Folder</span>
+                            </button>
                           )}
                         </div>
                       </div>
 
-                      {/* Folders List */}
+                      {/* Folders Grid */}
                       {folders.length > 0 && (
-                        <div className="mb-6">
-                          <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-md font-semibold text-gray-900">
+                        <div className="mb-8">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-slate-900">
                               Folders
                             </h3>
                             {selectedFolder && (
                               <button
                                 onClick={() => setSelectedFolder(null)}
-                                className="text-sm text-blue-600 hover:text-blue-800"
+                                className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 transition-colors"
                               >
-                                ← Back to All Documents
+                                <span>←</span> Back to All
                               </button>
                             )}
                           </div>
@@ -891,17 +860,18 @@ const BarangayStorage = () => {
                                     item.folder._id === folder._id,
                                 ),
                               );
+                              const isSelectedFolder =
+                                selectedFolder &&
+                                selectedFolder._id === folder._id;
                               return (
                                 <div
                                   key={folder._id}
-                                  className={`border border-gray-200 rounded-lg p-4 cursor-pointer transition-colors relative group ${
-                                    selectedFolder &&
-                                    selectedFolder._id === folder._id
-                                      ? "bg-blue-50 border-blue-300"
-                                      : "bg-gray-50 hover:bg-gray-100"
+                                  className={`relative group border-2 rounded-xl p-5 cursor-pointer transition-all ${
+                                    isSelectedFolder
+                                      ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300 shadow-md"
+                                      : "bg-slate-50 border-slate-200 hover:border-blue-300 hover:shadow-md"
                                   }`}
                                 >
-                                  {/* Delete button */}
                                   {user?.role === "Admin" && (
                                     <button
                                       onClick={(e) => {
@@ -911,7 +881,7 @@ const BarangayStorage = () => {
                                           folder.name,
                                         );
                                       }}
-                                      className="absolute top-2 right-2 p-2 text-red-600 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                      className="absolute top-3 right-3 p-2 text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                       title="Delete folder"
                                     >
                                       <Trash2 size={16} />
@@ -920,23 +890,40 @@ const BarangayStorage = () => {
 
                                   <div
                                     onClick={() => setSelectedFolder(folder)}
+                                    className="flex items-start gap-3"
                                   >
-                                    <h4 className="font-medium text-gray-900">
-                                      {folder.name}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                      {folderDocuments.length} document
-                                      {folderDocuments.length !== 1 ? "s" : ""}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      Created by: {folder.createdBy?.firstname}{" "}
-                                      {folder.createdBy?.lastname}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {new Date(
-                                        folder.createdAt,
-                                      ).toLocaleDateString()}
-                                    </p>
+                                    <div
+                                      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isSelectedFolder ? "bg-blue-600" : "bg-blue-100"}`}
+                                    >
+                                      <svg
+                                        className={`w-6 h-6 ${isSelectedFolder ? "text-white" : "text-blue-600"}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-bold text-slate-900 truncate">
+                                        {folder.name}
+                                      </h4>
+                                      <p className="text-sm text-slate-600 mt-1">
+                                        {folderDocuments.length} document
+                                        {folderDocuments.length !== 1
+                                          ? "s"
+                                          : ""}
+                                      </p>
+                                      <p className="text-xs text-slate-500 mt-2">
+                                        By {folder.createdBy?.firstname}{" "}
+                                        {folder.createdBy?.lastname}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -945,10 +932,10 @@ const BarangayStorage = () => {
                         </div>
                       )}
 
-                      {/* Folder Contents or All Documents */}
+                      {/* Document List */}
                       {selectedFolder ? (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                          <h3 className="text-lg font-bold text-slate-900 mb-4">
                             Documents in "{selectedFolder.name}"
                           </h3>
                           {(() => {
@@ -960,26 +947,28 @@ const BarangayStorage = () => {
                               ),
                             );
                             return folderDocuments.length === 0 ? (
-                              <div className="text-center py-12 text-gray-500">
-                                <svg
-                                  className="mx-auto h-12 w-12 text-gray-400"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                                <p className="mt-2 text-sm">
+                              <div className="text-center py-16">
+                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <svg
+                                    className="h-10 w-10 text-slate-400"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                </div>
+                                <p className="text-slate-500 font-medium">
                                   No documents in this folder
                                 </p>
                               </div>
                             ) : (
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 {folderDocuments.map((item) => (
                                   <DocumentItem
                                     key={item._id}
@@ -1008,26 +997,28 @@ const BarangayStorage = () => {
                               storage.filter((item) => !item.folder),
                             );
                             return unassignedDocuments.length === 0 ? (
-                              <div className="text-center py-12 text-gray-500">
-                                <svg
-                                  className="mx-auto h-12 w-12 text-gray-400"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                                <p className="mt-2 text-sm">
+                              <div className="text-center py-16">
+                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <svg
+                                    className="h-10 w-10 text-slate-400"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                </div>
+                                <p className="text-slate-500 font-medium">
                                   No documents stored yet
                                 </p>
                               </div>
                             ) : (
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 {unassignedDocuments.map((item) => (
                                   <DocumentItem
                                     key={item._id}
@@ -1054,22 +1045,22 @@ const BarangayStorage = () => {
 
                     {/* Users Section */}
                     {user?.role === "Admin" && (
-                      <div className="border-t pt-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      <div className="border-t-2 border-slate-200 pt-8">
+                        <h2 className="text-xl font-bold text-slate-900 mb-6">
                           Assigned Users
                         </h2>
 
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-6 mb-6">
+                          <label className="block text-sm font-bold text-slate-900 mb-3">
                             Add User to Barangay
                           </label>
-                          <div className="flex gap-2">
+                          <div className="flex gap-3">
                             <select
                               value={selectedUserToAdd}
                               onChange={(e) =>
                                 setSelectedUserToAdd(e.target.value)
                               }
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                             >
                               <option value="">Select a user...</option>
                               {availableUsers
@@ -1083,66 +1074,80 @@ const BarangayStorage = () => {
                             </select>
                             <button
                               onClick={handleAssignUser}
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                              className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
                             >
-                              Add
+                              Add User
                             </button>
                           </div>
                         </div>
 
                         {usersInBarangay.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-6">
-                            No users assigned yet
-                          </p>
+                          <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <svg
+                                className="w-8 h-8 text-slate-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                />
+                              </svg>
+                            </div>
+                            <p className="text-sm text-slate-500 font-medium">
+                              No users assigned yet
+                            </p>
+                          </div>
                         ) : (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead className="bg-gray-50 border-b border-gray-200">
+                          <div className="overflow-hidden border-2 border-slate-200 rounded-xl">
+                            <table className="w-full">
+                              <thead className="bg-gradient-to-r from-slate-100 to-slate-50">
                                 <tr>
-                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     Username
                                   </th>
-                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
-                                    First Name
+                                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    Name
                                   </th>
-                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
-                                    Last Name
-                                  </th>
-                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     Role
                                   </th>
-                                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     Position
                                   </th>
-                                  <th className="px-4 py-3 text-center font-medium text-gray-700">
+                                  <th className="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">
                                     Actions
                                   </th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-gray-200">
+                              <tbody className="bg-white divide-y divide-slate-200">
                                 {usersInBarangay.map((u) => (
-                                  <tr key={u._id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3 text-gray-900">
+                                  <tr
+                                    key={u._id}
+                                    className="hover:bg-slate-50 transition-colors"
+                                  >
+                                    <td className="px-6 py-4 text-sm font-medium text-slate-900">
                                       {u.username}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-700">
-                                      {u.firstname || "—"}
+                                    <td className="px-6 py-4 text-sm text-slate-700">
+                                      {u.firstname} {u.lastname}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-700">
-                                      {u.lastname || "—"}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                    <td className="px-6 py-4">
+                                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
                                         {u.role}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-3 text-gray-700">
+                                    <td className="px-6 py-4 text-sm text-slate-700">
                                       {u.position || "—"}
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-6 py-4 text-center">
                                       <button
                                         onClick={() => handleRemoveUser(u._id)}
-                                        className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs font-medium transition-colors duration-150"
+                                        className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold transition-colors"
                                       >
                                         Remove
                                       </button>
@@ -1156,38 +1161,44 @@ const BarangayStorage = () => {
                       </div>
                     )}
 
-                    {/* Activity Updates Sub-Storage (Officials can upload, Admins can view) */}
+                    {/* Activity Updates Section */}
                     {selectedDocument &&
                       user?.role &&
                       (user.role === "Official" || user.role === "Admin") && (
-                        <div className="border-t pt-6">
-                          <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900">
-                              Activity Updates -{" "}
-                              {selectedDocument.documentName ||
-                                selectedDocument.document?.subject ||
-                                "Document"}
-                            </h2>
+                        <div className="border-t-2 border-slate-200 pt-8">
+                          <div className="flex justify-between items-center mb-6">
+                            <div>
+                              <h2 className="text-xl font-bold text-slate-900">
+                                Activity Updates
+                              </h2>
+                              <p className="text-sm text-slate-600 mt-1">
+                                {selectedDocument.documentName ||
+                                  selectedDocument.document?.subject ||
+                                  "Document"}
+                              </p>
+                            </div>
                             <button
                               onClick={() => setSelectedDocument(null)}
-                              className="text-sm text-gray-500 hover:text-gray-700"
+                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                             >
-                              ✕ Close
+                              <X size={20} className="text-slate-500" />
                             </button>
                           </div>
 
-                          {/* Upload Photo Form - Officials only */}
                           {user?.role === "Official" && (
                             <form
                               onSubmit={handleUploadActivityPhoto}
-                              className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
+                              className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-xl p-6 mb-6"
                             >
-                              <h3 className="font-semibold text-gray-900 mb-3">
+                              <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                                  <ImageIcon className="text-white" size={16} />
+                                </div>
                                 Post Activity Photo Update
                               </h3>
-                              <div className="space-y-3">
+                              <div className="space-y-4">
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  <label className="block text-sm font-bold text-slate-900 mb-2">
                                     Photo
                                   </label>
                                   <input
@@ -1198,12 +1209,12 @@ const BarangayStorage = () => {
                                         e.target.files?.[0] || null,
                                       )
                                     }
-                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
                                     required
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  <label className="block text-sm font-bold text-slate-900 mb-2">
                                     Caption
                                   </label>
                                   <textarea
@@ -1212,15 +1223,15 @@ const BarangayStorage = () => {
                                       setActivityCaption(e.target.value)
                                     }
                                     placeholder="Add a caption for this update..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    rows={2}
+                                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
+                                    rows={3}
                                   />
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                   <button
                                     type="submit"
                                     disabled={uploadingActivity}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
                                   >
                                     {uploadingActivity
                                       ? "Uploading..."
@@ -1232,7 +1243,7 @@ const BarangayStorage = () => {
                                       setActivityPhotoFile(null);
                                       setActivityCaption("");
                                     }}
-                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200"
+                                    className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold transition-all"
                                   >
                                     Clear
                                   </button>
@@ -1241,63 +1252,70 @@ const BarangayStorage = () => {
                             </form>
                           )}
 
-                          {/* Activity Updates Display */}
                           <div>
-                            <h3 className="text-md font-semibold text-gray-900 mb-3">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">
                               Updates ({activityUpdates.length})
                             </h3>
                             {activityUpdates.length === 0 ? (
-                              <div className="text-center py-8 text-gray-500">
-                                <p className="text-sm">
+                              <div className="text-center py-12">
+                                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                  <ImageIcon
+                                    className="text-slate-400"
+                                    size={32}
+                                  />
+                                </div>
+                                <p className="text-sm text-slate-500 font-medium">
                                   No activity updates yet
                                 </p>
                               </div>
                             ) : (
-                              <div className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {activityUpdates.map((update) => (
                                   <div
                                     key={update._id}
-                                    className="border border-gray-200 rounded-lg p-4"
+                                    className="border-2 border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
                                   >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <p className="text-sm font-medium text-gray-900">
-                                          {update.uploadedBy?.firstname}{" "}
-                                          {update.uploadedBy?.lastname}
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                          {new Date(
-                                            update.createdAt,
-                                          ).toLocaleDateString()}{" "}
-                                          {new Date(
-                                            update.createdAt,
-                                          ).toLocaleTimeString()}
-                                        </p>
-                                      </div>
-                                      {String(update.uploadedBy?._id) ===
-                                        String(user?._id) && (
-                                        <button
-                                          onClick={() =>
-                                            handleDeleteActivityUpdate(
-                                              update._id,
-                                            )
-                                          }
-                                          className="px-2 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors"
-                                        >
-                                          Delete
-                                        </button>
-                                      )}
-                                    </div>
                                     <img
                                       src={`http://localhost:5000${update.photoUrl}`}
                                       alt="Activity update"
-                                      className="w-full h-auto rounded-md mb-2 max-h-96 object-cover"
+                                      className="w-full h-48 object-cover"
                                     />
-                                    {update.caption && (
-                                      <p className="text-sm text-gray-700">
-                                        {update.caption}
-                                      </p>
-                                    )}
+                                    <div className="p-4">
+                                      <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                          <p className="text-sm font-bold text-slate-900">
+                                            {update.uploadedBy?.firstname}{" "}
+                                            {update.uploadedBy?.lastname}
+                                          </p>
+                                          <p className="text-xs text-slate-500">
+                                            {new Date(
+                                              update.createdAt,
+                                            ).toLocaleDateString()}{" "}
+                                            {new Date(
+                                              update.createdAt,
+                                            ).toLocaleTimeString()}
+                                          </p>
+                                        </div>
+                                        {String(update.uploadedBy?._id) ===
+                                          String(user?._id) && (
+                                          <button
+                                            onClick={() =>
+                                              handleDeleteActivityUpdate(
+                                                update._id,
+                                              )
+                                            }
+                                            className="px-3 py-1 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition-colors"
+                                          >
+                                            Delete
+                                          </button>
+                                        )}
+                                      </div>
+                                      {update.caption && (
+                                        <p className="text-sm text-slate-700 mt-2">
+                                          {update.caption}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -1307,22 +1325,26 @@ const BarangayStorage = () => {
                       )}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-                    <svg
-                      className="h-16 w-16 text-gray-300 mb-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <p className="text-lg font-medium">Select a barangay</p>
-                    <p className="text-sm mt-1">
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-6">
+                      <svg
+                        className="h-12 w-12 text-blue-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-xl font-bold text-slate-900 mb-2">
+                      Select a barangay
+                    </p>
+                    <p className="text-sm text-slate-500">
                       Choose a barangay from the list to view documents
                     </p>
                   </div>
@@ -1336,7 +1358,7 @@ const BarangayStorage = () => {
   );
 };
 
-// Reusable Document Item Component
+// Enhanced Document Item Component
 const DocumentItem = ({
   item,
   user,
@@ -1409,37 +1431,51 @@ const DocumentItem = ({
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "completed":
+        return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200";
+      case "ongoing":
+        return "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border-amber-200";
+      default:
+        return "bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-200";
+    }
+  };
+
   return (
-    <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">
+    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-slate-900 text-lg mb-2">
             {item.documentName || item.document?.subject || "Document"}
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            From: {item.document?.sender?.username || item.uploadedBy?.username}{" "}
+          <p className="text-sm text-slate-600 mb-3">
+            From:{" "}
+            <span className="font-semibold">
+              {item.document?.sender?.username || item.uploadedBy?.username}
+            </span>{" "}
             ({item.document?.sender?.firstname || item.uploadedBy?.firstname}{" "}
             {item.document?.sender?.lastname || item.uploadedBy?.lastname})
           </p>
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`px-2 py-1 rounded-full ${
-                (item.document?.status || item.status) === "completed"
-                  ? "bg-green-100 text-green-700"
-                  : (item.document?.status || item.status) === "ongoing"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-gray-100 text-gray-700"
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${getStatusColor(
+                item.document?.status || item.status,
+              )}`}
             >
               {item.document?.status || item.status}
             </span>
-            <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
+              {new Date(item.createdAt).toLocaleDateString()}
+            </span>
           </div>
           {item.description && (
-            <p className="text-sm text-gray-700 mt-2">{item.description}</p>
+            <p className="text-sm text-slate-700 mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              {item.description}
+            </p>
           )}
         </div>
-        <div className="ml-3 flex items-center gap-2">
+        <div className="ml-4 flex items-start gap-2">
           {user?.role &&
             (user.role === "Official" || user.role === "Admin") && (
               <button
@@ -1447,16 +1483,16 @@ const DocumentItem = ({
                   setSelectedDocument(item);
                   fetchActivityUpdates(item.document?._id || item._id);
                 }}
-                className="px-3 py-1 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded text-sm font-medium transition-colors duration-150"
+                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
               >
-                Activity Updates
+                Activity
               </button>
             )}
           {item.documentUrl && (
             <a
               href={`http://localhost:5000${item.documentUrl}`}
               download={item.documentName}
-              className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-sm font-medium transition-colors duration-150"
+              className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
               target="_blank"
               rel="noreferrer"
             >
@@ -1466,20 +1502,21 @@ const DocumentItem = ({
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              className="p-2.5 hover:bg-slate-100 rounded-lg transition-colors border-2 border-slate-200"
               title="More options"
             >
-              <MoreVertical size={18} className="text-gray-600" />
+              <MoreVertical size={18} className="text-slate-600" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-52 bg-white border-2 border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
                 <button
                   onClick={() => {
                     setShowCalendarModal(true);
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 font-medium border-b border-gray-200 last:border-b-0"
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm text-slate-700 font-semibold transition-colors flex items-center gap-2"
                 >
+                  <Calendar size={16} className="text-blue-600" />
                   Add to Calendar
                 </button>
               </div>
@@ -1488,12 +1525,12 @@ const DocumentItem = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 pt-4 border-t-2 border-slate-100">
         {String(item.document?.sender?._id) === String(user?._id) && (
           <>
             <button
               onClick={() => handleUpdateStatus(item.document?._id, "ongoing")}
-              className="px-3 py-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 rounded text-sm font-medium transition-colors duration-150"
+              className="px-4 py-2 bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 rounded-lg text-sm font-semibold border-2 border-amber-200 transition-all"
             >
               Mark Ongoing
             </button>
@@ -1501,7 +1538,7 @@ const DocumentItem = ({
               onClick={() =>
                 handleUpdateStatus(item.document?._id, "completed")
               }
-              className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded text-sm font-medium transition-colors duration-150"
+              className="px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 hover:from-emerald-200 hover:to-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold border-2 border-emerald-200 transition-all"
             >
               Mark Completed
             </button>
@@ -1516,7 +1553,7 @@ const DocumentItem = ({
                 handleMoveToFolder(item._id, folderId || null);
                 e.target.value = "";
               }}
-              className="px-3 py-1 border border-gray-300 rounded text-sm"
+              className="px-4 py-2 border-2 border-slate-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               defaultValue=""
             >
               <option value="">Move to Folder</option>
@@ -1535,11 +1572,9 @@ const DocumentItem = ({
                   const token = localStorage.getItem("token");
                   const docId = item.document?._id || item.document;
                   const url = `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`;
-                  console.log("Deleting from URL:", url);
                   await axios.delete(url, {
                     headers: { Authorization: `Bearer ${token}` },
                   });
-                  // Remove from state immediately
                   setStorage(
                     storage.filter(
                       (s) => (s.document?._id || s.document) !== docId,
@@ -1547,16 +1582,11 @@ const DocumentItem = ({
                   );
                   alert("Message removed from barangay and returned to inbox");
                 } catch (err) {
-                  console.error("Detach failed - Full Error:", {
-                    status: err.response?.status,
-                    data: err.response?.data,
-                    message: err.message,
-                    error: err,
-                  });
+                  console.error("Detach failed:", err);
                   alert("Failed to remove message from barangay");
                 }
               }}
-              className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-sm font-medium transition-colors duration-150"
+              className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
             >
               Remove
             </button>
@@ -1564,24 +1594,27 @@ const DocumentItem = ({
         )}
       </div>
 
-      {/* Add to Calendar Modal */}
+      {/* Calendar Modal */}
       {showCalendarModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
-                Add to Calendar
-              </h3>
-              <button
-                onClick={() => setShowCalendarModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Calendar size={24} />
+                  Add to Calendar
+                </h3>
+                <button
+                  onClick={() => setShowCalendarModal(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={24} className="text-white" />
+                </button>
+              </div>
             </div>
-            <form onSubmit={handleAddToCalendar} className="space-y-4">
+            <form onSubmit={handleAddToCalendar} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block text-sm font-bold text-slate-900 mb-2">
                   Start Date & Time *
                 </label>
                 <input
@@ -1593,12 +1626,12 @@ const DocumentItem = ({
                       startDate: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2">
+                <label className="block text-sm font-bold text-slate-900 mb-2">
                   End Date & Time
                 </label>
                 <input
@@ -1610,21 +1643,21 @@ const DocumentItem = ({
                       endDate: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
                   disabled={addingToCalendar}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
                 >
                   {addingToCalendar ? "Adding..." : "Add to Calendar"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCalendarModal(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold transition-colors"
+                  className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
                 >
                   Cancel
                 </button>
