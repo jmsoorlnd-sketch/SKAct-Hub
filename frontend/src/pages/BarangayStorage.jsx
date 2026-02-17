@@ -10,6 +10,11 @@ import {
   FolderPlus,
   Search,
   Filter,
+  PenSquare,
+  AlignLeft,
+  Paperclip,
+  Send,
+  Tag,
   X,
   Calendar,
   Image as ImageIcon,
@@ -51,6 +56,7 @@ const BarangayStorage = () => {
   const [activityCaption, setActivityCaption] = useState("");
   const [uploadingActivity, setUploadingActivity] = useState(false);
   const [showUsersModal, setShowUsersModal] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
 
   useEffect(() => {
     let userData = null;
@@ -331,6 +337,20 @@ const BarangayStorage = () => {
     }
   };
 
+  const handleOpenCompose = () => {
+    setComposeSubject("");
+    setComposeBody("");
+    setComposeFile(null);
+    setShowComposeModal(true);
+  };
+
+  const handleCloseCompose = () => {
+    setShowComposeModal(false);
+    setComposeSubject("");
+    setComposeBody("");
+    setComposeFile(null);
+  };
+
   const handleSendToBarangay = async () => {
     if (!selectedBarangay) return alert("Select a barangay first");
     if (!composeSubject || !composeBody)
@@ -355,9 +375,7 @@ const BarangayStorage = () => {
       alert(
         "Message sent to admin for approval. It will be stored after approval.",
       );
-      setComposeSubject("");
-      setComposeBody("");
-      setComposeFile(null);
+      handleCloseCompose();
       fetchStorageDocuments(selectedBarangay);
     } catch (error) {
       console.error("Error sending to barangay:", error);
@@ -583,15 +601,19 @@ const BarangayStorage = () => {
                   </button>
                 )}
 
-                {user?.role === "Admin" && (
-                  <button
-                    onClick={() => navigate("/admin-dashboard")}
-                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                  >
-                    <Check size={20} />
-                    <span>Approved</span>
-                  </button>
-                )}
+                {user &&
+                  user.role !== "Admin" &&
+                  selectedBarangay &&
+                  String(user?.barangay?._id || user?.barangay) ===
+                    String(selectedBarangay) && (
+                    <button
+                      onClick={handleOpenCompose}
+                      className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                    >
+                      <PenSquare size={20} />
+                      <span>Compose</span>
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -672,10 +694,10 @@ const BarangayStorage = () => {
                               }
                               fetchStorageDocuments(b._id, currentUser);
                             }}
-                            className={`p-4 cursor-pointer transition-all duration-300 ${
+                            className={`p-4 cursor-pointer transition-all duration-200 ${
                               isSelected
-                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600 shadow-md"
-                                : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-slate-50 hover:shadow-md hover:border-l-4 hover:border-blue-300"
+                                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-600"
+                                : "hover:bg-slate-50"
                             }`}
                           >
                             <div className="flex justify-between items-start gap-3">
@@ -720,62 +742,6 @@ const BarangayStorage = () => {
               <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
                 {selectedBarangay ? (
                   <div className="space-y-6">
-                    {/* Compose Message Section */}
-                    {user &&
-                      user.role !== "Admin" &&
-                      String(userBarangayId) === String(selectedBarangay) && (
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
-                          <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                              <span className="text-white text-sm">✉</span>
-                            </div>
-                            Compose Message
-                          </h3>
-                          <div className="space-y-4">
-                            <input
-                              value={composeSubject}
-                              onChange={(e) =>
-                                setComposeSubject(e.target.value)
-                              }
-                              placeholder="Subject"
-                              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                            />
-                            <textarea
-                              value={composeBody}
-                              onChange={(e) => setComposeBody(e.target.value)}
-                              placeholder="Message body"
-                              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-                              rows={4}
-                            />
-                            <input
-                              type="file"
-                              onChange={(e) =>
-                                setComposeFile(e.target.files?.[0] || null)
-                              }
-                              className="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-all cursor-pointer"
-                            />
-                            <div className="flex gap-3">
-                              <button
-                                onClick={handleSendToBarangay}
-                                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all"
-                              >
-                                Send Message
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setComposeSubject("");
-                                  setComposeBody("");
-                                  setComposeFile(null);
-                                }}
-                                className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-sm font-semibold transition-all"
-                              >
-                                Clear
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                     {/* Documents Section */}
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -1356,6 +1322,138 @@ const BarangayStorage = () => {
           </div>
         </div>
       </div>
+
+      {/* ==================== COMPOSE MESSAGE MODAL ==================== */}
+      {showComposeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-white">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <PenSquare size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Compose Message</h2>
+                    <p className="text-indigo-100 text-sm">
+                      Send a document to your barangay
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseCompose}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={22} className="text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+              {/* Subject */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                  <Tag size={15} className="text-indigo-600" />
+                  Subject <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={composeSubject}
+                  onChange={(e) => setComposeSubject(e.target.value)}
+                  placeholder="e.g., Monthly Report Submission"
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                />
+              </div>
+
+              {/* Body */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                  <AlignLeft size={15} className="text-indigo-600" />
+                  Message Body <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={composeBody}
+                  onChange={(e) => setComposeBody(e.target.value)}
+                  placeholder="Write your message here..."
+                  rows={5}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                />
+              </div>
+
+              {/* Attachment */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                  <Paperclip size={15} className="text-indigo-600" />
+                  Attachment{" "}
+                  <span className="text-slate-400 font-normal text-xs">
+                    (optional)
+                  </span>
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 hover:border-indigo-400 transition-colors">
+                  <input
+                    type="file"
+                    onChange={(e) =>
+                      setComposeFile(e.target.files?.[0] || null)
+                    }
+                    className="block w-full text-sm text-slate-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-indigo-100 file:text-indigo-700
+                      hover:file:bg-indigo-200 transition-all cursor-pointer"
+                  />
+                  {composeFile && (
+                    <div className="mt-3 flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+                      <span className="text-xs font-semibold text-indigo-700 truncate">
+                        {composeFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setComposeFile(null)}
+                        className="ml-2 text-indigo-400 hover:text-indigo-600 flex-shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info note */}
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <p className="text-amber-800 text-sm font-medium">
+                  Your message will be sent to the admin for approval before it
+                  is stored in the barangay documents.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
+              <button
+                onClick={handleSendToBarangay}
+                disabled={!composeSubject.trim() || !composeBody.trim()}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                <Send size={18} />
+                <span>Send Message</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseCompose}
+                className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
@@ -1445,7 +1543,7 @@ const DocumentItem = ({
   };
 
   return (
-    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-300 bg-white hover:scale-[1.01] hover:bg-blue-50/30">
+    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-slate-900 text-lg mb-2">
