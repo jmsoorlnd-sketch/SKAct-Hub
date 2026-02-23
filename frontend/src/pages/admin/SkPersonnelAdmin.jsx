@@ -12,7 +12,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import Layout from "../../layout/Layout";
 import { useToast } from "../../components/Toast";
 
 const SkPersonnelAdmin = () => {
@@ -166,12 +165,12 @@ const SkPersonnelAdmin = () => {
                       : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
                   }`}
                 >
-                  {isInactive ? <UserX size={14} /> : <UserCheck size={14} />}
+                  {isInactive ? <UserX size={18} /> : <UserCheck size={18} />}
                   {data?.status || "Active"}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border-2 border-amber-200">
-                  <UserX size={14} />
+                  <UserX size={18} />
                   Vacant
                 </span>
               )}
@@ -211,12 +210,12 @@ const SkPersonnelAdmin = () => {
                   : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
               }`}
             >
-              {isInactive ? <UserX size={12} /> : <UserCheck size={12} />}
+              {isInactive ? <UserX size={18} /> : <UserCheck size={18} />}
               {data?.status || "Active"}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border-2 border-amber-200">
-              <UserX size={12} />
+              <UserX size={18} />
               Vacant
             </span>
           )}
@@ -227,17 +226,15 @@ const SkPersonnelAdmin = () => {
 
   /* ===================== RENDER ===================== */
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-8">
+          <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  SK Personnel Directory
-                </h1>
-                <p className="text-slate-600 mt-2 text-lg">
+                <h1 className="text-2xl font-bold">SK Personnel Directory</h1>
+                <p className="text-slate-600 mt-1 text-sm">
                   Official directory of Sangguniang Kabataan members
                 </p>
               </div>
@@ -307,49 +304,49 @@ const SkPersonnelAdmin = () => {
               ) : skPersonnel ? (
                 <>
                   {/* Statistics Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    {" "}
                     {/* Total Members */}
-                    <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 ">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <Users className="w-7 h-7 text-white" />
+                        <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                          <Users className="w-5 h-5 text-white" />
                         </div>
-                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
                           Total
                         </span>
                       </div>
-                      <h3 className="text-slate-500 text-sm font-semibold mb-1">
+                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
                         Total Members
                       </h3>
-                      <p className="text-3xl font-bold text-slate-900 mb-2">
+                      <p className="text-2xl font-bold text-slate-900 mb-2">
                         {statistics.total}
                       </p>
                       <div className="flex items-center text-xs text-slate-500">
-                        <Users className="w-4 h-4 text-blue-500 mr-1" />
+                        <Users className="w-3 h-3 text-blue-500 mr-1" />
                         <span>SK Personnel</span>
                       </div>
                     </div>
-
                     {/* Active Members */}
-                    <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 hover:shadow-xl transition-all hover:-translate-y-1">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <UserCheck className="w-7 h-7 text-white" />
+                        <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
+                          <UserCheck className="w-5 h-5 text-white" />
                         </div>
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">
                           {statistics.activeRate}%
                         </span>
                       </div>
-                      <h3 className="text-slate-500 text-sm font-semibold mb-1">
+                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
                         Active Members
                       </h3>
-                      <p className="text-3xl font-bold text-slate-900 mb-2">
+                      <p className="text-2xl font-bold text-slate-900 mb-2">
                         {statistics.active}
                       </p>
                       <div className="flex items-center text-xs text-slate-500">
-                        <div className="flex-1 bg-slate-200 rounded-full h-2 mr-2">
+                        <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
                           <div
-                            className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full transition-all duration-1000"
+                            className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-1.5 rounded-full transition-all duration-1000"
                             style={{ width: `${statistics.activeRate}%` }}
                           ></div>
                         </div>
@@ -358,27 +355,26 @@ const SkPersonnelAdmin = () => {
                         </span>
                       </div>
                     </div>
-
                     {/* Inactive Members */}
-                    <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div className="bg-white rounded-xl shadow-lg border-2 border-slate-200 p-4 hover:shadow-xl transition-all hover:-translate-y-1">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <UserX className="w-7 h-7 text-white" />
+                        <div className="w-11 h-11 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+                          <UserX className="w-5 h-5 text-white" />
                         </div>
-                        <span className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
                           Inactive
                         </span>
                       </div>
-                      <h3 className="text-slate-500 text-sm font-semibold mb-1">
+                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
                         Inactive Members
                       </h3>
-                      <p className="text-3xl font-bold text-slate-900 mb-2">
+                      <p className="text-2xl font-bold text-slate-900 mb-2">
                         {statistics.inactive}
                       </p>
                       <div className="flex items-center text-xs text-slate-500">
-                        <div className="flex-1 bg-slate-200 rounded-full h-2 mr-2">
+                        <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
                           <div
-                            className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-1000"
+                            className="bg-gradient-to-r from-red-500 to-red-600 h-1.5 rounded-full transition-all duration-1000"
                             style={{
                               width: `${statistics.total > 0 ? ((statistics.inactive / statistics.total) * 100).toFixed(1) : 0}%`,
                             }}
@@ -395,25 +391,24 @@ const SkPersonnelAdmin = () => {
                         </span>
                       </div>
                     </div>
-
                     {/* Key Positions */}
-                    <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1">
+                    <div className="bg-white rounded-xl shadow-lg border-2 border-slate-200 p-4 hover:shadow-xl transition-all hover:-translate-y-1">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <Award className="w-7 h-7 text-white" />
+                        <div className="w-11 h-11 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                          <Award className="w-5 h-5 text-white" />
                         </div>
-                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-lg text-xs font-bold">
                           Officers
                         </span>
                       </div>
-                      <h3 className="text-slate-500 text-sm font-semibold mb-1">
+                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
                         Key Positions
                       </h3>
-                      <p className="text-3xl font-bold text-slate-900 mb-2">
+                      <p className="text-2xl font-bold text-slate-900 mb-2">
                         3
                       </p>
                       <div className="flex items-center text-xs text-slate-500">
-                        <Shield className="w-4 h-4 text-purple-500 mr-1" />
+                        <Shield className="w-3 h-3 text-purple-500 mr-1" />
                         <span>Executive Officers</span>
                       </div>
                     </div>
@@ -510,7 +505,7 @@ const SkPersonnelAdmin = () => {
                           ) : (
                             <div className="text-center py-12">
                               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                <Users className="text-slate-400" size={32} />
+                                <Users className="text-slate-400" size={18} />
                               </div>
                               <p className="text-sm text-slate-500 font-medium">
                                 No kagawad members assigned
@@ -526,7 +521,7 @@ const SkPersonnelAdmin = () => {
                 <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-12">
                   <div className="text-center">
                     <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users className="text-slate-400" size={40} />
+                      <Users className="text-slate-400" size={18} />
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 mb-2">
                       No Personnel Data
@@ -541,7 +536,7 @@ const SkPersonnelAdmin = () => {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

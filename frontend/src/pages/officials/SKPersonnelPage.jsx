@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { useToast } from "../../components/Toast";
-import Layout from "../../layout/Layout";
 
 const SKPersonnelPage = () => {
   const navigate = useNavigate();
@@ -405,32 +404,30 @@ const SKPersonnelPage = () => {
   /* ===================== LOADING STATE ===================== */
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-3"></div>
             <p className="text-slate-600 font-medium">
               Loading SK personnel...
             </p>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   /* ===================== RENDER ===================== */
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              SK Personnel Management
-            </h1>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold">SK Personnel Management</h1>
             {barangayName && (
-              <p className="text-slate-600 mt-2 text-lg flex items-center gap-2">
-                <Shield className="w-5 h-5 text-blue-600" />
+              <p className="text-slate-600 mt-1 text-sm flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-600" />
                 Barangay:{" "}
                 <span className="font-bold text-blue-600">{barangayName}</span>
               </p>
@@ -438,7 +435,7 @@ const SKPersonnelPage = () => {
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard
               icon={Users}
               title="Total Members"
@@ -474,11 +471,11 @@ const SKPersonnelPage = () => {
           </div>
 
           {/* Key Officials Section */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">
               Key Officials
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Chairman */}
               <OfficialCard
                 title="SK Chairman"
@@ -518,17 +515,17 @@ const SKPersonnelPage = () => {
           </div>
 
           {/* SK Kagawad Section */}
-          <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-6 py-5 border-b-2 border-slate-200">
+          <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-5 py-4 border-b-2 border-slate-200">
               <div className="flex justify-between items-center">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Users className="w-6 h-6 text-purple-600" />
-                    <h2 className="text-2xl font-bold text-slate-900">
+                    <Users className="w-5 h-5 text-purple-600" />
+                    <h2 className="text-lg font-bold text-slate-900">
                       SK Kagawad
                     </h2>
                   </div>
-                  <p className="text-sm text-slate-600 mt-1">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     {skPersonnel?.kagawad?.length || 0} member
                     {(skPersonnel?.kagawad?.length || 0) !== 1 ? "s" : ""}
                   </p>
@@ -536,23 +533,23 @@ const SKPersonnelPage = () => {
                 {!showAddKagawad && (
                   <button
                     onClick={() => setShowAddKagawad(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
                   >
-                    <Plus size={20} />
+                    <Plus size={18} />
                     <span>Add Kagawad</span>
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-5">
               {/* Add Kagawad Form */}
               {showAddKagawad && (
-                <div className="mb-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-                  <h3 className="text-lg font-bold text-slate-900 mb-4">
+                <div className="mb-5 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                  <h3 className="text-base font-bold text-slate-900 mb-3">
                     Add New Kagawad
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
                     <input
                       type="text"
                       placeholder="Surname *"
@@ -563,7 +560,7 @@ const SKPersonnelPage = () => {
                           surname: e.target.value,
                         })
                       }
-                      className="px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                     <input
                       type="text"
@@ -575,7 +572,7 @@ const SKPersonnelPage = () => {
                           firstName: e.target.value,
                         })
                       }
-                      className="px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                     <input
                       type="text"
@@ -587,7 +584,7 @@ const SKPersonnelPage = () => {
                           middleName: e.target.value,
                         })
                       }
-                      className="px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                     <input
                       type="number"
@@ -596,10 +593,10 @@ const SKPersonnelPage = () => {
                       onChange={(e) =>
                         setKagawadForm({ ...kagawadForm, age: e.target.value })
                       }
-                      className="px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <select
                       value={kagawadForm.status}
                       onChange={(e) =>
@@ -608,25 +605,25 @@ const SKPersonnelPage = () => {
                           status: e.target.value,
                         })
                       }
-                      className="px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                      className="px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
                     >
                       <option>Active</option>
                       <option>Inactive</option>
                     </select>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <button
                       onClick={handleAddKagawad}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                      className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg font-bold text-sm shadow-md transition-all flex items-center gap-2"
                     >
-                      <Save size={18} />
+                      <Save size={16} />
                       Add Kagawad
                     </button>
                     <button
                       onClick={() => setShowAddKagawad(false)}
-                      className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all flex items-center gap-2"
+                      className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold text-sm transition-all flex items-center gap-2"
                     >
-                      <Ban size={18} />
+                      <Ban size={16} />
                       Cancel
                     </button>
                   </div>
@@ -639,52 +636,52 @@ const SKPersonnelPage = () => {
                   {skPersonnel.kagawad.map((k) => (
                     <div
                       key={k._id}
-                      className="p-5 bg-slate-50 rounded-xl border-2 border-slate-200 hover:shadow-md hover:border-blue-300 transition-all"
+                      className="p-4 bg-slate-50 rounded-lg border-2 border-slate-200 hover:shadow-md hover:border-blue-300 transition-all"
                     >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className="w-12 h-12 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-md">
-                            <span className="text-white font-bold text-lg">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-md">
+                            <span className="text-white font-bold text-base">
                               {k.name?.charAt(0) || "K"}
                             </span>
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-bold text-slate-900 text-lg">
+                            <h4 className="font-bold text-slate-900 text-base">
                               {k.name}
                             </h4>
-                            <p className="text-sm text-slate-600 mt-1">
+                            <p className="text-xs text-slate-600 mt-0.5">
                               Age: {k.age}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold border-2 ${
                               k.status === "Active"
                                 ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                                 : "bg-red-100 text-red-700 border-red-200"
                             }`}
                           >
                             {k.status === "Active" ? (
-                              <UserCheck size={14} />
+                              <UserCheck size={12} />
                             ) : (
-                              <UserX size={14} />
+                              <UserX size={12} />
                             )}
                             {k.status}
                           </span>
                           <button
                             onClick={() => setEditingKagawad(k._id)}
-                            className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+                            className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
                             title="Edit"
                           >
-                            <Edit2 size={16} />
+                            <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => handleDeleteKagawad(k._id)}
-                            className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                            className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
                             title="Delete"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
@@ -716,7 +713,7 @@ const SKPersonnelPage = () => {
           onClose={() => setEditingKagawad(null)}
         />
       )}
-    </Layout>
+    </>
   );
 };
 
@@ -756,26 +753,28 @@ const StatCard = ({
   const c = colors[color];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1">
-      <div className="flex items-start justify-between mb-4">
+    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
+      <div className="flex items-start justify-between mb-3">
         <div
-          className={`w-14 h-14 bg-gradient-to-br ${c.bg} rounded-xl flex items-center justify-center shadow-lg`}
+          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
         >
-          <Icon className="w-7 h-7 text-white" />
+          <Icon className="w-5 h-5 text-white" />
         </div>
         {percentage !== undefined && (
-          <span className={`px-3 py-1 ${c.badge} rounded-lg text-xs font-bold`}>
+          <span
+            className={`px-2 py-0.5 ${c.badge} rounded-md text-[11px] font-bold`}
+          >
             {percentage}%
           </span>
         )}
       </div>
-      <h3 className="text-slate-500 text-sm font-semibold mb-1">{title}</h3>
-      <p className="text-3xl font-bold text-slate-900 mb-2">{value}</p>
+      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">{title}</h3>
+      <p className="text-2xl font-bold text-slate-900 mb-2">{value}</p>
       {percentage !== undefined && (
-        <div className="flex items-center text-xs text-slate-500">
-          <div className="flex-1 bg-slate-200 rounded-full h-2 mr-2">
+        <div className="flex items-center text-[11px] text-slate-500">
+          <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
             <div
-              className={`bg-gradient-to-r ${c.bar} h-2 rounded-full transition-all duration-1000`}
+              className={`bg-gradient-to-r ${c.bar} h-1.5 rounded-full transition-all duration-1000`}
               style={{ width: `${percentage}%` }}
             ></div>
           </div>
@@ -783,8 +782,8 @@ const StatCard = ({
         </div>
       )}
       {subtitle && (
-        <div className="flex items-center text-xs text-slate-500 mt-2">
-          <Shield className="w-4 h-4 mr-1" />
+        <div className="flex items-center text-[11px] text-slate-500 mt-2">
+          <Shield className="w-3 h-3 mr-1" />
           <span>{subtitle}</span>
         </div>
       )}
@@ -828,14 +827,14 @@ const OfficialCard = ({
 
   return (
     <div
-      className={`p-6 bg-gradient-to-r ${c.bg} rounded-xl border-2 ${c.border} shadow-lg hover:shadow-xl transition-all`}
+      className={`p-5 bg-gradient-to-r ${c.bg} rounded-xl border-2 ${c.border} shadow-md`}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2.5">
           <div
-            className={`w-12 h-12 ${c.badge} rounded-xl flex items-center justify-center shadow-lg`}
+            className={`w-10 h-10 ${c.badge} rounded-lg flex items-center justify-center shadow-md`}
           >
-            <span className="text-white font-bold text-lg">
+            <span className="text-white font-bold text-base">
               {isAssigned
                 ? `${formData.firstName.charAt(0)}${formData.surname.charAt(0)}`
                 : "?"}
@@ -843,7 +842,7 @@ const OfficialCard = ({
           </div>
           <div>
             <span
-              className={`inline-block px-3 py-1 text-xs font-bold rounded-lg ${c.badge} text-white`}
+              className={`inline-block px-2.5 py-0.5 text-[11px] font-bold rounded-md ${c.badge} text-white`}
             >
               {title}
             </span>
@@ -852,7 +851,7 @@ const OfficialCard = ({
       </div>
 
       {isEditing ? (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <input
             type="text"
             placeholder="Surname"
@@ -860,7 +859,7 @@ const OfficialCard = ({
             onChange={(e) =>
               setFormData({ ...formData, surname: e.target.value })
             }
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
           <input
             type="text"
@@ -869,7 +868,7 @@ const OfficialCard = ({
             onChange={(e) =>
               setFormData({ ...formData, firstName: e.target.value })
             }
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
           <input
             type="text"
@@ -878,21 +877,21 @@ const OfficialCard = ({
             onChange={(e) =>
               setFormData({ ...formData, middleName: e.target.value })
             }
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
           <input
             type="number"
             placeholder="Age"
             value={formData.age}
             onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
           <select
             value={formData.status}
             onChange={(e) =>
               setFormData({ ...formData, status: e.target.value })
             }
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
           >
             <option>Active</option>
             <option>Inactive</option>
@@ -900,23 +899,23 @@ const OfficialCard = ({
           <div className="flex gap-2 pt-2">
             <button
               onClick={onSave}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg font-bold text-sm shadow-md transition-all flex items-center justify-center gap-1.5"
             >
-              <Save size={16} />
+              <Save size={14} />
               Save
             </button>
             <button
               onClick={onCancel}
-              className="flex-1 px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-1.5"
             >
-              <Ban size={16} />
+              <Ban size={14} />
               Cancel
             </button>
           </div>
         </div>
       ) : (
         <div>
-          <h4 className={`text-xl font-bold ${c.text} mb-2`}>
+          <h4 className={`text-base font-bold ${c.text} mb-1.5`}>
             {isAssigned ? (
               <>
                 {formData.surname}, {formData.firstName}{" "}
@@ -928,18 +927,18 @@ const OfficialCard = ({
           </h4>
           {isAssigned && (
             <>
-              <p className="text-sm text-slate-600 mb-2">Age: {formData.age}</p>
+              <p className="text-xs text-slate-600 mb-2">Age: {formData.age}</p>
               <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold border-2 ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold border-2 ${
                   formData.status === "Active"
                     ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                     : "bg-red-100 text-red-700 border-red-200"
                 }`}
               >
                 {formData.status === "Active" ? (
-                  <UserCheck size={12} />
+                  <UserCheck size={11} />
                 ) : (
-                  <UserX size={12} />
+                  <UserX size={11} />
                 )}
                 {formData.status}
               </span>
@@ -947,9 +946,9 @@ const OfficialCard = ({
           )}
           <button
             onClick={onEdit}
-            className="mt-4 px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-300 rounded-xl font-semibold transition-all flex items-center gap-2"
+            className="mt-3 px-3 py-2 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-300 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
           >
-            <Edit2 size={16} />
+            <Edit2 size={14} />
             Edit
           </button>
         </div>
@@ -968,23 +967,23 @@ const EditKagawadModal = ({ kagawad, onSave, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 rounded-t-2xl">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-              <Edit2 size={24} />
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Edit2 size={20} />
               Edit Kagawad
             </h3>
             <button
               onClick={onClose}
               className="p-1 hover:bg-white/20 rounded-lg transition-colors"
             >
-              <X size={24} className="text-white" />
+              <X size={20} className="text-white" />
             </button>
           </div>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-5 space-y-3">
           <div>
-            <label className="block text-sm font-bold text-slate-900 mb-2">
+            <label className="block text-xs font-bold text-slate-900 mb-1.5">
               Full Name
             </label>
             <input
@@ -993,11 +992,11 @@ const EditKagawadModal = ({ kagawad, onSave, onClose }) => {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-900 mb-2">
+            <label className="block text-xs font-bold text-slate-900 mb-1.5">
               Age
             </label>
             <input
@@ -1006,11 +1005,11 @@ const EditKagawadModal = ({ kagawad, onSave, onClose }) => {
               onChange={(e) =>
                 setFormData({ ...formData, age: parseInt(e.target.value) })
               }
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-900 mb-2">
+            <label className="block text-xs font-bold text-slate-900 mb-1.5">
               Status
             </label>
             <select
@@ -1018,22 +1017,22 @@ const EditKagawadModal = ({ kagawad, onSave, onClose }) => {
               onChange={(e) =>
                 setFormData({ ...formData, status: e.target.value })
               }
-              className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
             >
               <option>Active</option>
               <option>Inactive</option>
             </select>
           </div>
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-2 pt-3">
             <button
               onClick={() => onSave(formData)}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm shadow-md transition-all"
             >
               Save Changes
             </button>
             <button
               onClick={onClose}
-              className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+              className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold text-sm transition-all"
             >
               Cancel
             </button>

@@ -11,7 +11,7 @@ const SideProfile = ({ user }) => {
         className="flex items-center justify-between  bg-blue-200 hover:bg-blue-500 cursor-pointer p-2 rounded-lg"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
             {user?.firstname?.[0] || "U"}
           </div>
           <div className="text-sm">

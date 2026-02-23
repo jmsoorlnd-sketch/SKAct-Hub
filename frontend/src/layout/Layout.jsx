@@ -1,45 +1,34 @@
 import React from "react";
+import { Outlet } from "react-router-dom";
 import Navbar from "../components/navbars/Navbar";
 import Sidebar from "../components/navbars/Sidebar";
 
 /**
- * Layout Component
+ * Layout Component - Optimized for React Router
  *
- * Provides the main application structure with:
- * - Fixed navbar at top
- * - Fixed sidebar on left
- * - Scrollable main content area
- *
- * @param {Object} props
- * @param {React.ReactNode} props.children - Page content to render in main area
+ * Uses Outlet for nested routes to prevent remounting
+ * Uses flexbox instead of fixed positioning to prevent flickering
  */
-const Layout = ({ children }) => {
+const Layout = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
-      {/* ==================== NAVBAR ==================== */}
-      {/* Fixed at top, spans full width, z-index ensures it's above content */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-slate-200">
+    <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
+      {/* ===== NAVBAR ===== */}
+      <header className="flex-shrink-0 h-14 bg-white shadow-sm border-b border-slate-200 z-50">
         <Navbar />
       </header>
 
-      {/* ==================== CONTENT WRAPPER ==================== */}
-      {/* Flex container for sidebar + main, offset by navbar height (3.5rem = 56px) */}
-      <div className="flex flex-1 pt-14">
-        {/* ==================== SIDEBAR ==================== */}
-        {/* Fixed on left, full height minus navbar, has its own scroll */}
-        <aside className="fixed top-14 left-0 w-56 h-[calc(100vh-3.5rem)] bg-white border-r-2 border-slate-200 z-40 overflow-hidden">
+      {/* ===== MAIN CONTENT WRAPPER ===== */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* ===== SIDEBAR ===== */}
+        {/* Using flex instead of fixed positioning prevents flickering */}
+        <aside className="flex w-55 h-full overflow-hidden border-r-2 border-slate-200 bg-white">
           <Sidebar />
         </aside>
 
-        {/* ==================== MAIN CONTENT AREA ==================== */}
-        {/* 
-          - ml-56 (14rem) matches sidebar width to prevent overlap
-          - flex-1 takes remaining horizontal space
-          - min-h ensures full viewport height minus navbar
-          - overflow-y-auto enables scrolling for long content
-        */}
-        <main className="ml-56 flex-1 min-h-[calc(100vh-3.5rem)] overflow-y-auto">
-          {children}
+        {/* ===== PAGE CONTENT ===== */}
+        {/* Outlet renders the matched child route */}
+        <main className="flex-1 h-full overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+          <Outlet />
         </main>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Layout from "../layout/Layout";
 import {
   Check,
   Trash2,
@@ -10,12 +9,12 @@ import {
   FolderPlus,
   Search,
   Filter,
+  X,
   PenSquare,
   AlignLeft,
   Paperclip,
   Send,
   Tag,
-  X,
   Calendar,
   Image as ImageIcon,
 } from "lucide-react";
@@ -575,17 +574,16 @@ const BarangayStorage = () => {
     );
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Enhanced Header */}
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
+          <div className="mb-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Barangay Management
-                </h1>
-                <p className="text-slate-600 mt-2">
+                <h1 className="text-2xl font-bold ">Barangay Management</h1>
+                <p className="text-slate-600 mt-1 text-sm">
+                  {" "}
                   Organize and manage barangay documents efficiently
                 </p>
               </div>
@@ -594,12 +592,20 @@ const BarangayStorage = () => {
                 {user?.role === "Admin" && (
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
                   >
                     <HousePlus size={20} />
                     <span>Add Barangay</span>
                   </button>
                 )}
+
+                <button
+                  onClick={() => navigate("/admin/dashboard")}
+                  className="px-4 py-2 bg-emerald-600  hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
+                >
+                  <Check size={20} />
+                  <span>Approved</span>
+                </button>
 
                 {user &&
                   user.role !== "Admin" &&
@@ -1325,7 +1331,7 @@ const BarangayStorage = () => {
 
       {/* ==================== COMPOSE MESSAGE MODAL ==================== */}
       {showComposeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 flex-shrink-0">
@@ -1454,7 +1460,7 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 };
 

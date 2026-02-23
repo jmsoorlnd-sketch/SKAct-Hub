@@ -17,8 +17,6 @@ import {
   Tag,
 } from "lucide-react";
 
-import Layout from "../../layout/Layout";
-
 /* ===================== MAIN COMPONENT ===================== */
 const AdminCalendar = () => {
   /* ===================== STATE ===================== */
@@ -288,24 +286,22 @@ const AdminCalendar = () => {
 
   /* ===================== RENDER ===================== */
   return (
-    <Layout>
+    <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Event Calendar
-              </h1>
-              <p className="text-slate-600 mt-2 text-lg">
+              <h1 className="text-2xl font-bold">Event Calendar</h1>
+              <p className="text-slate-600 mt-1 text-sm">
                 Schedule and manage barangay events
               </p>
             </div>
             <button
               onClick={handleOpenCreateModal}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
             >
-              <Plus size={20} />
+              <Plus size={18} />
               <span>Create Event</span>
             </button>
           </div>
@@ -322,7 +318,8 @@ const AdminCalendar = () => {
           ) : (
             <>
               {/* Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {" "}
                 <StatCard
                   icon={CalendarIcon}
                   title="Total Events"
@@ -367,7 +364,7 @@ const AdminCalendar = () => {
                       onClick={handlePrevMonth}
                       className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-2"
                     >
-                      <ChevronLeft size={20} />
+                      <ChevronLeft size={18} />
                       <span className="font-semibold">Previous</span>
                     </button>
                     <h2 className="text-2xl font-bold text-white">
@@ -378,7 +375,7 @@ const AdminCalendar = () => {
                       className="p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-2"
                     >
                       <span className="font-semibold">Next</span>
-                      <ChevronRight size={20} />
+                      <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
@@ -505,7 +502,7 @@ const AdminCalendar = () => {
         <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex-shrink-0">
+            <div className="bg-blue-600 px-6 py-5 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-white">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -705,7 +702,7 @@ const AdminCalendar = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-blue-600 to-indigo-600 hover:bg-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>
@@ -858,7 +855,7 @@ const AdminCalendar = () => {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 };
 
@@ -889,25 +886,26 @@ const StatCard = ({ icon: Icon, title, value, color, subtitle, badge }) => {
   const c = colors[color];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 hover:shadow-xl transition-all hover:-translate-y-1">
-      <div className="flex items-start justify-between mb-4">
+    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
+      <div className="flex items-start justify-between mb-3">
         <div
-          className={`w-14 h-14 bg-gradient-to-br ${c.bg} rounded-xl flex items-center justify-center shadow-lg`}
+          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
         >
-          <Icon className="w-7 h-7 text-white" />
+          <Icon className="w-5 h-5 text-white" />
         </div>
-        <span className={`px-3 py-1 ${c.badge} rounded-lg text-xs font-bold`}>
+        <span
+          className={`px-2 py-0.5 ${c.badge} rounded-md text-[11px] font-bold`}
+        >
           {badge}
         </span>
       </div>
-      <h3 className="text-slate-500 text-sm font-semibold mb-1">{title}</h3>
-      <p className="text-3xl font-bold text-slate-900 mb-2">{value}</p>
-      <div className="flex items-center text-xs text-slate-500">
-        <CalendarDays className={`w-4 h-4 mr-1 ${c.icon}`} />
+      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">{title}</h3>
+      <p className="text-2xl font-bold text-slate-900 mb-2">{value}</p>
+      <div className="flex items-center text-[11px] text-slate-500">
+        <CalendarDays className={`w-3 h-3 mr-1 ${c.icon}`} />
         <span>{subtitle}</span>
       </div>
     </div>
   );
 };
-
 export default AdminCalendar;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
-import Layout from "../../layout/Layout";
 
 const AdminDashboard = () => {
   const [messages, setMessages] = useState([]);
@@ -141,7 +140,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <Layout>
+    <>
       <div className="w-full p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
         {/* ENHANCED HEADER */}
         <div className="mb-8 bg-white rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-2xl transition-all duration-300">
@@ -668,7 +667,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

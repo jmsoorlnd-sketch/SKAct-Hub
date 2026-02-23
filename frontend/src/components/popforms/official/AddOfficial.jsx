@@ -179,7 +179,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
         {/* ====== MODAL HEADER ====== */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex-shrink-0">
+        <div className="bg-blue-600 px-6 py-5 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 text-white">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
@@ -436,7 +436,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-3 bg-blue-600  hover:bg-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>

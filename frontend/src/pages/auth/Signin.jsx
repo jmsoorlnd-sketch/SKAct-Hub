@@ -40,9 +40,9 @@ const Signin = () => {
       if (user.role === "Admin") {
         window.location.href = "/admin/notifications";
       } else if (user.role === "Official") {
-        window.location.href = "/inbox";
+        window.location.href = "/official/inbox";
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = "/";
       }
     } catch (err) {
       if (err.response?.data?.message) {

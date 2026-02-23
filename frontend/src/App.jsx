@@ -1,265 +1,220 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+// Layout & Auth
+import Layout from "./layout/Layout";
+import PublicRoute from "./utils/PublicRoute";
+import RequireAuth from "./utils/RequireAuth";
+import RequireRole from "./utils/RequireRole";
+
+// Auth Pages
 import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
-import ProfilePage from "./pages/ProfilePage";
-import ProtectedRoute, { RoleProtectedRoute } from "./utils/Auth";
-import PublicRoute from "./utils/PublicRoute";
-import OfficialDashboard from "./pages/officials/OfficialDashboard";
+
+// Common Pages
 import Dashboard from "./pages/Dashboard";
+import ProfilePage from "./pages/ProfilePage";
+import Sent from "./pages/Sent";
+import Inbox from "./pages/Inbox";
+
+// Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SkOfficial from "./pages/admin/SkOfficial";
 import SkPersonnelAdmin from "./pages/admin/SkPersonnelAdmin";
 import Calendar from "./pages/Calendar";
 import Profiles from "./pages/admin/Profiles";
-import Sent from "./pages/Sent";
 import BarangayManagement from "./pages/admin/BarangayManagement";
-import BarangayStorage from "./pages/BarangayStorage";
-import Inbox from "./pages/Inbox";
-import BarangayPage from "./pages/barangay/BarangayPage";
-import BarangayView from "./pages/barangay/BarangayView";
-import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminNotification from "./pages/admin/AdminNotification";
+
+// Official Pages
+import OfficialDashboard from "./pages/officials/OfficialDashboard";
 import EventCalendar from "./pages/officials/EventCalendar";
 import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
-const App = () => {
-  const token = localStorage.getItem("token");
-  const user = localStorage.getItem("user");
-  if (token) {
-    console.log("✅ Token still exists:", token);
-    console.log("✅ User still exists:", user);
-  } else {
-    console.log("🚫 No token found — user is logged out");
-  }
 
+// Barangay Pages
+import BarangayStorage from "./pages/BarangayStorage";
+import BarangayPage from "./pages/barangay/BarangayPage";
+import BarangayViewPage from "./pages/barangay/BarangayViewPage";
+
+/* ===================== ROLES ===================== */
+const roles = {
+  ADMIN: "admin",
+  OFFICIAL: "official",
+  YOUTH: "youth",
+};
+
+/* ===================== APP ROUTES ===================== */
+const AppRoutes = () => {
   return (
-    <div>
-      <BrowserRouter>
-        <Routes>
-          {/* AUTH */}
+    <Routes>
+      {/* ===== PUBLIC ROUTES ===== */}
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <Signin />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <Signup />
+          </PublicRoute>
+        }
+      />
+      <Route path="/debug-signin" element={<Signin />} />
+
+      {/* ===== PROTECTED ROUTES ===== */}
+      <Route element={<RequireAuth />}>
+        {/* Layout wraps all protected routes */}
+        <Route element={<Layout />}>
+          {/* COMMON */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/sent" element={<Sent />} />
+
+          {/* BARANGAY */}
+          <Route path="/barangay-storage" element={<BarangayStorage />} />
+          <Route path="/barangay-page" element={<BarangayPage />} />
           <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <Signin />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicRoute>
-                <Signup />
-              </PublicRoute>
-            }
-          />
-          <Route path="/debug-signin" element={<Signin />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sk-official"
-            element={
-              <ProtectedRoute>
-                <SkOfficial />
-              </ProtectedRoute>
-            }
+            path="/barangay-view/:barangayId"
+            element={<BarangayViewPage />}
           />
 
-          {/* Official */}
+          {/* ADMIN */}
           <Route
-            path="/official-dashboard"
+            path="/admin/dashboard"
             element={
-              <RoleProtectedRoute role={["Official"]}>
-                <OfficialDashboard />
-              </RoleProtectedRoute>
-            }
-          />
-
-          {/* Admin Dashboard */}
-          <Route
-            path="/admin-dashboard"
-            element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminDashboard />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin Barangays Management */}
           <Route
             path="/admin/barangays"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <BarangayManagement />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin Profiles */}
           <Route
             path="/admin/profiles"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <Profiles />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin SK Official */}
           <Route
-            path="/admin/officials"
+            path="/admin/sk-officials"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <SkOfficial />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin SK Personnel View */}
           <Route
             path="/admin/sk-personnel"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <SkPersonnelAdmin />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin Events */}
           <Route
             path="/admin/events"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminCalendar />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin Monitoring */}
           <Route
             path="/admin/monitoring"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminMonitoring />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin Settings */}
           <Route
             path="/admin/settings"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminSettings />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Admin Notifications */}
           <Route
             path="/admin/notifications"
             element={
-              <RoleProtectedRoute role={["Admin"]}>
+              <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminNotification />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
 
-          {/* Official Event Calendar */}
+          {/* OFFICIAL */}
+          <Route
+            path="/official-dashboard"
+            element={
+              <RequireRole allowedRoles={[roles.OFFICIAL]}>
+                <OfficialDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/official/inbox"
+            element={
+              <RequireRole allowedRoles={[roles.OFFICIAL]}>
+                <Inbox />
+              </RequireRole>
+            }
+          />
           <Route
             path="/event-calendar"
             element={
-              <RoleProtectedRoute role={["Official"]}>
+              <RequireRole allowedRoles={[roles.OFFICIAL]}>
                 <EventCalendar />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* SK Personnel */}
           <Route
             path="/sk-personnel"
             element={
-              <RoleProtectedRoute role={["Official"]}>
+              <RequireRole allowedRoles={[roles.OFFICIAL]}>
                 <SKPersonnelPage />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
-
-          {/* Calendar */}
           <Route
             path="/calendar"
             element={
-              <RoleProtectedRoute role={["Official", "Youth"]}>
+              <RequireRole allowedRoles={[roles.OFFICIAL, roles.YOUTH]}>
                 <Calendar />
-              </RoleProtectedRoute>
+              </RequireRole>
             }
           />
+        </Route>
+      </Route>
 
-          {/* Sent messages */}
-          <Route
-            path="/sent"
-            element={
-              <ProtectedRoute>
-                <Sent />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Profile */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/inbox"
-            element={
-              <ProtectedRoute>
-                <Inbox />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Barangay Storage (All protected users) */}
-          <Route
-            path="/barangay-storage"
-            element={
-              <ProtectedRoute>
-                <BarangayStorage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/barangay-page"
-            element={
-              <ProtectedRoute>
-                <BarangayPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/barangay-view/:barangayId"
-            element={
-              <ProtectedRoute>
-                <BarangayViewPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </BrowserRouter>
-    </div>
+      {/* ===== CATCH-ALL ===== */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
+
+/* ===================== MAIN APP COMPONENT ===================== */
+const App = () => (
+  <BrowserRouter>
+    <AppRoutes />
+  </BrowserRouter>
+);
 
 export default App;

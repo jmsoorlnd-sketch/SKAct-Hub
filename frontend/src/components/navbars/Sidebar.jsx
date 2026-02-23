@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import axios from "axios";
 import SideProfile from "../SideProfile";
@@ -32,12 +32,17 @@ const Sidebar = () => {
   /* ==================== USER & NOTIFICATIONS ==================== */
   useEffect(() => {
     loadUser();
-    fetchUnseenCount();
-
-    // Refresh count every 30 seconds
-    const interval = setInterval(fetchUnseenCount, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchUnseenCount();
+
+      // Refresh count every 30 seconds
+      const interval = setInterval(fetchUnseenCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user?.role]); // Only refetch when user role changes
 
   const loadUser = () => {
     try {
@@ -148,42 +153,49 @@ const Sidebar = () => {
   /* ==================== MENU CONFIGURATION ==================== */
   const role = user?.role || "Guest";
 
-  const menus = {
-    Admin: [
-      {
-        name: "Notifications",
-        icon: Bell,
-        path: "/admin/notifications",
-        badge: unseenCount,
-      },
-      { name: "Barangays", icon: Home, path: "/barangay-storage" },
-      { name: "Youth Profiles", icon: Users, path: "/sk-official" },
-      { name: "SK Personnel", icon: Users, path: "/admin/sk-personnel" },
-      { name: "Event Scheduling", icon: CalendarDays, path: "/admin/events" },
-      {
-        name: "Monitoring & Evaluation",
-        icon: BarChart2,
-        path: "/admin/monitoring",
-      },
-      { name: "Settings", icon: Settings, path: "/admin/settings" },
-    ],
-    Official: [
-      { name: "Inbox", icon: Inbox, path: "/inbox" },
-      { name: "Event Calendar", icon: CalendarClock, path: "/event-calendar" },
-      { name: "Barangays", icon: Home, path: "/barangay-storage" },
-      { name: "SK Personnel", icon: Users, path: "/sk-personnel" },
-    ],
-    Guest: [{ name: "Home", icon: Home, path: "/" }],
-  };
+  // Memoize menu items to prevent recalculation on every render
+  const menuItems = useMemo(() => {
+    const menus = {
+      Admin: [
+        {
+          name: "Notifications",
+          icon: Bell,
+          path: "/admin/notifications",
+          badge: unseenCount,
+        },
+        { name: "Barangays", icon: Home, path: "/barangay-storage" },
+        { name: "Youth Profiles", icon: Users, path: "/admin/sk-officials" },
+        { name: "SK Personnel", icon: Users, path: "/admin/sk-personnel" },
+        { name: "Event Scheduling", icon: CalendarDays, path: "/admin/events" },
+        {
+          name: "Monitoring & Evaluation",
+          icon: BarChart2,
+          path: "/admin/monitoring",
+        },
+        // { name: "Settings", icon: Settings, path: "/admin/settings" },
+      ],
+      Official: [
+        { name: "Inbox", icon: Inbox, path: "/official/inbox" },
+        {
+          name: "Event Calendar",
+          icon: CalendarClock,
+          path: "/event-calendar",
+        },
+        { name: "Barangays", icon: Home, path: "/barangay-storage" },
+        { name: "SK Personnel", icon: Users, path: "/sk-personnel" },
+      ],
+      Guest: [{ name: "Home", icon: Home, path: "/" }],
+    };
 
-  const menuItems = menus[role] || menus.Guest;
+    return menus[role] || menus.Guest;
+  }, [role, unseenCount]); // Only recalculate when role or unseenCount changes
 
   /* ==================== RENDER HELPERS ==================== */
   const getMenuClass = (path) => {
     const isActive = currentPath === path;
-    return `relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all duration-200 ${
+    return `relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
       isActive
-        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
+        ? "bg-blue-600 text-white shadow-lg"
         : "text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700"
     }`;
   };
@@ -191,9 +203,9 @@ const Sidebar = () => {
   const getPanelTitle = () => {
     switch (role) {
       case "Admin":
-        return "Admin Panel";
+        return "Admin ";
       case "Official":
-        return "Officials Panel";
+        return "Officials ";
       default:
         return "SKhub";
     }
@@ -201,46 +213,46 @@ const Sidebar = () => {
 
   /* ==================== RENDER ==================== */
   return (
-    <div className="flex h-full bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="w-64 bg-white shadow-xl flex flex-col border-r-2 border-slate-200">
-        {/* Header */}
-        <div className="p-6 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            {getPanelTitle()}
-          </h1>
-        </div>
+    <div className="w-full h-full bg-white shadow-xl flex flex-col">
+      {/* Header */}
+      <div className="py-3 px-9 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
+        <h1 className="text-2xl text-slate-900 tracking font-bold ">
+          {getPanelTitle()}
+        </h1>
+      </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2 ">
-          {menuItems.map((menu) => {
-            const Icon = menu.icon;
-            return (
-              <Link
-                key={menu.path}
-                to={menu.path}
-                className={getMenuClass(menu.path)}
-              >
-                <Icon size={20} />
-                <span className="flex-1">{menu.name}</span>
+      {/* Navigation */}
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        {menuItems.map((menu) => {
+          const Icon = menu.icon;
+          return (
+            <Link
+              key={menu.path}
+              to={menu.path}
+              className={getMenuClass(menu.path)}
+            >
+              <Icon size={18} />
+              <span className="flex-1">{menu.name}</span>
 
-                {/* Notification Badge */}
-                {menu.badge && menu.badge > 0 && (
-                  <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] text-center animate-pulse">
-                    {menu.badge > 99 ? "99+" : menu.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+              {/* Notification Badge */}
+              {menu.badge && menu.badge > 0 && (
+                <span className="px-0.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] text-center ">
+                  {menu.badge > 99 ? "99+" : menu.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Profile Footer */}
-        <div className="p-4 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50">
-          <SideProfile user={user} />
-        </div>
+      {/* Profile Footer */}
+      <div className="p-3 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+        <SideProfile user={user} />
       </div>
     </div>
   );
 };
 
-export default Sidebar;
+// Wrap with React.memo to prevent re-renders when parent updates
+// but props haven't changed (Sidebar has no props)
+export default React.memo(Sidebar);
