@@ -60,11 +60,16 @@ const AdminNotification = () => {
       // Sort by time
       allNotifications.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-      // Load seen status
-      const seenIds = getSeenNotifications();
+      // Load seen status from backend (not localStorage)
+      const seenStatusResponse = await axios.get(
+        `${API_BASE}/notifications/status`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const seenMap = seenStatusResponse.data.seenStatuses || {};
+
       const withSeenStatus = allNotifications.map((n) => ({
         ...n,
-        seen: seenIds.includes(n.id),
+        seen: seenMap[n.id] || false,
       }));
 
       setNotifications(withSeenStatus);
@@ -221,36 +226,80 @@ const AdminNotification = () => {
   };
 
   /* ==================== SEEN/UNSEEN TRACKING ==================== */
-  const getSeenNotifications = () => {
+  const markAsSeen = async (notificationId) => {
     try {
-      const seen = localStorage.getItem("seenNotifications");
-      return seen ? JSON.parse(seen) : [];
-    } catch {
-      return [];
-    }
-  };
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
 
-  const markAsSeen = (notificationId) => {
-    const seenIds = getSeenNotifications();
-    if (!seenIds.includes(notificationId)) {
-      seenIds.push(notificationId);
-      localStorage.setItem("seenNotifications", JSON.stringify(seenIds));
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n)),
+      console.log("Marking notification as seen:", notificationId);
+
+      // Call API to mark as seen in database
+      const response = await axios.put(
+        `${API_BASE}/notifications/${notificationId}/seen`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      console.log("API response:", response.data);
+
+      // Update local state immediately
+      setNotifications((prev) => {
+        const updated = prev.map((n) =>
+          n.id === notificationId ? { ...n, seen: true } : n,
+        );
+        console.log("Updated notifications:", updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error(
+        "Failed to mark notification as seen:",
+        err.response?.data || err.message,
       );
     }
   };
 
-  const markAllAsSeen = () => {
-    const allIds = notifications.map((n) => n.id);
-    localStorage.setItem("seenNotifications", JSON.stringify(allIds));
-    setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
+  const markAllAsSeen = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+
+      console.log("Marking all notifications as seen");
+
+      // Call API to mark all as seen in database
+      const response = await axios.put(
+        `${API_BASE}/notifications/all/seen`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      console.log("API response:", response.data);
+
+      // Update local state immediately
+      setNotifications((prev) => {
+        const updated = prev.map((n) => ({ ...n, seen: true }));
+        console.log("All notifications marked as seen:", updated);
+        return updated;
+      });
+    } catch (err) {
+      console.error(
+        "Failed to mark all notifications as seen:",
+        err.response?.data || err.message,
+      );
+    }
   };
 
   /* ==================== NAVIGATION ==================== */
-  const handleClick = (notification) => {
-    markAsSeen(notification.id);
+  const handleClick = async (notification) => {
+    // Mark as seen first
+    await markAsSeen(notification.id);
 
+    // Then navigate
     switch (notification.type) {
       case "message_pending":
         navigate("/admin/dashboard", {

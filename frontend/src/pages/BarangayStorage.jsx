@@ -175,6 +175,14 @@ const BarangayStorage = () => {
   const [selectedFolderForUpload, setSelectedFolderForUpload] = useState(null);
   const [uploadingToFolder, setUploadingToFolder] = useState(false);
   const [showFolderComposeModal, setShowFolderComposeModal] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    action: null,
+    messageId: null,
+    docId: null,
+    message: "",
+    title: "",
+  });
   const [folderComposeData, setFolderComposeData] = useState({
     subject: "",
     body: "",
@@ -566,6 +574,55 @@ const BarangayStorage = () => {
       console.error("Error updating status:", error);
       toast.error("Failed to update status.");
     }
+  };
+
+  const openConfirmationModal = (action, messageId, docId, title, message) => {
+    setConfirmationModal({
+      isOpen: true,
+      action,
+      messageId,
+      docId,
+      message,
+      title,
+    });
+  };
+
+  const closeConfirmationModal = () => {
+    setConfirmationModal({
+      isOpen: false,
+      action: null,
+      messageId: null,
+      docId: null,
+      message: "",
+      title: "",
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const { action, messageId, docId } = confirmationModal;
+
+    if (action === "ongoing" || action === "completed") {
+      await handleUpdateStatus(messageId, action);
+    } else if (action === "remove") {
+      try {
+        const token = localStorage.getItem("token");
+        const url = `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`;
+        await axios.delete(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setStorage(
+          storage.filter((s) => (s.document?._id || s.document) !== docId),
+        );
+        toast.success(
+          "Message removed from barangay and returned to inbox",
+        );
+      } catch (err) {
+        console.error("Detach failed:", err);
+        toast.error("Failed to remove message from barangay");
+      }
+    }
+
+    closeConfirmationModal();
   };
 
   const handleDeleteFolder = async (folderId, folderName) => {
@@ -1190,6 +1247,10 @@ const BarangayStorage = () => {
                                     showUsersModal={showUsersModal}
                                     setShowUsersModal={setShowUsersModal}
                                     fileInputRef={fileInputRef}
+                                    confirmationModal={confirmationModal}
+                                    openConfirmationModal={openConfirmationModal}
+                                    closeConfirmationModal={closeConfirmationModal}
+                                    handleConfirmAction={handleConfirmAction}
                                   />
                                 ))}
                               </div>
@@ -1241,6 +1302,10 @@ const BarangayStorage = () => {
                                     showUsersModal={showUsersModal}
                                     setShowUsersModal={setShowUsersModal}
                                     fileInputRef={fileInputRef}
+                                    confirmationModal={confirmationModal}
+                                    openConfirmationModal={openConfirmationModal}
+                                    closeConfirmationModal={closeConfirmationModal}
+                                    handleConfirmAction={handleConfirmAction}
                                   />
                                 ))}
                               </div>
@@ -2017,6 +2082,10 @@ const DocumentItem = ({
   showUsersModal,
   setShowUsersModal,
   fileInputRef,
+  confirmationModal,
+  openConfirmationModal,
+  closeConfirmationModal,
+  handleConfirmAction,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showFolderSubmenu, setShowFolderSubmenu] = useState(false);
@@ -2165,55 +2234,6 @@ const DocumentItem = ({
                   <Calendar size={16} className="text-blue-600" />
                   Add to Calendar
                 </button>
-                {user?.role === "Official" && folders.length > 0 && (
-                  <>
-                    <div className="border-t border-slate-200"></div>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowFolderSubmenu(!showFolderSubmenu)}
-                        className="w-full text-left px-4 py-3 hover:bg-green-50 text-sm text-slate-700 font-semibold transition-colors flex items-center justify-between gap-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          🗂️
-                          <span>Move to Folder</span>
-                        </div>
-                        <span>{showFolderSubmenu ? "▼" : "▶"}</span>
-                      </button>
-                      {showFolderSubmenu && (
-                        <div className="bg-slate-50 border-t border-slate-200">
-                          <button
-                            onClick={() => {
-                              handleMoveToFolder(item._id, null);
-                              setShowFolderSubmenu(false);
-                              setShowMenu(false);
-                              toast.success("Document removed from folder");
-                            }}
-                            className="w-full text-left px-6 py-2.5 hover:bg-slate-200 text-xs text-slate-600 font-semibold transition-colors"
-                          >
-                            No Folder
-                          </button>
-                          {folders.map((folder) => (
-                            <button
-                              key={folder._id}
-                              onClick={() => {
-                                handleMoveToFolder(item._id, folder._id);
-                                setShowFolderSubmenu(false);
-                                setShowMenu(false);
-                                toast.success(
-                                  `Document moved to "${folder.name}"`,
-                                );
-                              }}
-                              className="w-full text-left px-6 py-2.5 hover:bg-slate-200 text-xs text-slate-700 font-semibold transition-colors flex items-center gap-2"
-                            >
-                              <span className="text-sm">📁</span>
-                              {folder.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
               </div>
             )}
           </div>
@@ -2224,14 +2244,28 @@ const DocumentItem = ({
         {String(item.document?.sender?._id) === String(user?._id) && (
           <>
             <button
-              onClick={() => handleUpdateStatus(item.document?._id, "ongoing")}
+              onClick={() =>
+                openConfirmationModal(
+                  "ongoing",
+                  item.document?._id,
+                  null,
+                  "Mark as Ongoing",
+                  "Are you sure you want to mark this document as ongoing?",
+                )
+              }
               className="px-4 py-2 bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 rounded-lg text-sm font-semibold border-2 border-amber-200 transition-all"
             >
               Mark Ongoing
             </button>
             <button
               onClick={() =>
-                handleUpdateStatus(item.document?._id, "completed")
+                openConfirmationModal(
+                  "completed",
+                  item.document?._id,
+                  null,
+                  "Mark as Completed",
+                  "Are you sure you want to mark this document as completed?",
+                )
               }
               className="px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 hover:from-emerald-200 hover:to-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold border-2 border-emerald-200 transition-all"
             >
@@ -2240,49 +2274,18 @@ const DocumentItem = ({
           </>
         )}
 
-        {user?.role === "Admin" && (
+        {user?.role === "Official" && (
           <>
-            <select
-              onChange={(e) => {
-                const folderId = e.target.value;
-                handleMoveToFolder(item._id, folderId || null);
-                e.target.value = "";
-              }}
-              className="px-4 py-2 border-2 border-slate-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              defaultValue=""
-            >
-              <option value="">Move to Folder</option>
-              <option value="">No Folder</option>
-              {folders.map((folder) => (
-                <option key={folder._id} value={folder._id}>
-                  {folder.name}
-                </option>
-              ))}
-            </select>
             <button
-              onClick={async () => {
-                if (!window.confirm("Remove this message from the barangay?"))
-                  return;
-                try {
-                  const token = localStorage.getItem("token");
-                  const docId = item.document?._id || item.document;
-                  const url = `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`;
-                  await axios.delete(url, {
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-                  setStorage(
-                    storage.filter(
-                      (s) => (s.document?._id || s.document) !== docId,
-                    ),
-                  );
-                  toast.success(
-                    "Message removed from barangay and returned to inbox",
-                  );
-                } catch (err) {
-                  console.error("Detach failed:", err);
-                  toast.error("Failed to remove message from barangay");
-                }
-              }}
+              onClick={() =>
+                openConfirmationModal(
+                  "remove",
+                  null,
+                  item.document?._id || item.document,
+                  "Remove Document",
+                  "Are you sure you want to remove this message from the barangay? It will be returned to your inbox.",
+                )
+              }
               className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
             >
               Remove
@@ -2360,6 +2363,40 @@ const DocumentItem = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmationModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+              <h3 className="text-xl font-bold text-white">
+                {confirmationModal.title}
+              </h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-slate-700 text-base mb-6">
+                {confirmationModal.message}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConfirmAction}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={closeConfirmationModal}
+                  className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
