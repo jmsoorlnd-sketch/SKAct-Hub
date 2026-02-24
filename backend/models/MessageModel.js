@@ -55,6 +55,12 @@ const messageSchema = new mongoose.Schema(
       ref: "Barangay",
       default: null,
     },
+    // intendedFolder: if message was created from a folder, store the folder id for later assignment
+    intendedFolder: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Folder",
+      default: null,
+    },
     // isAdminScheduled: true if this is an event scheduled by the admin (not from an official)
     isAdminScheduled: {
       type: Boolean,

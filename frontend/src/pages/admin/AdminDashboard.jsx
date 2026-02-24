@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import { useToast } from "../../components/Toast";
 
 const AdminDashboard = () => {
+  const toast = useToast();
   const [messages, setMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ const AdminDashboard = () => {
       });
       setMessages(messages.filter((m) => m._id !== messageId));
       setSelectedMessage(null);
-      alert("Message deleted");
+      toast.success("Message deleted");
     } catch (error) {
       console.error("Delete failed:", error);
     }
@@ -104,7 +106,7 @@ const AdminDashboard = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Message approved and stored to barangay!");
+      toast.success("Message approved and stored to barangay!");
 
       // Refresh messages
       await refreshMessages();
@@ -113,7 +115,7 @@ const AdminDashboard = () => {
       console.error("Approve failed:", error);
       const errorMsg =
         error?.response?.data?.message || "Failed to approve message";
-      alert(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
@@ -128,14 +130,14 @@ const AdminDashboard = () => {
         { messageId: selectedMessage._id },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Message rejected and will be returned to the official");
+      toast.success("Message rejected and will be returned to the official");
 
       // Refresh messages
       await refreshMessages();
       setSelectedMessage(null);
     } catch (error) {
       console.error("Reject failed:", error);
-      alert("Failed to reject message");
+      toast.error("Failed to reject message");
     }
   };
 

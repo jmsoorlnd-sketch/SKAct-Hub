@@ -1,5 +1,5 @@
 import express from "express";
-import { requireAuth, adminOnly } from "../middleware/auth.js";
+import { requireAuth, adminOnly, officialOnly } from "../middleware/auth.js";
 import {
   getAllBarangays,
   createBarangay,
@@ -91,7 +91,7 @@ router.get("/get-barangay/:id", requireAuth, getBarangayById);
 router.get("/officials/:id", getOfficialsByBarangay);
 
 // Folder routes
-router.post("/:barangayId/folders", requireAuth, adminOnly, createFolder);
+router.post("/:barangayId/folders", requireAuth, officialOnly, createFolder);
 router.get("/:barangayId/folders", requireAuth, getFolders);
 router.put(
   "/:barangayId/storage/:storageId/move",
@@ -101,7 +101,7 @@ router.put(
 router.delete(
   "/:barangayId/folders/:folderId",
   requireAuth,
-  adminOnly,
+  officialOnly,
   deleteFolder,
 );
 

@@ -30,4 +30,12 @@ const adminOnly = (req, res, next) => {
   }
 };
 
-export { requireAuth, adminOnly };
+const officialOnly = (req, res, next) => {
+  if (req.user && req.user.role?.toLowerCase() === "official") {
+    next();
+  } else {
+    res.status(403).json({ message: "Official Only" });
+  }
+};
+
+export { requireAuth, adminOnly, officialOnly };

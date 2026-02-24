@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,9 +19,11 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
+import { useToast } from "../components/Toast";
 
 const BarangayStorage = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [barangays, setBarangays] = useState([]);
@@ -56,6 +58,19 @@ const BarangayStorage = () => {
   const [uploadingActivity, setUploadingActivity] = useState(false);
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [showComposeModal, setShowComposeModal] = useState(false);
+  const [selectedFolderForUpload, setSelectedFolderForUpload] = useState(null);
+  const [uploadingToFolder, setUploadingToFolder] = useState(false);
+  const [showFolderComposeModal, setShowFolderComposeModal] = useState(false);
+  const [folderComposeData, setFolderComposeData] = useState({
+    subject: "",
+    body: "",
+  });
+  const [folderComposeFile, setFolderComposeFile] = useState(null);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [showFolderSuccessModal, setShowFolderSuccessModal] = useState(false);
+  const [createdFolderName, setCreatedFolderName] = useState("");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     let userData = null;
@@ -137,6 +152,10 @@ const BarangayStorage = () => {
           },
         );
         setStorage(res.data.storage || []);
+        // Fetch folders for officials too
+        if (barangayId) {
+          await fetchFolders(barangayId);
+        }
       } else {
         const res = await axios.get(
           `http://localhost:5000/api/barangays/${barangayId}/storage`,
@@ -214,7 +233,7 @@ const BarangayStorage = () => {
         (b) => b?.chairmanId && String(b.chairmanId) === String(user._id),
       ).length;
       if (createdByThisAdmin >= ADMIN_LIMIT) {
-        return alert(
+        return toast.warning(
           `Creation limit reached. Each admin can create up to ${ADMIN_LIMIT} barangays.`,
         );
       }
@@ -227,7 +246,8 @@ const BarangayStorage = () => {
         name.toLowerCase() === formData.barangay.toLowerCase()
       );
     });
-    if (isDuplicate) return alert("A barangay with this name already exists!");
+    if (isDuplicate)
+      return toast.warning("A barangay with this name already exists!");
     try {
       const token = localStorage.getItem("token");
       const dataToSubmit = {
@@ -241,7 +261,7 @@ const BarangayStorage = () => {
         dataToSubmit,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Barangay created successfully!");
+      toast.success("Barangay created successfully!");
       setFormData({ barangay: "", city: "", province: "", region: "" });
       setShowForm(false);
       fetchBarangays();
@@ -249,9 +269,9 @@ const BarangayStorage = () => {
       console.error("Error creating barangay:", error);
       const serverMsg = error?.response?.data?.message;
       if (serverMsg) {
-        alert(serverMsg);
+        toast.error(serverMsg);
       } else {
-        alert("Failed to create barangay.");
+        toast.error("Failed to create barangay.");
       }
     }
   };
@@ -264,18 +284,18 @@ const BarangayStorage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setBarangays(barangays.filter((b) => b._id !== barangayId));
-      alert("Barangay deleted successfully!");
+      toast.success("Barangay deleted successfully!");
       setSelectedBarangay(null);
       setStorage([]);
     } catch (error) {
       console.error("Error deleting barangay:", error);
-      alert("Failed to delete barangay.");
+      toast.error("Failed to delete barangay.");
     }
   };
 
   const handleAssignUser = async () => {
     if (!selectedUserToAdd || !selectedBarangay)
-      return alert("Please select a user to assign.");
+      return toast.warning("Please select a user to assign.");
 
     const prevUser = availableUsers.find((u) => u._id === selectedUserToAdd);
     const prevBarangayId = prevUser?.barangay
@@ -302,19 +322,19 @@ const BarangayStorage = () => {
         "this barangay";
 
       if (prevBarangayId && prevBarangayId !== String(selectedBarangay)) {
-        alert(
+        toast.info(
           `User reassigned from "${
             prevBarangayName || prevBarangayId
           }" to "${targetName}". Previous access revoked.`,
         );
       } else {
-        alert("User assigned successfully!");
+        toast.success("User assigned successfully!");
       }
 
       setSelectedUserToAdd("");
     } catch (error) {
       console.error("Error assigning user:", error);
-      alert("Failed to assign user.");
+      toast.error("Failed to assign user.");
     }
   };
 
@@ -329,10 +349,10 @@ const BarangayStorage = () => {
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setUsersInBarangay(usersInBarangay.filter((u) => u._id !== userId));
-      alert("User removed from barangay");
+      toast.success("User removed from barangay");
     } catch (error) {
       console.error("Error removing user:", error);
-      alert("Failed to remove user from barangay.");
+      toast.error("Failed to remove user from barangay.");
     }
   };
 
@@ -351,9 +371,9 @@ const BarangayStorage = () => {
   };
 
   const handleSendToBarangay = async () => {
-    if (!selectedBarangay) return alert("Select a barangay first");
+    if (!selectedBarangay) return toast.warning("Select a barangay first");
     if (!composeSubject || !composeBody)
-      return alert("Subject and message are required");
+      return toast.warning("Subject and message are required");
     try {
       const token = localStorage.getItem("token");
       const fd = new FormData();
@@ -371,7 +391,7 @@ const BarangayStorage = () => {
           },
         },
       );
-      alert(
+      toast.success(
         "Message sent to admin for approval. It will be stored after approval.",
       );
       handleCloseCompose();
@@ -379,8 +399,8 @@ const BarangayStorage = () => {
     } catch (error) {
       console.error("Error sending to barangay:", error);
       const serverMsg = error?.response?.data?.message;
-      if (serverMsg) alert(serverMsg);
-      else alert("Failed to send.");
+      if (serverMsg) toast.error(serverMsg);
+      else toast.error("Failed to send.");
     }
   };
 
@@ -393,11 +413,12 @@ const BarangayStorage = () => {
         { name: folderName },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Folder created successfully!");
+      setCreatedFolderName(folderName);
+      setShowFolderSuccessModal(true);
       fetchFolders(selectedBarangay);
     } catch (error) {
       console.error("Error creating folder:", error);
-      alert("Failed to create folder.");
+      toast.error("Failed to create folder.");
     }
   };
 
@@ -409,11 +430,11 @@ const BarangayStorage = () => {
         { folderId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Document moved to folder!");
+      toast.success("Document moved to folder!");
       fetchStorageDocuments(selectedBarangay);
     } catch (error) {
       console.error("Error moving document:", error);
-      alert("Failed to move document.");
+      toast.error("Failed to move document.");
     }
   };
 
@@ -429,7 +450,7 @@ const BarangayStorage = () => {
       fetchStorageDocuments(selectedBarangay);
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Failed to update status.");
+      toast.error("Failed to update status.");
     }
   };
 
@@ -451,7 +472,7 @@ const BarangayStorage = () => {
         `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert(
+      toast.success(
         `Folder deleted successfully${
           documentsInFolder.length > 0
             ? `! ${documentsInFolder.length} document(s) returned to stored documents.`
@@ -465,7 +486,104 @@ const BarangayStorage = () => {
       fetchStorageDocuments(selectedBarangay);
     } catch (error) {
       console.error("Error deleting folder:", error);
-      alert("Failed to delete folder.");
+      toast.error("Failed to delete folder.");
+    }
+  };
+
+  const handleUploadToFolderCompose = async (folderId) => {
+    if (!selectedBarangay || !folderId) {
+      toast.warning("Please select a folder");
+      return;
+    }
+
+    if (!folderComposeData.subject || !folderComposeData.body) {
+      toast.warning("Subject and message are required");
+      return;
+    }
+
+    try {
+      setUploadingToFolder(true);
+      const token = localStorage.getItem("token");
+      const fd = new FormData();
+      fd.append("subject", folderComposeData.subject);
+      fd.append("body", folderComposeData.body);
+      fd.append("folderId", folderId);
+      if (folderComposeFile) fd.append("attachment", folderComposeFile);
+
+      // Create the message with approval required
+      await axios.post(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/messages`,
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      toast.success(
+        "Document created and sent for admin approval to be stored in the folder!",
+      );
+      setShowFolderComposeModal(false);
+      setFolderComposeData({ subject: "", body: "" });
+      setFolderComposeFile(null);
+      setSelectedFolderForUpload(null);
+      fetchStorageDocuments(selectedBarangay);
+      fetchFolders(selectedBarangay);
+    } catch (error) {
+      console.error("Error creating document for folder:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to create document. Please try again.",
+      );
+    } finally {
+      setUploadingToFolder(false);
+    }
+  };
+
+  const handleUploadToFolder = async (folderId, file) => {
+    if (!selectedBarangay || !folderId || !file) {
+      toast.warning("Please select a folder and file");
+      return;
+    }
+
+    try {
+      setUploadingToFolder(true);
+      const token = localStorage.getItem("token");
+      const fd = new FormData();
+      fd.append("subject", file.name);
+      fd.append("body", `File: ${file.name}`);
+      fd.append("attachment", file);
+
+      // Create a new message with the file
+      const response = await axios.post(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/messages`,
+        fd,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      // If message was created, move it to the folder
+      if (response.data.message) {
+        const messageId = response.data.message._id;
+        await handleMoveToFolder(messageId, folderId);
+        toast.success("File uploaded and added to folder successfully!");
+        fetchStorageDocuments(selectedBarangay);
+      }
+    } catch (error) {
+      console.error("Error uploading file to folder:", error);
+      toast.error("Failed to upload file to folder.");
+    } finally {
+      setUploadingToFolder(false);
+      setSelectedFolderForUpload(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -485,8 +603,8 @@ const BarangayStorage = () => {
 
   const handleUploadActivityPhoto = async (e) => {
     e.preventDefault();
-    if (!selectedDocument) return alert("Select a document first");
-    if (!activityPhotoFile) return alert("Please select a photo");
+    if (!selectedDocument) return toast.warning("Select a document first");
+    if (!activityPhotoFile) return toast.warning("Please select a photo");
 
     try {
       setUploadingActivity(true);
@@ -508,14 +626,14 @@ const BarangayStorage = () => {
         },
       );
 
-      alert("Activity photo uploaded successfully!");
+      toast.success("Activity photo uploaded successfully!");
       setActivityPhotoFile(null);
       setActivityCaption("");
       fetchActivityUpdates(messageId);
     } catch (error) {
       console.error("Error uploading activity photo:", error);
       const serverMsg = error?.response?.data?.message;
-      alert(serverMsg || "Failed to upload activity photo");
+      toast.error(serverMsg || "Failed to upload activity photo");
     } finally {
       setUploadingActivity(false);
     }
@@ -531,12 +649,12 @@ const BarangayStorage = () => {
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      alert("Activity photo deleted successfully!");
+      toast.success("Activity photo deleted successfully!");
       const messageId = selectedDocument.document?._id || selectedDocument._id;
       fetchActivityUpdates(messageId);
     } catch (error) {
       console.error("Error deleting activity update:", error);
-      alert("Failed to delete activity photo");
+      toast.error("Failed to delete activity photo");
     }
   };
 
@@ -627,7 +745,7 @@ const BarangayStorage = () => {
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
               onSubmit={() => {
-                alert("Barangay added successfully!");
+                toast.success("Barangay added successfully!");
                 fetchBarangays();
               }}
             />
@@ -794,12 +912,9 @@ const BarangayStorage = () => {
                             </select>
                           </div>
 
-                          {user?.role === "Admin" && (
+                          {user?.role === "Official" && (
                             <button
-                              onClick={() => {
-                                const folderName = prompt("Enter folder name:");
-                                if (folderName) handleCreateFolder(folderName);
-                              }}
+                              onClick={() => setShowCreateFolderModal(true)}
                               className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
                             >
                               <FolderPlus size={18} />
@@ -846,20 +961,47 @@ const BarangayStorage = () => {
                                       : "bg-slate-50 border-slate-200 hover:border-blue-300 hover:shadow-md"
                                   }`}
                                 >
-                                  {user?.role === "Admin" && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteFolder(
-                                          folder._id,
-                                          folder.name,
-                                        );
-                                      }}
-                                      className="absolute top-3 right-3 p-2 text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                      title="Delete folder"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
+                                  {user?.role === "Official" && (
+                                    <div className="absolute top-3 right-3 flex gap-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedFolderForUpload(
+                                            folder._id,
+                                          );
+                                          setShowFolderComposeModal(true);
+                                        }}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                        title="Create message for folder"
+                                      >
+                                        <svg
+                                          className="w-5 h-5"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 4v16m8-8H4"
+                                          />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteFolder(
+                                            folder._id,
+                                            folder.name,
+                                          );
+                                        }}
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                        title="Delete folder"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
                                   )}
 
                                   <div
@@ -958,6 +1100,7 @@ const BarangayStorage = () => {
                                     fetchActivityUpdates={fetchActivityUpdates}
                                     showUsersModal={showUsersModal}
                                     setShowUsersModal={setShowUsersModal}
+                                    fileInputRef={fileInputRef}
                                   />
                                 ))}
                               </div>
@@ -1008,6 +1151,7 @@ const BarangayStorage = () => {
                                     fetchActivityUpdates={fetchActivityUpdates}
                                     showUsersModal={showUsersModal}
                                     setShowUsersModal={setShowUsersModal}
+                                    fileInputRef={fileInputRef}
                                   />
                                 ))}
                               </div>
@@ -1460,6 +1604,311 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
+
+      {/* Folder Compose Modal */}
+      {showFolderComposeModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-white">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <PenSquare size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">
+                      Create Document for Folder
+                    </h2>
+                    <p className="text-blue-100 text-sm">
+                      Add a document directly to your folder
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowFolderComposeModal(false);
+                    setFolderComposeData({ subject: "", body: "" });
+                    setFolderComposeFile(null);
+                  }}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={22} className="text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+              {/* Subject */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                  <Tag size={15} className="text-blue-600" />
+                  Subject <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={folderComposeData.subject}
+                  onChange={(e) =>
+                    setFolderComposeData({
+                      ...folderComposeData,
+                      subject: e.target.value,
+                    })
+                  }
+                  placeholder="e.g., Minutes of Meeting"
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              {/* Body */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                  <AlignLeft size={15} className="text-blue-600" />
+                  Message Body <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={folderComposeData.body}
+                  onChange={(e) =>
+                    setFolderComposeData({
+                      ...folderComposeData,
+                      body: e.target.value,
+                    })
+                  }
+                  placeholder="Write your document content here..."
+                  rows={6}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                />
+              </div>
+
+              {/* Attachment */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                  <Paperclip size={15} className="text-blue-600" />
+                  Attachment{" "}
+                  <span className="text-slate-400 font-normal text-xs">
+                    (optional)
+                  </span>
+                </label>
+                <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    onChange={(e) =>
+                      setFolderComposeFile(e.target.files?.[0] || null)
+                    }
+                    className="block w-full text-sm text-slate-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-100 file:text-blue-700
+                      hover:file:bg-blue-200 transition-all cursor-pointer"
+                  />
+                  {folderComposeFile && (
+                    <div className="mt-3 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                      <span className="text-xs font-semibold text-blue-700 truncate">
+                        {folderComposeFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setFolderComposeFile(null)}
+                        className="ml-2 text-blue-400 hover:text-blue-600 flex-shrink-0"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Info note */}
+              <div className="flex items-start gap-3 p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check size={12} className="text-white" />
+                </div>
+                <p className="text-green-800 text-sm font-medium">
+                  This document will be sent for admin approval and stored in
+                  the folder once approved.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
+              <button
+                onClick={() =>
+                  handleUploadToFolderCompose(selectedFolderForUpload)
+                }
+                disabled={
+                  !folderComposeData.subject.trim() ||
+                  !folderComposeData.body.trim() ||
+                  uploadingToFolder
+                }
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                {uploadingToFolder ? (
+                  <>
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-r-transparent rounded-full"></span>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    <span>Create Document</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFolderComposeModal(false);
+                  setFolderComposeData({ subject: "", body: "" });
+                  setFolderComposeFile(null);
+                }}
+                className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden File Input for Folder Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && selectedFolderForUpload) {
+            handleUploadToFolder(selectedFolderForUpload, file);
+          }
+        }}
+        accept="*/*"
+      />
+
+      {/* Create Folder Modal */}
+      {showCreateFolderModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-white">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <FolderPlus size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Create New Folder</h2>
+                    <p className="text-indigo-100 text-sm">Name your folder</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCreateFolderModal(false);
+                    setNewFolderName("");
+                  }}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={22} className="text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
+                  <FolderPlus size={15} className="text-indigo-600" />
+                  Folder Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder="e.g., Meeting Minutes"
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  autoFocus
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && newFolderName.trim()) {
+                      handleCreateFolder(newFolderName);
+                      setShowCreateFolderModal(false);
+                      setNewFolderName("");
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3">
+              <button
+                onClick={() => {
+                  if (newFolderName.trim()) {
+                    handleCreateFolder(newFolderName);
+                    setShowCreateFolderModal(false);
+                    setNewFolderName("");
+                  }
+                }}
+                disabled={!newFolderName.trim()}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                <Check size={18} />
+                <span>Create Folder</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateFolderModal(false);
+                  setNewFolderName("");
+                }}
+                className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Folder Success Modal */}
+      {showFolderSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            {/* Modal Body */}
+            <div className="p-8 text-center space-y-4 flex flex-col items-center justify-center">
+              {/* Success Icon */}
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center animate-pulse">
+                <Check size={32} className="text-white" />
+              </div>
+
+              {/* Success Message */}
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                  Folder Created!
+                </h2>
+                <p className="text-slate-600 text-sm">
+                  "{createdFolderName}" has been successfully created and is
+                  ready to use.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-8 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowFolderSuccessModal(false);
+                  setCreatedFolderName("");
+                }}
+                className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Check size={18} />
+                <span>Done</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -1478,8 +1927,10 @@ const DocumentItem = ({
   fetchActivityUpdates,
   showUsersModal,
   setShowUsersModal,
+  fileInputRef,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showFolderSubmenu, setShowFolderSubmenu] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [calendarFormData, setCalendarFormData] = useState({
     startDate: "",
@@ -1490,7 +1941,7 @@ const DocumentItem = ({
   const handleAddToCalendar = async (e) => {
     e.preventDefault();
     if (!calendarFormData.startDate) {
-      alert("Please fill in the start date and time");
+      toast.warning("Please fill in the start date and time");
       return;
     }
 
@@ -1498,7 +1949,7 @@ const DocumentItem = ({
       setAddingToCalendar(true);
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Authentication token not found. Please log in again.");
+        toast.error("Authentication token not found. Please log in again.");
         return;
       }
 
@@ -1525,13 +1976,13 @@ const DocumentItem = ({
         },
       );
 
-      alert("Document added to calendar successfully");
+      toast.success("Document added to calendar successfully");
       setShowCalendarModal(false);
       setCalendarFormData({ startDate: "", endDate: "" });
       setShowMenu(false);
     } catch (error) {
       console.error("Failed to add to calendar:", error);
-      alert("Failed to add document to calendar");
+      toast.error("Failed to add document to calendar");
     } finally {
       setAddingToCalendar(false);
     }
@@ -1576,7 +2027,7 @@ const DocumentItem = ({
             </span>
           </div>
           {item.description && (
-            <p className="text-sm text-slate-700 mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <p className="text-xs text-slate-700 mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 line-clamp-2">
               {item.description}
             </p>
           )}
@@ -1614,7 +2065,7 @@ const DocumentItem = ({
               <MoreVertical size={18} className="text-slate-600" />
             </button>
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-52 bg-white border-2 border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-56 bg-white border-2 border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
                 <button
                   onClick={() => {
                     setShowCalendarModal(true);
@@ -1625,13 +2076,62 @@ const DocumentItem = ({
                   <Calendar size={16} className="text-blue-600" />
                   Add to Calendar
                 </button>
+                {user?.role === "Official" && folders.length > 0 && (
+                  <>
+                    <div className="border-t border-slate-200"></div>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowFolderSubmenu(!showFolderSubmenu)}
+                        className="w-full text-left px-4 py-3 hover:bg-green-50 text-sm text-slate-700 font-semibold transition-colors flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          🗂️
+                          <span>Move to Folder</span>
+                        </div>
+                        <span>{showFolderSubmenu ? "▼" : "▶"}</span>
+                      </button>
+                      {showFolderSubmenu && (
+                        <div className="bg-slate-50 border-t border-slate-200">
+                          <button
+                            onClick={() => {
+                              handleMoveToFolder(item._id, null);
+                              setShowFolderSubmenu(false);
+                              setShowMenu(false);
+                              toast.success("Document removed from folder");
+                            }}
+                            className="w-full text-left px-6 py-2.5 hover:bg-slate-200 text-xs text-slate-600 font-semibold transition-colors"
+                          >
+                            No Folder
+                          </button>
+                          {folders.map((folder) => (
+                            <button
+                              key={folder._id}
+                              onClick={() => {
+                                handleMoveToFolder(item._id, folder._id);
+                                setShowFolderSubmenu(false);
+                                setShowMenu(false);
+                                toast.success(
+                                  `Document moved to "${folder.name}"`,
+                                );
+                              }}
+                              className="w-full text-left px-6 py-2.5 hover:bg-slate-200 text-xs text-slate-700 font-semibold transition-colors flex items-center gap-2"
+                            >
+                              <span className="text-sm">📁</span>
+                              {folder.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 pt-4 border-t-2 border-slate-100">
+      <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
         {String(item.document?.sender?._id) === String(user?._id) && (
           <>
             <button
@@ -1686,10 +2186,12 @@ const DocumentItem = ({
                       (s) => (s.document?._id || s.document) !== docId,
                     ),
                   );
-                  alert("Message removed from barangay and returned to inbox");
+                  toast.success(
+                    "Message removed from barangay and returned to inbox",
+                  );
                 } catch (err) {
                   console.error("Detach failed:", err);
-                  alert("Failed to remove message from barangay");
+                  toast.error("Failed to remove message from barangay");
                 }
               }}
               className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"

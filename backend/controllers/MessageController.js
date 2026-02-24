@@ -257,20 +257,29 @@ export const approveMessageForBarangay = async (req, res) => {
     await message.save();
 
     // Store the message to BarangayStorage
-    const storage = await BarangayStorage.create({
+    const storageData = {
       barangay: barangayId,
       document: messageId,
       uploadedBy: message.sender,
       documentName: message.subject,
       description: message.body,
-    });
+    };
+
+    // If message has an intended folder, add it to storage
+    if (message.intendedFolder) {
+      storageData.folder = message.intendedFolder;
+    }
+
+    const storage = await BarangayStorage.create(storageData);
 
     await storage.populate("barangay");
     await storage.populate("document");
     await storage.populate("uploadedBy", "username email");
 
     res.status(201).json({
-      message: "Message approved and stored to barangay",
+      message:
+        "Message approved and stored to barangay" +
+        (message.intendedFolder ? " in designated folder" : ""),
       data: storage,
     });
   } catch (error) {

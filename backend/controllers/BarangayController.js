@@ -314,7 +314,7 @@ export const createBarangayMessage = async (req, res) => {
   try {
     const { barangayId } = req.params;
     const senderId = req.user._id;
-    const { subject, body, startDate, endDate } = req.body;
+    const { subject, body, startDate, endDate, folderId } = req.body;
 
     // Only non-admin users assigned to this barangay can send messages to it
     if (req.user && req.user.role === "Admin") {
@@ -343,6 +343,16 @@ export const createBarangayMessage = async (req, res) => {
     if (!barangay)
       return res.status(404).json({ message: "Barangay not found" });
 
+    // Verify folderId belongs to this barangay if provided
+    if (folderId) {
+      const folder = await Folder.findById(folderId);
+      if (!folder || String(folder.barangay) !== String(barangayId)) {
+        return res
+          .status(404)
+          .json({ message: "Folder not found in this barangay" });
+      }
+    }
+
     // determine recipient: prefer chairmanId, otherwise any admin
     let recipientId = barangay.chairmanId || null;
     if (!recipientId) {
@@ -366,7 +376,7 @@ export const createBarangayMessage = async (req, res) => {
     const s = startDate ? new Date(startDate) : null;
     const e = endDate ? new Date(endDate) : null;
 
-    // Create message with pending status - DO NOT store directly to barangay yet
+    // Create message with pending status (always requires approval)
     const message = await Message.create({
       sender: senderId,
       recipient: recipientId,
@@ -378,7 +388,8 @@ export const createBarangayMessage = async (req, res) => {
       endDate: e,
       status: "pending",
       isAttached: false,
-      attachedToBarangay: barangayId,
+      attachedToBarangay: folderId ? barangayId : null,
+      intendedFolder: folderId || null,
     });
 
     await message.populate("sender", "username firstname lastname");
