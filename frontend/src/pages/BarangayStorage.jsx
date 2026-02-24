@@ -17,9 +17,123 @@ import {
   Tag,
   Calendar,
   Image as ImageIcon,
+  Plus,
 } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 import { useToast } from "../components/Toast";
+
+/* ===================== CUSTOM FOLDER STYLES ===================== */
+const folderStyles = `
+  .folder-container {
+    perspective: 1000px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .animated-folder {
+    position: relative;
+    width: 100px;
+    height: 60px;
+    background: #fff;
+    border: 3px solid #8a91b4;
+    border-radius: 5px;
+    transition: all 0.3s ease-in-out;
+    transform-style: preserve-3d;
+  }
+
+  .animated-folder::before {
+    content: "";
+    position: absolute;
+    top: -23%;
+    left: -3px;
+    width: 30px;
+    height: 14px;
+    background-color: #8a91b4;
+    border-radius: 5px 5px 0 0;
+    z-index: 1;
+  }
+
+  .animated-folder::after {
+    content: "";
+    position: absolute;
+    width: 104%;
+    height: 103%;
+    background-color: #8a91b4;
+    border: 3px solid #8a91b4;
+    border-radius: 5px;
+    left: -2px;
+    top: -1px;
+    transform: rotateX(0deg);
+    transform-origin: top;
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .folder-container:hover .animated-folder::after {
+    transform: rotateX(-30deg);
+  }
+
+  .file {
+    position: absolute;
+    width: 50px;
+    height: 40px;
+    border-radius: 4px;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .file.one {
+    top: 10px;
+    left: 10px;
+    background: #ffd6a5;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  .file.two {
+    top: 15px;
+    left: 35px;
+    background: #efa390;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  .file.three {
+    top: 22px;
+    left: 22px;
+    background: #fdffb6;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  .folder-container:hover .file.one {
+    transform: translate(-40px, -60px) rotate(-13deg);
+  }
+
+  .folder-container:hover .file.two {
+    transform: translate(40px, -60px) rotate(13deg);
+  }
+
+  .folder-container:hover .file.three {
+    transform: translate(0px, -50px) rotate(0deg);
+  }
+
+  .folder-name {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #1f2937;
+    text-align: center;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .folder-count {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+`;
 
 const BarangayStorage = () => {
   const navigate = useNavigate();
@@ -693,6 +807,7 @@ const BarangayStorage = () => {
 
   return (
     <>
+      <style>{folderStyles}</style>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Enhanced Header */}
@@ -940,7 +1055,7 @@ const BarangayStorage = () => {
                               </button>
                             )}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
                             {folders.map((folder) => {
                               const folderDocuments = filterDocuments(
                                 storage.filter(
@@ -955,91 +1070,65 @@ const BarangayStorage = () => {
                               return (
                                 <div
                                   key={folder._id}
-                                  className={`relative group border-2 rounded-xl p-5 cursor-pointer transition-all ${
-                                    isSelectedFolder
-                                      ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-300 shadow-md"
-                                      : "bg-slate-50 border-slate-200 hover:border-blue-300 hover:shadow-md"
-                                  }`}
+                                  className="flex justify-center"
                                 >
-                                  {user?.role === "Official" && (
-                                    <div className="absolute top-3 right-3 flex gap-2">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedFolderForUpload(
-                                            folder._id,
-                                          );
-                                          setShowFolderComposeModal(true);
-                                        }}
-                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                        title="Create message for folder"
-                                      >
-                                        <svg
-                                          className="w-5 h-5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M12 4v16m8-8H4"
-                                          />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteFolder(
-                                            folder._id,
-                                            folder.name,
-                                          );
-                                        }}
-                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                                        title="Delete folder"
-                                      >
-                                        <Trash2 size={16} />
-                                      </button>
-                                    </div>
-                                  )}
-
                                   <div
+                                    className="folder-container relative"
                                     onClick={() => setSelectedFolder(folder)}
-                                    className="flex items-start gap-3"
                                   >
-                                    <div
-                                      className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isSelectedFolder ? "bg-blue-600" : "bg-blue-100"}`}
-                                    >
-                                      <svg
-                                        className={`w-6 h-6 ${isSelectedFolder ? "text-white" : "text-blue-600"}`}
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                                        />
-                                      </svg>
+                                    <div className="animated-folder">
+                                      {/* File cards */}
+                                      <div className="file one"></div>
+                                      <div className="file two"></div>
+                                      <div className="file three"></div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <h4 className="font-bold text-slate-900 truncate">
-                                        {folder.name}
-                                      </h4>
-                                      <p className="text-sm text-slate-600 mt-1">
-                                        {folderDocuments.length} document
-                                        {folderDocuments.length !== 1
-                                          ? "s"
-                                          : ""}
-                                      </p>
-                                      <p className="text-xs text-slate-500 mt-2">
-                                        By {folder.createdBy?.firstname}{" "}
-                                        {folder.createdBy?.lastname}
-                                      </p>
+
+                                    {/* Controls */}
+                                    {user?.role === "Official" && (
+                                      <div className="absolute -top-1 -right-4 flex gap-1.5 z-50">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedFolderForUpload(
+                                              folder._id,
+                                            );
+                                            setShowFolderComposeModal(true);
+                                          }}
+                                          className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                                          title="Add document"
+                                        >
+                                          <Plus size={14} />
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteFolder(
+                                              folder._id,
+                                              folder.name,
+                                            );
+                                          }}
+                                          className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                                          title="Delete folder"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {/* Folder Label */}
+                                    <div className="folder-name">
+                                      {folder.name}
                                     </div>
+                                    <div className="folder-count">
+                                      {folderDocuments.length} item
+                                      {folderDocuments.length !== 1 ? "s" : ""}
+                                    </div>
+
+                                    {isSelectedFolder && (
+                                      <div className="mt-2 text-xs text-blue-600 font-semibold text-center">
+                                        ✓ Selected
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
