@@ -613,9 +613,7 @@ const BarangayStorage = () => {
         setStorage(
           storage.filter((s) => (s.document?._id || s.document) !== docId),
         );
-        toast.success(
-          "Message removed from barangay and returned to inbox",
-        );
+        toast.success("Message removed from barangay and returned to inbox");
       } catch (err) {
         console.error("Detach failed:", err);
         toast.error("Failed to remove message from barangay");
@@ -1248,8 +1246,12 @@ const BarangayStorage = () => {
                                     setShowUsersModal={setShowUsersModal}
                                     fileInputRef={fileInputRef}
                                     confirmationModal={confirmationModal}
-                                    openConfirmationModal={openConfirmationModal}
-                                    closeConfirmationModal={closeConfirmationModal}
+                                    openConfirmationModal={
+                                      openConfirmationModal
+                                    }
+                                    closeConfirmationModal={
+                                      closeConfirmationModal
+                                    }
                                     handleConfirmAction={handleConfirmAction}
                                   />
                                 ))}
@@ -1303,8 +1305,12 @@ const BarangayStorage = () => {
                                     setShowUsersModal={setShowUsersModal}
                                     fileInputRef={fileInputRef}
                                     confirmationModal={confirmationModal}
-                                    openConfirmationModal={openConfirmationModal}
-                                    closeConfirmationModal={closeConfirmationModal}
+                                    openConfirmationModal={
+                                      openConfirmationModal
+                                    }
+                                    closeConfirmationModal={
+                                      closeConfirmationModal
+                                    }
                                     handleConfirmAction={handleConfirmAction}
                                   />
                                 ))}
