@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,6 +20,7 @@ import {
   Plus,
 } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
+import { AuthContext } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 
 /* ===================== CUSTOM FOLDER STYLES ===================== */
@@ -122,10 +123,12 @@ const folderStyles = `
     font-size: 14px;
     color: #1f2937;
     text-align: center;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 160px;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
   }
 
   .folder-count {
@@ -138,8 +141,11 @@ const folderStyles = `
 const BarangayStorage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user, setUser } = useContext(AuthContext);
+  const role = (user?.role || "").toLowerCase();
+  const isOfficial = role === "official";
+  const isAdmin = role === "admin";
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const [barangays, setBarangays] = useState([]);
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const [storage, setStorage] = useState([]);
@@ -192,6 +198,12 @@ const BarangayStorage = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [showFolderSuccessModal, setShowFolderSuccessModal] = useState(false);
   const [createdFolderName, setCreatedFolderName] = useState("");
+  const [folderStatusModal, setFolderStatusModal] = useState({
+    isOpen: false,
+    folderId: null,
+    status: null,
+    folderName: "",
+  });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -214,7 +226,7 @@ const BarangayStorage = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      if (currentUser && currentUser.role === "Admin") {
+      if (currentUser && (currentUser.role || "").toLowerCase() === "admin") {
         const res = await axios.get(
           "http://localhost:5000/api/barangays/all-barangays",
           {
@@ -266,7 +278,7 @@ const BarangayStorage = () => {
     }
 
     try {
-      if (currentUser && currentUser.role !== "Admin") {
+      if (currentUser && (currentUser.role || "").toLowerCase() !== "admin") {
         const res = await axios.get(
           "http://localhost:5000/api/barangays/me/storage",
           {
@@ -316,7 +328,7 @@ const BarangayStorage = () => {
   const fetchUsersInBarangay = async (barangayId) => {
     try {
       const token = localStorage.getItem("token");
-      if (!user || user.role !== "Admin") return;
+      if (!user || (user.role || "").toLowerCase() !== "admin") return;
       const res = await axios.get(
         `http://localhost:5000/api/barangays/${barangayId}/users`,
         {
@@ -659,6 +671,43 @@ const BarangayStorage = () => {
     }
   };
 
+  const handleUpdateFolderStatus = async (folderId, status) => {
+    if (!selectedBarangay || !folderId) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}/status`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      toast.success("Folder status updated");
+      fetchFolders(selectedBarangay);
+    } catch (error) {
+      console.error("Error updating folder status:", error);
+      toast.error("Failed to update folder status.");
+    }
+  };
+
+  const openFolderStatusModal = (folderId, status, folderName) => {
+    setFolderStatusModal({ isOpen: true, folderId, status, folderName });
+  };
+
+  const closeFolderStatusModal = () => {
+    setFolderStatusModal({
+      isOpen: false,
+      folderId: null,
+      status: null,
+      folderName: "",
+    });
+  };
+
+  const confirmFolderStatusChange = async () => {
+    const { folderId, status } = folderStatusModal;
+    if (!folderId || !status) return closeFolderStatusModal();
+    await handleUpdateFolderStatus(folderId, status);
+    closeFolderStatusModal();
+  };
+
   const handleUploadToFolderCompose = async (folderId) => {
     if (!selectedBarangay || !folderId) {
       toast.warning("Please select a folder");
@@ -877,7 +926,7 @@ const BarangayStorage = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                {user?.role === "Admin" && (
+                {isAdmin && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
@@ -895,8 +944,8 @@ const BarangayStorage = () => {
                   <span>Approved</span>
                 </button>
 
-                {user &&
-                  user.role !== "Admin" &&
+                {!isAdmin &&
+                  user &&
                   selectedBarangay &&
                   String(user?.barangay?._id || user?.barangay) ===
                     String(selectedBarangay) && (
@@ -1167,6 +1216,52 @@ const BarangayStorage = () => {
                                         >
                                           <Trash2 size={14} />
                                         </button>
+                                      </div>
+                                    )}
+                                    {/* Status badge and admin visible status */}
+                                    <div className="mt-2 flex items-center justify-center gap-2">
+                                      <div className="text-sm font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                                        {folder.status
+                                          ? folder.status
+                                              .charAt(0)
+                                              .toUpperCase() +
+                                            folder.status.slice(1)
+                                          : "Ongoing"}
+                                      </div>
+                                    </div>
+
+                                    {/* Official controls: toggle status */}
+                                    {user?.role === "Official" && (
+                                      <div className="mt-2 flex items-center justify-center gap-2">
+                                        {folder.status !== "completed" ? (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openFolderStatusModal(
+                                                folder._id,
+                                                "completed",
+                                                folder.name,
+                                              );
+                                            }}
+                                            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-semibold"
+                                          >
+                                            Mark Completed
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              openFolderStatusModal(
+                                                folder._id,
+                                                "ongoing",
+                                                folder.name,
+                                              );
+                                            }}
+                                            className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md text-xs font-semibold"
+                                          >
+                                            Mark Ongoing
+                                          </button>
+                                        )}
                                       </div>
                                     )}
 
@@ -1442,7 +1537,7 @@ const BarangayStorage = () => {
                     {/* Activity Updates Section */}
                     {selectedDocument &&
                       user?.role &&
-                      (user.role === "Official" || user.role === "Admin") && (
+                      (isOfficial || isAdmin) && (
                         <div className="border-t-2 border-slate-200 pt-8">
                           <div className="flex justify-between items-center mb-6">
                             <div>
@@ -2069,6 +2164,47 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
+
+      {/* Folder Status Confirmation Modal */}
+      {folderStatusModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white text-lg font-bold">Confirm</h3>
+                <button
+                  onClick={closeFolderStatusModal}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={20} className="text-white" />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-slate-700">
+                {folderStatusModal.status === "completed"
+                  ? `Mark folder "${folderStatusModal.folderName}" as completed?`
+                  : `Mark folder "${folderStatusModal.folderName}" as ongoing?`}
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 justify-end">
+              <button
+                onClick={closeFolderStatusModal}
+                className="px-6 py-2 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmFolderStatusChange}
+                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              >
+                <Check size={16} />
+                <span>Confirm</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -2197,18 +2333,17 @@ const DocumentItem = ({
           )}
         </div>
         <div className="ml-4 flex items-start gap-2">
-          {user?.role &&
-            (user.role === "Official" || user.role === "Admin") && (
-              <button
-                onClick={() => {
-                  setSelectedDocument(item);
-                  fetchActivityUpdates(item.document?._id || item._id);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
-              >
-                Activity
-              </button>
-            )}
+          {user?.role && (isOfficial || isAdmin) && (
+            <button
+              onClick={() => {
+                setSelectedDocument(item);
+                fetchActivityUpdates(item.document?._id || item._id);
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
+            >
+              Activity
+            </button>
+          )}
           {item.documentUrl && (
             <a
               href={`http://localhost:5000${item.documentUrl}`}

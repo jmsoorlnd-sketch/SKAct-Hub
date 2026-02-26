@@ -19,6 +19,7 @@ import {
   detachMessageFromBarangay,
   createFolder,
   getFolders,
+  updateFolderStatus,
   moveDocumentToFolder,
   deleteFolder,
 } from "../controllers/BarangayController.js";
@@ -93,6 +94,12 @@ router.get("/officials/:id", getOfficialsByBarangay);
 // Folder routes
 router.post("/:barangayId/folders", requireAuth, officialOnly, createFolder);
 router.get("/:barangayId/folders", requireAuth, getFolders);
+router.put(
+  "/:barangayId/folders/:folderId/status",
+  requireAuth,
+  officialOnly,
+  updateFolderStatus,
+);
 router.put(
   "/:barangayId/storage/:storageId/move",
   requireAuth,

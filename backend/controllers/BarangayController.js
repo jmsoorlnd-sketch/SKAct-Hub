@@ -626,3 +626,32 @@ export const deleteFolder = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+// Update folder status (ongoing / completed)
+export const updateFolderStatus = async (req, res) => {
+  try {
+    const { barangayId, folderId } = req.params;
+    const { status } = req.body;
+
+    if (!status || !["ongoing", "completed"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const folder = await Folder.findById(folderId);
+    if (!folder) return res.status(404).json({ message: "Folder not found" });
+
+    if (String(folder.barangay) !== String(barangayId)) {
+      return res
+        .status(403)
+        .json({ message: "Folder does not belong to this barangay" });
+    }
+
+    folder.status = status;
+    await folder.save();
+
+    res.status(200).json({ message: "Folder status updated", folder });
+  } catch (error) {
+    console.error("Error updating folder status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

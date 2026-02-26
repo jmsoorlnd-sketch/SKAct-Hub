@@ -15,6 +15,11 @@ const folderSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  status: {
+    type: String,
+    enum: ["ongoing", "completed"],
+    default: "ongoing",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 
