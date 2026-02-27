@@ -102,9 +102,11 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     if (!formData.firstname.trim())
       newErrors.firstname = "First name is required";
     if (!formData.lastname.trim()) newErrors.lastname = "Last name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      newErrors.email = "Enter a valid email address";
+    // email optional – validate only if provided
+    if (formData.email && formData.email.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+        newErrors.email = "Enter a valid email address";
+    }
     if (!formData.username.trim()) newErrors.username = "Username is required";
     if (!formData.position) newErrors.position = "Position is required";
     if (!formData.barangay) newErrors.barangay = "Barangay is required";
@@ -319,7 +321,6 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             {/* ---- Email ---- */}
             <FormField
               label="Email Address"
-              required
               icon={<Mail size={15} className="text-blue-600" />}
               error={errors.email}
             >
@@ -328,7 +329,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="juan@example.com"
+                placeholder="juan@example.com (optional)"
                 autoComplete="off"
                 className={inputClass(errors.email)}
               />

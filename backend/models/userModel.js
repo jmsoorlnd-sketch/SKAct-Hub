@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  // email is optional for admins creating accounts; officials can add later
+  email: { type: String, required: false, unique: true, sparse: true },
 
   // MAIN ROLE FIELD
   role: {

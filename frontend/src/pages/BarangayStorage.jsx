@@ -37,8 +37,8 @@ const folderStyles = `
     position: relative;
     width: 100px;
     height: 60px;
-    background: #fff;
-    border: 3px solid #8a91b4;
+    background: #3b82f6; /* blue folder color */
+    border: 3px solid #2563eb;
     border-radius: 5px;
     transition: all 0.3s ease-in-out;
     transform-style: preserve-3d;
@@ -51,7 +51,7 @@ const folderStyles = `
     left: -3px;
     width: 30px;
     height: 14px;
-    background-color: #8a91b4;
+    background-color: #2563eb;
     border-radius: 5px 5px 0 0;
     z-index: 1;
   }
@@ -61,8 +61,8 @@ const folderStyles = `
     position: absolute;
     width: 104%;
     height: 103%;
-    background-color: #8a91b4;
-    border: 3px solid #8a91b4;
+    background-color: #2563eb;
+    border: 3px solid #2563eb;
     border-radius: 5px;
     left: -2px;
     top: -1px;
@@ -1189,7 +1189,7 @@ const BarangayStorage = () => {
 
                                     {/* Controls */}
                                     {user?.role === "Official" && (
-                                      <div className="absolute -top-1 -right-4 flex gap-1.5 z-50">
+                                      <div className="absolute top-2 right-2 flex gap-1.5 z-50">
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1230,38 +1230,22 @@ const BarangayStorage = () => {
                                       </div>
                                     </div>
 
-                                    {/* Official controls: toggle status */}
+                                    {/* Official controls: toggle status (Admin can only view) */}
                                     {user?.role === "Official" && (
                                       <div className="mt-2 flex items-center justify-center gap-2">
-                                        {folder.status !== "completed" ? (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openFolderStatusModal(
-                                                folder._id,
-                                                "completed",
-                                                folder.name,
-                                              );
-                                            }}
-                                            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md text-xs font-semibold"
-                                          >
-                                            Mark Completed
-                                          </button>
-                                        ) : (
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              openFolderStatusModal(
-                                                folder._id,
-                                                "ongoing",
-                                                folder.name,
-                                              );
-                                            }}
-                                            className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md text-xs font-semibold"
-                                          >
-                                            Mark Ongoing
-                                          </button>
-                                        )}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openFolderStatusModal(
+                                              folder._id,
+                                              folder.status || "pending",
+                                              folder.name,
+                                            );
+                                          }}
+                                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-semibold"
+                                        >
+                                          Change Status
+                                        </button>
                                       </div>
                                     )}
 
@@ -2181,11 +2165,25 @@ const BarangayStorage = () => {
               </div>
             </div>
             <div className="p-6">
-              <p className="text-slate-700">
-                {folderStatusModal.status === "completed"
-                  ? `Mark folder "${folderStatusModal.folderName}" as completed?`
-                  : `Mark folder "${folderStatusModal.folderName}" as ongoing?`}
-              </p>
+              <div className="space-y-3">
+                <p className="text-slate-700 font-semibold">
+                  Change status for "{folderStatusModal.folderName}"
+                </p>
+                <select
+                  value={folderStatusModal.status || "pending"}
+                  onChange={(e) =>
+                    setFolderStatusModal((prev) => ({
+                      ...prev,
+                      status: e.target.value,
+                    }))
+                  }
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
             </div>
             <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 justify-end">
               <button
@@ -2237,6 +2235,10 @@ const DocumentItem = ({
     endDate: "",
   });
   const [addingToCalendar, setAddingToCalendar] = useState(false);
+
+  // Derive role flags from user
+  const isOfficial = user?.role?.toLowerCase() === "official";
+  const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const handleAddToCalendar = async (e) => {
     e.preventDefault();
@@ -2382,7 +2384,8 @@ const DocumentItem = ({
       </div>
 
       <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
-        {String(item.document?.sender?._id) === String(user?._id) && (
+        {(String(item.document?.sender?._id) === String(user?._id) ||
+          user?.role === "Official") && (
           <>
             <button
               onClick={() =>

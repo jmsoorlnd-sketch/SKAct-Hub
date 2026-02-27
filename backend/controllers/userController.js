@@ -17,20 +17,22 @@ const signupUser = async (req, res) => {
     position = position ? String(position).trim() : undefined;
 
     // validate
-    if (!username || !email || !password) {
+    if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message: "Username, email and password are required",
+        message: "Username and password are required",
       });
     }
 
-    // check existing email
-    const emailExists = await User.findOne({ email });
-    if (emailExists) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already exists",
-      });
+    // if email was provided, make sure it's unique
+    if (email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists",
+        });
+      }
     }
 
     // check existing username
@@ -52,11 +54,11 @@ const signupUser = async (req, res) => {
     // create user object
     const userData = {
       username,
-      email,
       password: hashedPassword,
       role: finalRole,
       position: "Admin",
     };
+    if (email) userData.email = email; // only include when given
 
     // include optional names when provided
     if (firstname) userData.firstname = firstname;

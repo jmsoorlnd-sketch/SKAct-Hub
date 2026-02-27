@@ -633,7 +633,7 @@ export const updateFolderStatus = async (req, res) => {
     const { barangayId, folderId } = req.params;
     const { status } = req.body;
 
-    if (!status || !["ongoing", "completed"].includes(status)) {
+    if (!status || !["pending", "ongoing", "completed"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 

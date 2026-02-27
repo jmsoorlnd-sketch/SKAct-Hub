@@ -193,10 +193,10 @@ const Sidebar = () => {
   /* ==================== RENDER HELPERS ==================== */
   const getMenuClass = (path) => {
     const isActive = currentPath === path;
-    return `relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+    return `relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold text-sm transform transition-all duration-200 ease-in-out ${
       isActive
         ? "bg-blue-600 text-white shadow-lg"
-        : "text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700"
+        : "text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:scale-105"
     }`;
   };
 

@@ -120,11 +120,16 @@ export const updateStatus = async (req, res) => {
     const msg = await Message.findById(messageId);
     if (!msg) return res.status(404).json({ message: "Message not found" });
 
-    // Only the original sender can change the status (admins cannot)
-    if (String(msg.sender) !== String(req.user._id)) {
+    // Only the original sender or officials can change the status
+    const isSender = String(msg.sender) === String(req.user._id);
+    const isOfficial = req.user.role === "Official";
+
+    if (!isSender && !isOfficial) {
       return res
         .status(403)
-        .json({ message: "Only the message sender can update status" });
+        .json({
+          message: "Only the message sender or an official can update status",
+        });
     }
 
     msg.status = status;
