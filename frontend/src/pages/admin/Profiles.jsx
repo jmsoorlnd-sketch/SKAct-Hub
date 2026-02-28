@@ -7,6 +7,8 @@ const Profiles = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState({
     firstname: "",
     lastname: "",
@@ -72,6 +74,29 @@ const Profiles = () => {
     } catch (err) {
       console.error(err);
       alert("Failed to update status");
+    }
+  };
+
+  const openDeleteConfirm = (user) => {
+    setDeleteTarget(user);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(
+        `http://localhost:5000/api/users/${deleteTarget._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setUsers((prev) => prev.filter((u) => u._id !== deleteTarget._id));
+      setShowDeleteConfirm(false);
+      setDeleteTarget(null);
+      alert("User deleted successfully");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete user");
     }
   };
 
@@ -282,6 +307,50 @@ const Profiles = () => {
             </div>
           )}
 
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && deleteTarget && (
+            <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-red-600">Delete User</h3>
+                  <button
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeleteTarget(null);
+                    }}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete{" "}
+                  <span className="font-bold">
+                    {deleteTarget.firstname} {deleteTarget.lastname}
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+                <div className="flex gap-3 pt-6">
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeleteTarget(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-lg shadow overflow-hidden bg-white">
             <div className="overflow-x-auto overflow-y-auto max-h-[50vh]">
               <table className="min-w-full divide-y divide-gray-200">
@@ -383,6 +452,12 @@ const Profiles = () => {
                               {official.status === "Active"
                                 ? "Deactivate"
                                 : "Activate"}
+                            </button>
+                            <button
+                              className="text-red-600 hover:text-red-800 font-medium"
+                              onClick={() => openDeleteConfirm(official)}
+                            >
+                              Delete
                             </button>
                           </div>
                         </td>

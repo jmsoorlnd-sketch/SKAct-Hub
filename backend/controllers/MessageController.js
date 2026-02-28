@@ -2,6 +2,7 @@ import Message from "../models/MessageModel.js";
 import User from "../models/UserModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 import Barangay from "../models/BarangayModel.js";
+import Folder from "../models/FolderModel.js";
 import ActivityUpdate from "../models/ActivityUpdateModel.js";
 
 // Send a message
@@ -120,16 +121,11 @@ export const updateStatus = async (req, res) => {
     const msg = await Message.findById(messageId);
     if (!msg) return res.status(404).json({ message: "Message not found" });
 
-    // Only the original sender or officials can change the status
-    const isSender = String(msg.sender) === String(req.user._id);
-    const isOfficial = req.user.role === "Official";
-
-    if (!isSender && !isOfficial) {
+    // Only the original sender can change the status (admins cannot)
+    if (String(msg.sender) !== String(req.user._id)) {
       return res
         .status(403)
-        .json({
-          message: "Only the message sender or an official can update status",
-        });
+        .json({ message: "Only the message sender can update status" });
     }
 
     msg.status = status;
@@ -276,6 +272,19 @@ export const approveMessageForBarangay = async (req, res) => {
     }
 
     const storage = await BarangayStorage.create(storageData);
+
+    // automatically move folder to ongoing if this is the first document stored
+    if (storage.folder) {
+      try {
+        const folder = await Folder.findById(storage.folder);
+        if (folder && folder.status === "pending") {
+          folder.status = "ongoing";
+          await folder.save();
+        }
+      } catch (err) {
+        console.warn("Failed to auto-update folder status:", err);
+      }
+    }
 
     await storage.populate("barangay");
     await storage.populate("document");

@@ -291,8 +291,15 @@ export const getMyBarangayStorage = async (req, res) => {
 
     console.log("getMyBarangayStorage: user", userId, "barangayId", barangayId);
 
-    // Query storage for this barangay without strict validation (let mongo handle it)
-    const storage = await BarangayStorage.find({ barangay: barangayId })
+    // Build base query for this barangay
+    const query = { barangay: barangayId };
+
+    // secretaries and treasurers may only see documents *they* uploaded
+    if (user.position === "Secretary" || user.position === "Treasurer") {
+      query.uploadedBy = userId;
+    }
+
+    const storage = await BarangayStorage.find(query)
       .populate("uploadedBy", "username firstname lastname")
       .populate("folder", "name")
       .populate({
@@ -550,8 +557,20 @@ export const createFolder = async (req, res) => {
 export const getFolders = async (req, res) => {
   try {
     const { barangayId } = req.params;
+    const userId = req.user && req.user._id;
 
-    const folders = await Folder.find({ barangay: barangayId }).populate(
+    // build query
+    const q = { barangay: barangayId };
+
+    // if secretary or treasurer, only return folders they created
+    if (
+      req.user &&
+      (req.user.position === "Secretary" || req.user.position === "Treasurer")
+    ) {
+      q.createdBy = userId;
+    }
+
+    const folders = await Folder.find(q).populate(
       "createdBy",
       "firstname lastname username",
     );

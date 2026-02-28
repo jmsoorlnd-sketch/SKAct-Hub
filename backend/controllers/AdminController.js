@@ -17,6 +17,21 @@ const createOfficial = async (req, res) => {
       barangay,
     } = req.body;
 
+    // Validate required fields
+    if (!email || !email.trim()) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    if (!password || password.length < 8) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters" });
+    }
+
     // 1️⃣ Check if email exists
     const existEmail = await User.findOne({ email });
     if (existEmail) {

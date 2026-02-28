@@ -102,11 +102,10 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     if (!formData.firstname.trim())
       newErrors.firstname = "First name is required";
     if (!formData.lastname.trim()) newErrors.lastname = "Last name is required";
-    // email optional – validate only if provided
-    if (formData.email && formData.email.trim()) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-        newErrors.email = "Enter a valid email address";
-    }
+    // email is now required
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Enter a valid email address";
     if (!formData.username.trim()) newErrors.username = "Username is required";
     if (!formData.position) newErrors.position = "Position is required";
     if (!formData.barangay) newErrors.barangay = "Barangay is required";

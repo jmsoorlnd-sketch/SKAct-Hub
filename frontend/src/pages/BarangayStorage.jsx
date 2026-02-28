@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useContext } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,7 +20,6 @@ import {
   Plus,
 } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
-import { AuthContext } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 
 /* ===================== CUSTOM FOLDER STYLES ===================== */
@@ -37,8 +36,8 @@ const folderStyles = `
     position: relative;
     width: 100px;
     height: 60px;
-    background: #3b82f6; /* blue folder color */
-    border: 3px solid #2563eb;
+    background: #fff;
+    border: 3px solid #a0522d; /* brown border */
     border-radius: 5px;
     transition: all 0.3s ease-in-out;
     transform-style: preserve-3d;
@@ -51,7 +50,7 @@ const folderStyles = `
     left: -3px;
     width: 30px;
     height: 14px;
-    background-color: #2563eb;
+    background-color: #a0522d; /* brown flap */
     border-radius: 5px 5px 0 0;
     z-index: 1;
   }
@@ -61,8 +60,8 @@ const folderStyles = `
     position: absolute;
     width: 104%;
     height: 103%;
-    background-color: #2563eb;
-    border: 3px solid #2563eb;
+    background-color: #a0522d;
+    border: 3px solid #a0522d;
     border-radius: 5px;
     left: -2px;
     top: -1px;
@@ -123,12 +122,10 @@ const folderStyles = `
     font-size: 14px;
     color: #1f2937;
     text-align: center;
-    max-width: 160px;
-    overflow: visible;
-    text-overflow: unset;
-    white-space: normal;
-    word-break: break-word;
-    line-height: 1.2;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .folder-count {
@@ -141,11 +138,8 @@ const folderStyles = `
 const BarangayStorage = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, setUser } = useContext(AuthContext);
-  const role = (user?.role || "").toLowerCase();
-  const isOfficial = role === "official";
-  const isAdmin = role === "admin";
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const [barangays, setBarangays] = useState([]);
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const [storage, setStorage] = useState([]);
@@ -198,12 +192,6 @@ const BarangayStorage = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [showFolderSuccessModal, setShowFolderSuccessModal] = useState(false);
   const [createdFolderName, setCreatedFolderName] = useState("");
-  const [folderStatusModal, setFolderStatusModal] = useState({
-    isOpen: false,
-    folderId: null,
-    status: null,
-    folderName: "",
-  });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -226,7 +214,7 @@ const BarangayStorage = () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      if (currentUser && (currentUser.role || "").toLowerCase() === "admin") {
+      if (currentUser && currentUser.role === "Admin") {
         const res = await axios.get(
           "http://localhost:5000/api/barangays/all-barangays",
           {
@@ -278,7 +266,7 @@ const BarangayStorage = () => {
     }
 
     try {
-      if (currentUser && (currentUser.role || "").toLowerCase() !== "admin") {
+      if (currentUser && currentUser.role !== "Admin") {
         const res = await axios.get(
           "http://localhost:5000/api/barangays/me/storage",
           {
@@ -328,7 +316,7 @@ const BarangayStorage = () => {
   const fetchUsersInBarangay = async (barangayId) => {
     try {
       const token = localStorage.getItem("token");
-      if (!user || (user.role || "").toLowerCase() !== "admin") return;
+      if (!user || user.role !== "Admin") return;
       const res = await axios.get(
         `http://localhost:5000/api/barangays/${barangayId}/users`,
         {
@@ -630,12 +618,39 @@ const BarangayStorage = () => {
         console.error("Detach failed:", err);
         toast.error("Failed to remove message from barangay");
       }
+    } else if (action === "deleteFolder") {
+      try {
+        const folderId = docId;
+        const documentsInFolder = storage.filter(
+          (item) => item.folder && item.folder._id === folderId,
+        );
+        const token = localStorage.getItem("token");
+        await axios.delete(
+          `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        toast.success(
+          `Folder deleted successfully${
+            documentsInFolder.length > 0
+              ? `! ${documentsInFolder.length} document(s) returned to stored documents.`
+              : "!"
+          }`,
+        );
+        if (selectedFolder && selectedFolder._id === folderId) {
+          setSelectedFolder(null);
+        }
+        fetchFolders(selectedBarangay);
+        fetchStorageDocuments(selectedBarangay);
+      } catch (error) {
+        console.error("Error deleting folder:", error);
+        toast.error("Failed to delete folder.");
+      }
     }
 
     closeConfirmationModal();
   };
 
-  const handleDeleteFolder = async (folderId, folderName) => {
+  const handleDeleteFolder = (folderId, folderName) => {
     const documentsInFolder = storage.filter(
       (item) => item.folder && item.folder._id === folderId,
     );
@@ -645,67 +660,14 @@ const BarangayStorage = () => {
       confirmMessage += `\n\nThis folder contains ${documentsInFolder.length} document(s). They will be moved to stored documents.`;
     }
 
-    if (!window.confirm(confirmMessage)) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      toast.success(
-        `Folder deleted successfully${
-          documentsInFolder.length > 0
-            ? `! ${documentsInFolder.length} document(s) returned to stored documents.`
-            : "!"
-        }`,
-      );
-      if (selectedFolder && selectedFolder._id === folderId) {
-        setSelectedFolder(null);
-      }
-      fetchFolders(selectedBarangay);
-      fetchStorageDocuments(selectedBarangay);
-    } catch (error) {
-      console.error("Error deleting folder:", error);
-      toast.error("Failed to delete folder.");
-    }
-  };
-
-  const handleUpdateFolderStatus = async (folderId, status) => {
-    if (!selectedBarangay || !folderId) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      toast.success("Folder status updated");
-      fetchFolders(selectedBarangay);
-    } catch (error) {
-      console.error("Error updating folder status:", error);
-      toast.error("Failed to update folder status.");
-    }
-  };
-
-  const openFolderStatusModal = (folderId, status, folderName) => {
-    setFolderStatusModal({ isOpen: true, folderId, status, folderName });
-  };
-
-  const closeFolderStatusModal = () => {
-    setFolderStatusModal({
-      isOpen: false,
-      folderId: null,
-      status: null,
-      folderName: "",
-    });
-  };
-
-  const confirmFolderStatusChange = async () => {
-    const { folderId, status } = folderStatusModal;
-    if (!folderId || !status) return closeFolderStatusModal();
-    await handleUpdateFolderStatus(folderId, status);
-    closeFolderStatusModal();
+    // Open modal confirmation instead of window.confirm
+    openConfirmationModal(
+      "deleteFolder",
+      null,
+      folderId,
+      "Delete Folder",
+      confirmMessage,
+    );
   };
 
   const handleUploadToFolderCompose = async (folderId) => {
@@ -926,7 +888,7 @@ const BarangayStorage = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                {isAdmin && (
+                {user?.role === "Admin" && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
@@ -944,8 +906,8 @@ const BarangayStorage = () => {
                   <span>Approved</span>
                 </button>
 
-                {!isAdmin &&
-                  user &&
+                {user &&
+                  user.role !== "Admin" &&
                   selectedBarangay &&
                   String(user?.barangay?._id || user?.barangay) ===
                     String(selectedBarangay) && (
@@ -1189,7 +1151,7 @@ const BarangayStorage = () => {
 
                                     {/* Controls */}
                                     {user?.role === "Official" && (
-                                      <div className="absolute top-2 right-2 flex gap-1.5 z-50">
+                                      <div className="absolute -top-1 -right-4 flex gap-1.5 z-50">
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1218,36 +1180,6 @@ const BarangayStorage = () => {
                                         </button>
                                       </div>
                                     )}
-                                    {/* Status badge and admin visible status */}
-                                    <div className="mt-2 flex items-center justify-center gap-2">
-                                      <div className="text-sm font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                                        {folder.status
-                                          ? folder.status
-                                              .charAt(0)
-                                              .toUpperCase() +
-                                            folder.status.slice(1)
-                                          : "Ongoing"}
-                                      </div>
-                                    </div>
-
-                                    {/* Official controls: toggle status (Admin can only view) */}
-                                    {user?.role === "Official" && (
-                                      <div className="mt-2 flex items-center justify-center gap-2">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openFolderStatusModal(
-                                              folder._id,
-                                              folder.status || "pending",
-                                              folder.name,
-                                            );
-                                          }}
-                                          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-semibold"
-                                        >
-                                          Change Status
-                                        </button>
-                                      </div>
-                                    )}
 
                                     {/* Folder Label */}
                                     <div className="folder-name">
@@ -1256,6 +1188,18 @@ const BarangayStorage = () => {
                                     <div className="folder-count">
                                       {folderDocuments.length} item
                                       {folderDocuments.length !== 1 ? "s" : ""}
+                                    </div>
+
+                                    {/* Status badge */}
+                                    <div className="mt-2 flex items-center justify-center gap-2">
+                                      <div className="text-sm font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                                        {folder.status
+                                          ? folder.status
+                                              .charAt(0)
+                                              .toUpperCase() +
+                                            folder.status.slice(1)
+                                          : "Pending"}
+                                      </div>
                                     </div>
 
                                     {isSelectedFolder && (
@@ -1521,7 +1465,7 @@ const BarangayStorage = () => {
                     {/* Activity Updates Section */}
                     {selectedDocument &&
                       user?.role &&
-                      (isOfficial || isAdmin) && (
+                      (user.role === "Official" || user.role === "Admin") && (
                         <div className="border-t-2 border-slate-200 pt-8">
                           <div className="flex justify-between items-center mb-6">
                             <div>
@@ -2148,61 +2092,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
-      {/* Folder Status Confirmation Modal */}
-      {folderStatusModal.isOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <h3 className="text-white text-lg font-bold">Confirm</h3>
-                <button
-                  onClick={closeFolderStatusModal}
-                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                >
-                  <X size={20} className="text-white" />
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-3">
-                <p className="text-slate-700 font-semibold">
-                  Change status for "{folderStatusModal.folderName}"
-                </p>
-                <select
-                  value={folderStatusModal.status || "pending"}
-                  onChange={(e) =>
-                    setFolderStatusModal((prev) => ({
-                      ...prev,
-                      status: e.target.value,
-                    }))
-                  }
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="ongoing">Ongoing</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 justify-end">
-              <button
-                onClick={closeFolderStatusModal}
-                className="px-6 py-2 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmFolderStatusChange}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-              >
-                <Check size={16} />
-                <span>Confirm</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
@@ -2235,10 +2124,6 @@ const DocumentItem = ({
     endDate: "",
   });
   const [addingToCalendar, setAddingToCalendar] = useState(false);
-
-  // Derive role flags from user
-  const isOfficial = user?.role?.toLowerCase() === "official";
-  const isAdmin = user?.role?.toLowerCase() === "admin";
 
   const handleAddToCalendar = async (e) => {
     e.preventDefault();
@@ -2335,17 +2220,18 @@ const DocumentItem = ({
           )}
         </div>
         <div className="ml-4 flex items-start gap-2">
-          {user?.role && (isOfficial || isAdmin) && (
-            <button
-              onClick={() => {
-                setSelectedDocument(item);
-                fetchActivityUpdates(item.document?._id || item._id);
-              }}
-              className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
-            >
-              Activity
-            </button>
-          )}
+          {user?.role &&
+            (user.role === "Official" || user.role === "Admin") && (
+              <button
+                onClick={() => {
+                  setSelectedDocument(item);
+                  fetchActivityUpdates(item.document?._id || item._id);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
+              >
+                Activity
+              </button>
+            )}
           {item.documentUrl && (
             <a
               href={`http://localhost:5000${item.documentUrl}`}
@@ -2384,8 +2270,7 @@ const DocumentItem = ({
       </div>
 
       <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
-        {(String(item.document?.sender?._id) === String(user?._id) ||
-          user?.role === "Official") && (
+        {String(item.document?.sender?._id) === String(user?._id) && (
           <>
             <button
               onClick={() =>
