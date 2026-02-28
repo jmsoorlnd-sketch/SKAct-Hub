@@ -25,7 +25,7 @@ import { useToast } from "../components/Toast";
 /* ===================== CUSTOM FOLDER STYLES ===================== */
 const folderStyles = `
   .folder-container {
-    perspective: 1000px;
+    perspective: 1200px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -36,10 +36,10 @@ const folderStyles = `
     position: relative;
     width: 100px;
     height: 60px;
-    background: #fff;
-    border: 3px solid #a0522d; /* brown border */
+    background: #F5E6D3;
+    border: 3px solid #D4A574; /* light brown border */
     border-radius: 5px;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     transform-style: preserve-3d;
   }
 
@@ -50,9 +50,11 @@ const folderStyles = `
     left: -3px;
     width: 30px;
     height: 14px;
-    background-color: #a0522d; /* brown flap */
+    background-color: #D4A574; /* light brown flap */
     border-radius: 5px 5px 0 0;
     z-index: 1;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center bottom;
   }
 
   .animated-folder::after {
@@ -60,19 +62,24 @@ const folderStyles = `
     position: absolute;
     width: 104%;
     height: 103%;
-    background-color: #a0522d;
-    border: 3px solid #a0522d;
+    background-color: #D4A574;
+    border: 3px solid #D4A574;
     border-radius: 5px;
     left: -2px;
     top: -1px;
     transform: rotateX(0deg);
     transform-origin: top;
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    backface-visibility: hidden;
   }
 
   .folder-container:hover .animated-folder::after {
-    transform: rotateX(-30deg);
+    transform: rotateX(-45deg);
+  }
+
+  .folder-container:hover .animated-folder::before {
+    transform: rotateX(-45deg);
   }
 
   .file {

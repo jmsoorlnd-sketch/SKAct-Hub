@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  Plus,
+  X,
   Clock,
   MapPin,
   FileText,
@@ -11,16 +14,39 @@ import {
   TrendingUp,
   CalendarDays,
   Shield,
+  Tag,
+  AlignLeft,
+  Save,
 } from "lucide-react";
 
 const EventCalendar = () => {
   /* ===================== STATE ===================== */
   const [userBarangay, setUserBarangay] = useState(null);
+  const { user } = useContext(AuthContext);
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
+  const [selectedEventIds, setSelectedEventIds] = useState(new Set());
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    eventIds: [],
+    message: "",
+    title: "",
+  });
+
+  // Create Event Modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const defaultForm = {
+    subject: "",
+    body: "",
+    startDate: "",
+    endDate: "",
+  };
+  const [formData, setFormData] = useState(defaultForm);
+  const [formErrors, setFormErrors] = useState({});
 
   /* ===================== DATA FETCHING ===================== */
   useEffect(() => {
@@ -61,6 +87,41 @@ const EventCalendar = () => {
     }
   };
 
+  const openConfirmationModal = (ids) => {
+    setConfirmationModal({
+      isOpen: true,
+      eventIds: ids,
+      title: "Cancel Events",
+      message: `Cancel ${ids.length} selected event${ids.length !== 1 ? "s" : ""}?`,
+    });
+  };
+
+  const closeConfirmationModal = () => {
+    setConfirmationModal({
+      isOpen: false,
+      eventIds: [],
+      message: "",
+      title: "",
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const ids = confirmationModal.eventIds || [];
+    for (const id of ids) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.delete(`http://localhost:5000/api/messages/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.error("Failed to delete event", id, err);
+      }
+    }
+    setSelectedEventIds(new Set());
+    fetchEvents();
+    closeConfirmationModal();
+  };
+
   /* ===================== CALENDAR HELPERS ===================== */
   const getDaysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -84,10 +145,21 @@ const EventCalendar = () => {
 
   const getEventsForDate = (date) => {
     return events.filter((event) => {
+      // allow if the current user created the event
+      if (user && `${event.sender?._id}` === `${user._id}`) {
+        const eventDate = new Date(event.startDate);
+        return (
+          eventDate.getDate() === date.getDate() &&
+          eventDate.getMonth() === date.getMonth() &&
+          eventDate.getFullYear() === date.getFullYear()
+        );
+      }
+
       if (!userBarangay) return false;
 
       // Only show events if the official's barangay matches
-      if (event.attachedToBarangay !== userBarangay._id) {
+      // convert IDs to string in case one is ObjectId
+      if (`${event.attachedToBarangay}` !== `${userBarangay._id}`) {
         return false;
       }
 
@@ -100,13 +172,84 @@ const EventCalendar = () => {
     });
   };
 
+  /* clear selections when events update */
+  useEffect(() => {
+    setSelectedEventIds(new Set());
+  }, [events]);
+
+  /* ===================== EVENT CREATION ===================== */
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.subject.trim()) errors.subject = "Event title is required";
+    if (!formData.startDate) errors.startDate = "Start date is required";
+    if (formData.endDate && formData.endDate < formData.startDate)
+      errors.endDate = "End date cannot be before start date";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleOpenCreateModal = () => {
+    setFormData(defaultForm);
+    setFormErrors({});
+    setShowCreateModal(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setFormData(defaultForm);
+    setFormErrors({});
+  };
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Authentication token not found. Please log in again.");
+        return;
+      }
+
+      await axios.post(
+        "http://localhost:5000/api/messages/send",
+        {
+          subject: formData.subject,
+          body: formData.body,
+          startDate: formData.startDate,
+          endDate: formData.endDate || null,
+          barangayId: userBarangay?._id || null,
+          // no recipientId: backend will default to sender
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      handleCloseCreateModal();
+      fetchEvents();
+    } catch (error) {
+      console.error("Failed to create event:", error);
+      alert(
+        error.response?.status === 401
+          ? "Authentication failed. Please log in again."
+          : "Failed to create event. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   /* ===================== STATISTICS ===================== */
   const statistics = useMemo(() => {
-    if (!userBarangay) return { total: 0, upcoming: 0, past: 0, thisMonth: 0 };
+    if (!userBarangay && !user)
+      return { total: 0, upcoming: 0, past: 0, thisMonth: 0 };
 
-    const barangayEvents = events.filter(
-      (e) => e.attachedToBarangay === userBarangay._id,
-    );
+    const barangayEvents = events.filter((e) => {
+      if (user && `${e.sender?._id}` === `${user._id}`) return true;
+      if (userBarangay && `${e.attachedToBarangay}` === `${userBarangay._id}`)
+        return true;
+      return false;
+    });
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -126,7 +269,21 @@ const EventCalendar = () => {
     }).length;
 
     return { total, upcoming, past, thisMonth };
-  }, [events, userBarangay, currentDate]);
+  }, [events, userBarangay, user, currentDate]);
+
+  // precompute filtered upcoming events list for rendering and selection
+  const upcomingEvents = useMemo(() => {
+    if (!userBarangay && !user) return [];
+    return events
+      .filter((e) => {
+        if (user && `${e.sender?._id}` === `${user._id}`) return true;
+        if (userBarangay && `${e.attachedToBarangay}` === `${userBarangay._id}`)
+          return true;
+        return false;
+      })
+      .filter((e) => new Date(e.startDate) >= new Date())
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  }, [events, userBarangay, user, user]);
 
   /* ===================== CALENDAR RENDER ===================== */
   const renderCalendar = () => {
@@ -223,11 +380,20 @@ const EventCalendar = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Event Calendar</h1>
-            <p className="text-slate-600 mt-1 text-sm">
-              View scheduled events for your barangay
-            </p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Event Calendar</h1>
+              <p className="text-slate-600 mt-1 text-sm">
+                Create events and see all your scheduled activities
+              </p>
+            </div>
+            <button
+              onClick={handleOpenCreateModal}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
+            >
+              <Plus size={18} />
+              <span>Create Event</span>
+            </button>
           </div>
 
           {loading ? (
@@ -269,7 +435,7 @@ const EventCalendar = () => {
                       </h2>
                     </div>
                     <p className="text-blue-100 text-sm">
-                      Events scheduled for your barangay
+                      Events for your barangay or ones you created
                     </p>
                   </div>
                   <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
@@ -371,13 +537,53 @@ const EventCalendar = () => {
               {/* Upcoming Events List */}
               {statistics.upcoming > 0 && (
                 <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-5 py-3 border-b-2 border-slate-200">
-                    <h3 className="text-base font-bold text-slate-900">
-                      Upcoming Events
-                    </h3>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Events scheduled for Barangay {userBarangay.barangayName}
-                    </p>
+                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-5 py-3 border-b-2 border-slate-200 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={
+                          upcomingEvents.length > 0 &&
+                          selectedEventIds.size === upcomingEvents.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedEventIds(
+                              new Set(upcomingEvents.map((ev) => ev._id)),
+                            );
+                          } else {
+                            setSelectedEventIds(new Set());
+                          }
+                        }}
+                      />
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900">
+                          Upcoming Events
+                        </h3>
+                        <p className="text-xs text-slate-600 mt-0.5">
+                          Events scheduled for Barangay{" "}
+                          {userBarangay.barangayName}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (selectedEventIds.size === 0) return;
+                        const ids = Array.from(selectedEventIds);
+                        setConfirmationModal({
+                          isOpen: true,
+                          eventIds: ids,
+                          title: "Cancel Events",
+                          message: `Cancel ${ids.length} selected event${
+                            ids.length !== 1 ? "s" : ""
+                          }?`,
+                        });
+                      }}
+                      className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors"
+                      disabled={selectedEventIds.size === 0}
+                    >
+                      Cancel Selected
+                    </button>
                   </div>
 
                   <div className="p-5">
@@ -396,6 +602,17 @@ const EventCalendar = () => {
                             key={evt._id}
                             className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
                           >
+                            <input
+                              type="checkbox"
+                              className="mr-2 mb-2"
+                              checked={selectedEventIds.has(evt._id)}
+                              onChange={() => {
+                                const copy = new Set(selectedEventIds);
+                                if (copy.has(evt._id)) copy.delete(evt._id);
+                                else copy.add(evt._id);
+                                setSelectedEventIds(copy);
+                              }}
+                            />
                             <div className="flex items-start gap-2.5 mb-2.5">
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
                                 <CalendarIcon className="w-5 h-5 text-white" />
@@ -455,6 +672,38 @@ const EventCalendar = () => {
                 </div>
               )}
             </>
+          )}
+
+          {/* Confirmation modal for bulk actions */}
+          {confirmationModal.isOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+                  <h3 className="text-xl font-bold text-white">
+                    {confirmationModal.title}
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <p className="text-slate-700 text-base mb-6">
+                    {confirmationModal.message}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleConfirmAction}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={closeConfirmationModal}
+                      className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -546,6 +795,203 @@ const EventCalendar = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== CREATE EVENT MODAL ==================== */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="bg-blue-600 px-6 py-5 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-white">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <CalendarIcon size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Create New Event</h2>
+                    <p className="text-blue-100 text-sm">
+                      Schedule a barangay event
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseCreateModal}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={22} className="text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <form
+              onSubmit={handleCreateEvent}
+              className="flex flex-col flex-1 overflow-hidden"
+            >
+              <div className="p-6 overflow-y-auto flex-1 space-y-5">
+                {/* Event Title */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                    <Tag size={15} className="text-blue-600" />
+                    Event Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.subject}
+                    onChange={(e) => {
+                      setFormData({ ...formData, subject: e.target.value });
+                      if (formErrors.subject)
+                        setFormErrors({ ...formErrors, subject: "" });
+                    }}
+                    placeholder="e.g., Community General Assembly"
+                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                      formErrors.subject
+                        ? "border-red-400 bg-red-50"
+                        : "border-slate-200 focus:border-blue-500"
+                    }`}
+                  />
+                  {formErrors.subject && (
+                    <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
+                      <X size={11} /> {formErrors.subject}
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                    <AlignLeft size={15} className="text-blue-600" />
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.body}
+                    onChange={(e) =>
+                      setFormData({ ...formData, body: e.target.value })
+                    }
+                    placeholder="Describe the event, agenda, or any additional details..."
+                    rows={4}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                  />
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                      <Clock size={15} className="text-blue-600" />
+                      Start Date & Time <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.startDate}
+                      onChange={(e) => {
+                        setFormData({ ...formData, startDate: e.target.value });
+                        if (formErrors.startDate)
+                          setFormErrors({ ...formErrors, startDate: "" });
+                      }}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                        formErrors.startDate
+                          ? "border-red-400 bg-red-50"
+                          : "border-slate-200 focus:border-blue-500"
+                      }`}
+                    />
+                    {formErrors.startDate && (
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
+                        <X size={11} /> {formErrors.startDate}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                      <Clock size={15} className="text-purple-600" />
+                      End Date & Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formData.endDate}
+                      onChange={(e) => {
+                        setFormData({ ...formData, endDate: e.target.value });
+                        if (formErrors.endDate)
+                          setFormErrors({ ...formErrors, endDate: "" });
+                      }}
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                        formErrors.endDate
+                          ? "border-red-400 bg-red-50"
+                          : "border-slate-200 focus:border-purple-500"
+                      }`}
+                    />
+                    {formErrors.endDate && (
+                      <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
+                        <X size={11} /> {formErrors.endDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live Preview */}
+                {formData.subject && (
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+                    <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">
+                      Preview
+                    </p>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                        <CalendarIcon size={18} className="text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-900 truncate">
+                          {formData.subject}
+                        </h4>
+                        {formData.body && (
+                          <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">
+                            {formData.body}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-3 mt-2">
+                          {formData.startDate && (
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-700 font-semibold">
+                              <Clock size={11} />
+                              {new Date(formData.startDate).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      <span>Create Event</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseCreateModal}
+                  className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -24,23 +24,17 @@ const AdminCalendar = () => {
   const [events, setEvents] = useState([]);
   const [barangays, setBarangays] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [selectedEventIds, setSelectedEventIds] = useState(new Set());
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    eventIds: [],
+    message: "",
+    title: "",
+  });
 
   // Modals
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
-
-  // Form
-  const defaultForm = {
-    subject: "",
-    body: "",
-    startDate: "",
-    endDate: "",
-    barangayId: "",
-  };
-  const [formData, setFormData] = useState(defaultForm);
-  const [formErrors, setFormErrors] = useState({});
 
   /* ===================== DATA FETCHING ===================== */
   useEffect(() => {
@@ -72,10 +66,8 @@ const AdminCalendar = () => {
         },
       );
 
-      const filtered = (res.data.activities || []).filter(
-        (a) => a.isAdminScheduled === true,
-      );
-      setEvents(filtered);
+      // show every activity received from the server (admins can view all barangay events)
+      setEvents(res.data.activities || []);
     } catch (error) {
       console.error("Failed to fetch events:", error);
     } finally {
@@ -107,84 +99,56 @@ const AdminCalendar = () => {
       );
     });
 
-  /* ===================== FORM VALIDATION ===================== */
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.subject.trim()) errors.subject = "Event title is required";
-    if (!formData.startDate) errors.startDate = "Start date is required";
-    if (formData.endDate && formData.endDate < formData.startDate)
-      errors.endDate = "End date cannot be before start date";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  /* clear selections when events update */
+  useEffect(() => {
+    setSelectedEventIds(new Set());
+  }, [events]);
 
   /* ===================== EVENT HANDLERS ===================== */
-  const handleOpenCreateModal = () => {
-    setFormData(defaultForm);
-    setFormErrors({});
-    setShowCreateModal(true);
+  const handleDeleteEvent = (eventId) => {
+    // open confirmation modal with single id
+    setConfirmationModal({
+      isOpen: true,
+      eventIds: [eventId],
+      title: "Cancel Event",
+      message: "Are you sure you want to cancel this event?",
+    });
   };
 
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-    setFormData(defaultForm);
-    setFormErrors({});
+  const openConfirmationModal = (ids) => {
+    setConfirmationModal({
+      isOpen: true,
+      eventIds: ids,
+      title: "Cancel Events",
+      message: `Cancel ${ids.length} selected event${ids.length !== 1 ? "s" : ""}?`,
+    });
   };
 
-  const handleCreateEvent = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  const closeConfirmationModal = () => {
+    setConfirmationModal({
+      isOpen: false,
+      eventIds: [],
+      message: "",
+      title: "",
+    });
+  };
 
-    try {
-      setSubmitting(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Authentication token not found. Please log in again.");
-        return;
+  const handleConfirmAction = async () => {
+    const ids = confirmationModal.eventIds || [];
+    for (const id of ids) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.delete(`http://localhost:5000/api/messages/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.error("Failed to delete event", id, err);
       }
-
-      await axios.post(
-        "http://localhost:5000/api/messages/send",
-        {
-          subject: formData.subject,
-          body: formData.body,
-          startDate: formData.startDate,
-          endDate: formData.endDate || null,
-          attachedToBarangay: formData.barangayId || null,
-          recipient: "admin",
-          status: "approved",
-          isAdminScheduled: true,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      handleCloseCreateModal();
-      fetchEvents();
-    } catch (error) {
-      console.error("Failed to create event:", error);
-      alert(
-        error.response?.status === 401
-          ? "Authentication failed. Please log in again."
-          : "Failed to schedule event. Please try again.",
-      );
-    } finally {
-      setSubmitting(false);
     }
-  };
-
-  const handleDeleteEvent = async (eventId) => {
-    if (!window.confirm("Are you sure you want to cancel this event?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/messages/${eventId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setShowDateModal(false);
-      fetchEvents();
-    } catch (error) {
-      console.error("Failed to delete event:", error);
-      alert("Failed to cancel event. Please try again.");
-    }
+    setSelectedEventIds(new Set());
+    setShowDateModal(false);
+    fetchEvents();
+    closeConfirmationModal();
   };
 
   /* ===================== STATISTICS ===================== */
@@ -204,6 +168,13 @@ const AdminCalendar = () => {
       }).length,
     };
   }, [events, currentDate]);
+
+  // sorted list for display and bulk selection
+  const sortedEvents = useMemo(() => {
+    return [...events].sort(
+      (a, b) => new Date(a.startDate) - new Date(b.startDate),
+    );
+  }, [events]);
 
   /* ===================== CALENDAR RENDER ===================== */
   const renderCalendar = () => {
@@ -262,15 +233,25 @@ const AdminCalendar = () => {
             )}
           </div>
           <div className="space-y-1 flex-1">
-            {dayEvents.slice(0, 3).map((evt) => (
-              <div
-                key={evt._id}
-                className="text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 px-2 py-1 rounded-lg truncate border border-blue-200 font-semibold"
-                title={evt.subject}
-              >
-                {evt.subject}
-              </div>
-            ))}
+            {dayEvents.slice(0, 3).map((evt) => {
+              const barangayName = barangays.find(
+                (b) => b._id === evt.attachedToBarangay,
+              )?.barangayName;
+              return (
+                <div
+                  key={evt._id}
+                  className="text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 px-2 py-1 rounded-lg truncate border border-blue-200 font-semibold"
+                  title={`${evt.subject}${barangayName ? ` \u2013 ${barangayName}` : ""}`}
+                >
+                  {evt.subject}
+                  {barangayName && (
+                    <span className="block text-[8px] text-slate-600 truncate">
+                      {barangayName}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
             {dayEvents.length > 3 && (
               <div className="text-xs text-blue-600 font-bold text-center">
                 +{dayEvents.length - 3} more
@@ -290,20 +271,11 @@ const AdminCalendar = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Event Calendar</h1>
-              <p className="text-slate-600 mt-1 text-sm">
-                Schedule and manage barangay events
-              </p>
-            </div>
-            <button
-              onClick={handleOpenCreateModal}
-              className="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
-            >
-              <Plus size={18} />
-              <span>Create Event</span>
-            </button>
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold">Event Calendar</h1>
+            <p className="text-slate-600 mt-1 text-sm">
+              View barangay events created by officials
+            </p>
           </div>
 
           {loading ? (
@@ -409,13 +381,54 @@ const AdminCalendar = () => {
               {/* Events List */}
               {events.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b-2 border-slate-200">
-                    <h3 className="text-lg font-bold text-slate-900">
-                      All Scheduled Events
-                    </h3>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Chronological event list
-                    </p>
+                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b-2 border-slate-200 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="mr-2"
+                        checked={
+                          sortedEvents.length > 0 &&
+                          selectedEventIds.size === sortedEvents.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedEventIds(
+                              new Set(sortedEvents.map((ev) => ev._id)),
+                            );
+                          } else {
+                            setSelectedEventIds(new Set());
+                          }
+                        }}
+                      />
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          All Scheduled Events
+                        </h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Chronological event list
+                        </p>
+                      </div>
+                    </div>
+                    {events.length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (selectedEventIds.size === 0) return;
+                          const ids = Array.from(selectedEventIds);
+                          setConfirmationModal({
+                            isOpen: true,
+                            eventIds: ids,
+                            title: "Cancel Events",
+                            message: `Cancel ${ids.length} selected event${
+                              ids.length !== 1 ? "s" : ""
+                            }?`,
+                          });
+                        }}
+                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors"
+                        disabled={selectedEventIds.size === 0}
+                      >
+                        Cancel Selected
+                      </button>
+                    )}
                   </div>
                   <div className="p-6 space-y-4">
                     {[...events]
@@ -433,6 +446,17 @@ const AdminCalendar = () => {
                             className={`p-5 rounded-xl border-2 transition-all ${isPast ? "bg-slate-50 border-slate-200" : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:shadow-md"}`}
                           >
                             <div className="flex justify-between items-start gap-4">
+                              <input
+                                type="checkbox"
+                                className="mt-2"
+                                checked={selectedEventIds.has(evt._id)}
+                                onChange={() => {
+                                  const copy = new Set(selectedEventIds);
+                                  if (copy.has(evt._id)) copy.delete(evt._id);
+                                  else copy.add(evt._id);
+                                  setSelectedEventIds(copy);
+                                }}
+                              />
                               <div className="flex-1">
                                 <div className="flex items-start gap-3 mb-3">
                                   <div
@@ -449,6 +473,11 @@ const AdminCalendar = () => {
                                         {evt.body}
                                       </p>
                                     )}
+                                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                                      <span>
+                                        Created by: {evt.sender?.username}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -477,6 +506,16 @@ const AdminCalendar = () => {
                                     </span>
                                   </div>
                                 )}
+                                {!barangayName &&
+                                  evt.sender?.barangay?.barangayName && (
+                                    <div className="flex items-center gap-2 mt-3 text-sm">
+                                      <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                                      <span className="font-semibold text-slate-600">
+                                        Barangay:{" "}
+                                        {evt.sender.barangay.barangayName}
+                                      </span>
+                                    </div>
+                                  )}
                               </div>
                               <button
                                 onClick={() => handleDeleteEvent(evt._id)}
@@ -496,238 +535,6 @@ const AdminCalendar = () => {
           )}
         </div>
       </div>
-
-      {/* ==================== CREATE EVENT MODAL ==================== */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden">
-            {/* Modal Header */}
-            <div className="bg-blue-600 px-6 py-5 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-white">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                    <CalendarIcon size={22} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Create New Event</h2>
-                    <p className="text-blue-100 text-sm">
-                      Schedule a barangay event
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleCloseCreateModal}
-                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                >
-                  <X size={22} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <form
-              onSubmit={handleCreateEvent}
-              className="flex flex-col flex-1 overflow-hidden"
-            >
-              <div className="p-6 overflow-y-auto flex-1 space-y-5">
-                {/* Event Title */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
-                    <Tag size={15} className="text-blue-600" />
-                    Event Title <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.subject}
-                    onChange={(e) => {
-                      setFormData({ ...formData, subject: e.target.value });
-                      if (formErrors.subject)
-                        setFormErrors({ ...formErrors, subject: "" });
-                    }}
-                    placeholder="e.g., Community General Assembly"
-                    className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                      formErrors.subject
-                        ? "border-red-400 bg-red-50"
-                        : "border-slate-200 focus:border-blue-500"
-                    }`}
-                  />
-                  {formErrors.subject && (
-                    <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
-                      <X size={11} /> {formErrors.subject}
-                    </p>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
-                    <AlignLeft size={15} className="text-blue-600" />
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.body}
-                    onChange={(e) =>
-                      setFormData({ ...formData, body: e.target.value })
-                    }
-                    placeholder="Describe the event, agenda, or any additional details..."
-                    rows={4}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
-                  />
-                </div>
-
-                {/* Connected Barangay */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
-                    <MapPin size={15} className="text-emerald-600" />
-                    Connected Barangay
-                  </label>
-                  <select
-                    value={formData.barangayId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, barangayId: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
-                  >
-                    <option value="">— All Barangays (General Event) —</option>
-                    {barangays.map((b) => (
-                      <option key={b._id} value={b._id}>
-                        {b.barangayName}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500 mt-1.5">
-                    Leave blank to create a general event for all barangays.
-                  </p>
-                </div>
-
-                {/* Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
-                      <Clock size={15} className="text-blue-600" />
-                      Start Date & Time <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={formData.startDate}
-                      onChange={(e) => {
-                        setFormData({ ...formData, startDate: e.target.value });
-                        if (formErrors.startDate)
-                          setFormErrors({ ...formErrors, startDate: "" });
-                      }}
-                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                        formErrors.startDate
-                          ? "border-red-400 bg-red-50"
-                          : "border-slate-200 focus:border-blue-500"
-                      }`}
-                    />
-                    {formErrors.startDate && (
-                      <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
-                        <X size={11} /> {formErrors.startDate}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
-                      <Clock size={15} className="text-purple-600" />
-                      End Date & Time
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={formData.endDate}
-                      onChange={(e) => {
-                        setFormData({ ...formData, endDate: e.target.value });
-                        if (formErrors.endDate)
-                          setFormErrors({ ...formErrors, endDate: "" });
-                      }}
-                      className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
-                        formErrors.endDate
-                          ? "border-red-400 bg-red-50"
-                          : "border-slate-200 focus:border-purple-500"
-                      }`}
-                    />
-                    {formErrors.endDate && (
-                      <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
-                        <X size={11} /> {formErrors.endDate}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Live Preview */}
-                {formData.subject && (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
-                    <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">
-                      Preview
-                    </p>
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-                        <CalendarIcon size={18} className="text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-slate-900 truncate">
-                          {formData.subject}
-                        </h4>
-                        {formData.body && (
-                          <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">
-                            {formData.body}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-3 mt-2">
-                          {formData.startDate && (
-                            <span className="inline-flex items-center gap-1 text-xs text-blue-700 font-semibold">
-                              <Clock size={11} />
-                              {new Date(formData.startDate).toLocaleString()}
-                            </span>
-                          )}
-                          {formData.barangayId && (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold">
-                              <MapPin size={11} />
-                              {
-                                barangays.find(
-                                  (b) => b._id === formData.barangayId,
-                                )?.barangayName
-                              }
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 px-6 py-3 bg-blue-600 to-indigo-600 hover:bg-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save size={18} />
-                      <span>Create Event</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseCreateModal}
-                  className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ==================== DATE MODAL ==================== */}
       {showDateModal && selectedDate && (
@@ -814,6 +621,16 @@ const AdminCalendar = () => {
                                   </span>
                                 </div>
                               )}
+                              {!barangayName &&
+                                evt.sender?.barangay?.barangayName && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <MapPin className="w-4 h-4 text-slate-400" />
+                                    <span className="font-semibold text-slate-600">
+                                      Barangay:{" "}
+                                      {evt.sender.barangay.barangayName}
+                                    </span>
+                                  </div>
+                                )}
                             </div>
                           </div>
                           <button
@@ -837,20 +654,42 @@ const AdminCalendar = () => {
                     No events on this date
                   </p>
                   <p className="text-slate-400 text-sm mt-2">
-                    Click below to schedule one
+                    Officials can schedule events
                   </p>
-                  <button
-                    onClick={() => {
-                      setShowDateModal(false);
-                      handleOpenCreateModal();
-                    }}
-                    className="mt-4 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-semibold shadow-lg transition-all inline-flex items-center gap-2"
-                  >
-                    <Plus size={18} />
-                    Create Event
-                  </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation modal for bulk actions */}
+      {confirmationModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+              <h3 className="text-xl font-bold text-white">
+                {confirmationModal.title}
+              </h3>
+            </div>
+            <div className="p-6">
+              <p className="text-slate-700 text-base mb-6">
+                {confirmationModal.message}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConfirmAction}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={closeConfirmationModal}
+                  className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

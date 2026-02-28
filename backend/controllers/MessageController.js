@@ -30,6 +30,11 @@ export const sendMessage = async (req, res) => {
       finalRecipientId = adminUser._id;
     }
 
+    // if no recipient specified (e.g. official scheduling an event), default to sender
+    if (!finalRecipientId) {
+      finalRecipientId = senderId;
+    }
+
     if (!finalRecipientId || !subject || !body) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -51,8 +56,17 @@ export const sendMessage = async (req, res) => {
     const senderUser = await User.findById(senderId);
     const isAdminEvent = senderUser?.role === "Admin";
 
-    // Admin-scheduled events are automatically approved
-    const messageStatus = isAdminEvent ? "approved" : status || "pending";
+    // Events (messages with startDate) should be approved immediately so they
+    // appear on the calendar. Admin-scheduled events are also approved automatically.
+    let messageStatus;
+    if (isAdminEvent) {
+      messageStatus = "approved";
+    } else if (s) {
+      // s is parsed startDate; treat any message with a startDate as an event
+      messageStatus = "approved";
+    } else {
+      messageStatus = status || "pending";
+    }
 
     const message = await Message.create({
       sender: senderId,
@@ -141,11 +155,20 @@ export const updateStatus = async (req, res) => {
 // Get activities that are approved or ongoing (for calendar)
 export const getActivities = async (req, res) => {
   try {
+    // return every message that has a startDate (i.e. an event)
+    // populate sender with full details including their barangay
     const activities = await Message.find({
-      status: { $in: ["approved", "ongoing"] },
       startDate: { $exists: true },
     })
-      .populate("sender", "username email role")
+      .populate({
+        path: "sender",
+        select: "username email role barangay",
+        populate: {
+          path: "barangay",
+          select: "barangayName city province",
+        },
+      })
+      .populate("attachedToBarangay", "barangayName city province")
       .sort({ startDate: 1 });
 
     res.status(200).json({ activities });
