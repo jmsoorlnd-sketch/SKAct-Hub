@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import SKLOGO from "../../assets/sklogo.png";
+const API_BASE = "http://localhost:5000/api";
 
 const Signin = () => {
+  /* ===================== STATE ===================== */
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -9,15 +12,14 @@ const Signin = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const { username, password } = formData;
-
   const usernameRef = useRef(null);
   const passwordRef = useRef(null);
 
+  /* ===================== HANDLERS ===================== */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError(""); // Clear error on input change
+    setError("");
   };
 
   const handleSubmit = async (e) => {
@@ -26,9 +28,9 @@ const Signin = () => {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/users/signin", {
-        username,
-        password,
+      const res = await axios.post(`${API_BASE}/users/signin`, {
+        username: formData.username,
+        password: formData.password,
       });
 
       const { user, token } = res.data;
@@ -45,16 +47,15 @@ const Signin = () => {
         window.location.href = "/";
       }
     } catch (err) {
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Something went wrong. Please try again.");
-      }
+      setError(
+        err.response?.data?.message ||
+          "Something went wrong. Please try again.",
+      );
       setIsLoading(false);
     }
   };
 
-  // Sync potential browser autofill values into React state
+  /* ===================== SYNC AUTOFILL ===================== */
   useEffect(() => {
     const syncAutofill = () => {
       const u = usernameRef.current?.value || "";
@@ -70,70 +71,106 @@ const Signin = () => {
     return () => clearTimeout(id);
   }, []);
 
+  /* ===================== RENDER ===================== */
   return (
-    <div className="min-h-screen w-full bg-gray-200 from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col md:flex-row">
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
         {/* LEFT SIDE - Hero Section */}
-        <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 p-12 lg:p-16 flex flex-col justify-center text-white relative overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+        <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 lg:p-12 flex flex-col justify-center text-white relative overflow-hidden">
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-24 -mt-24"></div>
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white opacity-5 rounded-full -ml-20 -mb-20"></div>
 
           <div className="relative z-10">
-            <div className="mb-8">
-              <svg
-                className="w-12 h-12 mb-4"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
-              </svg>
+            {/* Logo */}
+            <div className="mb-6">
+              <img
+                src={SKLOGO}
+                alt="Logo"
+                className="h-10 w-10 object-contain"
+              />
             </div>
 
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+            {/* Title */}
+            <h1 className="text-3xl lg:text-4xl font-bold mb-3 leading-tight">
               Welcome to
               <br />
-              SKAct-Hub
+              SKActHub
             </h1>
-            <p className="text-lg text-blue-100 mb-8 leading-relaxed">
-              Your centralized platform for project management and document
-              tracking. Streamline your workflow and enhance collaboration.
+
+            {/* Description */}
+            <p className="text-base text-blue-100 mb-6 leading-relaxed">
+              Your centralized platform for Sangguniang Kabataan project
+              management and document tracking. Streamline your workflow and
+              enhance collaboration.
             </p>
 
-            <div className="flex items-center gap-2 text-blue-100">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-              <span className="text-sm"></span>
+            {/* Features */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-blue-100 text-sm">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Secure document management</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-100 text-sm">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Real-time project tracking</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-100 text-sm">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Efficient team collaboration</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* RIGHT SIDE - Form Section */}
-        <div className="w-full md:w-1/2 p-8 lg:p-16 flex flex-col justify-center bg-white">
+        <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center bg-white">
           <div className="w-full max-w-md mx-auto">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h2>
-              <p className="text-gray-600">
+            {/* Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 mb-1">
+                Sign In
+              </h2>
+              <p className="text-sm text-slate-600">
                 Enter your credentials to access your account
               </p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <div className="mb-5 p-3 bg-red-50 border-2 border-red-200 rounded-lg flex items-start gap-2">
                 <svg
-                  className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"
+                  className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -143,20 +180,23 @@ const Signin = () => {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-sm text-red-800">{error}</span>
+                <span className="text-xs text-red-800 font-medium">
+                  {error}
+                </span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* USERNAME */}
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Username Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">
                   Username
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg
-                      className="h-5 w-5 text-gray-400"
+                      className="h-4 w-4 text-slate-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -173,27 +213,27 @@ const Signin = () => {
                     type="text"
                     name="username"
                     ref={usernameRef}
-                    value={username}
-                    onInput={(e) => handleChange(e)}
-                    onChange={(e) => handleChange(e)}
+                    value={formData.username}
+                    onInput={handleChange}
+                    onChange={handleChange}
                     autoComplete="username"
                     required
                     disabled={isLoading}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
                     placeholder="Enter your username"
                   />
                 </div>
               </div>
 
-              {/* PASSWORD */}
+              {/* Password Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg
-                      className="h-5 w-5 text-gray-400"
+                      className="h-4 w-4 text-slate-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -210,38 +250,38 @@ const Signin = () => {
                     type="password"
                     name="password"
                     ref={passwordRef}
-                    value={password}
-                    onInput={(e) => handleChange(e)}
-                    onChange={(e) => handleChange(e)}
+                    value={formData.password}
+                    onInput={handleChange}
+                    onChange={handleChange}
                     autoComplete="current-password"
                     required
                     disabled={isLoading}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
                     placeholder="Enter your password"
                   />
                 </div>
               </div>
 
-              {/* Forgot Password Link */}
+              {/* Forgot Password */}
               <div className="flex items-center justify-end">
                 <a
                   href="#"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   Forgot password?
                 </a>
               </div>
 
-              {/* SUBMIT BUTTON */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
                     <svg
-                      className="animate-spin h-5 w-5 text-white"
+                      className="animate-spin h-4 w-4 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -265,7 +305,7 @@ const Signin = () => {
                   <>
                     <span>Sign In</span>
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -283,12 +323,12 @@ const Signin = () => {
             </form>
 
             {/* Footer */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-600">
+            <div className="mt-6 text-center">
+              <p className="text-xs text-slate-600">
                 Don't have an account?{" "}
                 <a
                   href="#"
-                  className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                  className="font-bold text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   Contact your administrator
                 </a>

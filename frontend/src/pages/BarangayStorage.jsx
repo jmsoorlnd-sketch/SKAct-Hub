@@ -896,23 +896,24 @@ const BarangayStorage = () => {
 
               <div className="flex items-center gap-3">
                 {user?.role === "Admin" && (
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="px-4 py-2 bg-blue-600  hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
-                  >
-                    <HousePlus size={20} />
-                    <span>Add Barangay</span>
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setIsModalOpen(true)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
+                    >
+                      <HousePlus size={20} />
+                      <span>Add Barangay</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigate("/admin/dashboard")}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
+                    >
+                      <Check size={20} />
+                      <span>Approved</span>
+                    </button>
+                  </div>
                 )}
-
-                <button
-                  onClick={() => navigate("/admin/dashboard")}
-                  className="px-4 py-2 bg-emerald-600  hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
-                >
-                  <Check size={20} />
-                  <span>Approved</span>
-                </button>
-
                 {user &&
                   user.role !== "Admin" &&
                   selectedBarangay &&
