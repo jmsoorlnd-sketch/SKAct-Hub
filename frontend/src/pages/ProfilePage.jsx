@@ -1,8 +1,32 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../layout/Layout";
+import {
+  User,
+  Mail,
+  Lock,
+  MapPin,
+  Home,
+  Calendar,
+  Shield,
+  Camera,
+  Edit2,
+  Check,
+  X,
+  Upload,
+  AlertCircle,
+} from "lucide-react";
 
+/* ===================== CONSTANTS ===================== */
+const API_BASE = "http://localhost:5000/api";
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+/* ===================== MAIN COMPONENT ===================== */
 const ProfilePage = () => {
+  /* ==================== STATE ==================== */
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -25,41 +49,41 @@ const ProfilePage = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
 
+  /* ==================== DATA FETCHING ==================== */
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/users/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.data.user) {
-          setFormData({
-            username: res.data.user.username || "",
-            password: "",
-            firstname: res.data.user.firstname || "",
-            lastname: res.data.user.lastname || "",
-            age: res.data.user.age || "",
-            role: res.data.user.role || "",
-            email: res.data.user.email || "",
-            address: res.data.user.address || "",
-            civil: res.data.user.civil || "",
-            barangay: res.data.user.barangay?.barangayName || "",
-            profileImage: res.data.user.profileImage || "",
-          });
-        }
-        console.log(formData);
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-        showMessage("Failed to load profile data", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
   }, []);
 
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/users/me`, {
+        headers: getAuthHeaders(),
+      });
+
+      if (res.data.user) {
+        setFormData({
+          username: res.data.user.username || "",
+          password: "",
+          firstname: res.data.user.firstname || "",
+          lastname: res.data.user.lastname || "",
+          age: res.data.user.age || "",
+          role: res.data.user.role || "",
+          email: res.data.user.email || "",
+          address: res.data.user.address || "",
+          civil: res.data.user.civil || "",
+          barangay: res.data.user.barangay?.barangayName || "",
+          profileImage: res.data.user.profileImage || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      showMessage("Failed to load profile data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ==================== HANDLERS ==================== */
   const showMessage = (text, type = "success") => {
     setMessage(text);
     setMessageType(type);
@@ -86,19 +110,18 @@ const ProfilePage = () => {
 
     try {
       setUploadingImage(true);
-      const token = localStorage.getItem("token");
       const formDataImg = new FormData();
       formDataImg.append("profileImage", imageFile);
 
       const res = await axios.post(
-        "http://localhost:5000/api/users/upload-image",
+        `${API_BASE}/users/upload-image`,
         formDataImg,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...getAuthHeaders(),
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
 
       setFormData((prev) => ({
@@ -124,13 +147,12 @@ const ProfilePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
       const payload = { ...formData };
       if (!payload.password) delete payload.password;
 
-      await axios.post("http://localhost:5000/api/users/create", payload, {
+      await axios.post(`${API_BASE}/users/create`, payload, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...getAuthHeaders(),
           "Content-Type": "application/json",
         },
       });
@@ -140,7 +162,7 @@ const ProfilePage = () => {
       console.error("Error saving profile:", error);
       showMessage(
         error.response?.data?.message || "Failed to save profile. Try again.",
-        "error"
+        "error",
       );
     }
   };
@@ -152,68 +174,65 @@ const ProfilePage = () => {
     setMessage("");
   };
 
+  /* ==================== LOADING STATE ==================== */
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading profile...</p>
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-3"></div>
+            <p className="text-sm text-slate-600 font-medium">
+              Loading profile...
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
+  /* ==================== RENDER ==================== */
   return (
-    <Layout>
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 ">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-6 px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-6"></div>
-
           {/* Alert Message */}
           {message && (
             <div
-              className={`mb-6 p-4 rounded-lg border ${
+              className={`mb-4 p-3 rounded-lg border-2 ${
                 messageType === "success"
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-red-50 border-red-200 text-red-800"
+                  ? "bg-emerald-50 border-emerald-200"
+                  : "bg-red-50 border-red-200"
               }`}
             >
-              <div className="flex items-start">
-                <svg
-                  className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
+              <div className="flex items-start gap-2">
+                {messageType === "success" ? (
+                  <Check className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                )}
+                <span
+                  className={`text-sm font-medium ${
+                    messageType === "success"
+                      ? "text-emerald-800"
+                      : "text-red-800"
+                  }`}
                 >
-                  {messageType === "success" ? (
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  ) : (
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  )}
-                </svg>
-                <span className="text-sm font-medium">{message}</span>
+                  {message}
+                </span>
               </div>
             </div>
           )}
 
           {/* Main Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
             {/* Card Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-8 sm:px-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-white mb-1">
+                  <h1 className="text-xl font-bold text-white mb-1">
                     My Profile
                   </h1>
-                  <p className="text-blue-100 text-sm">
+                  <p className="text-xs text-blue-100">
                     Manage your personal information
                   </p>
                 </div>
@@ -221,21 +240,9 @@ const ProfilePage = () => {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors shadow-sm"
+                    className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors shadow-md flex items-center gap-2"
                   >
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
+                    <Edit2 className="w-4 h-4" />
                     Edit Profile
                   </button>
                 )}
@@ -244,11 +251,11 @@ const ProfilePage = () => {
 
             <form onSubmit={handleSubmit}>
               {/* Profile Image Section */}
-              <div className="px-6 py-6 sm:px-8 border-b border-gray-200 bg-gray-50">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="px-6 py-5 border-b-2 border-slate-200 bg-slate-50">
+                <div className="flex flex-col sm:flex-row items-center gap-5">
                   {/* Profile Picture */}
                   <div className="relative">
-                    <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-200 border-2 border-white shadow-lg">
                       {imagePreview || formData.profileImage ? (
                         <img
                           src={
@@ -259,38 +266,14 @@ const ProfilePage = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600">
-                          <svg
-                            className="w-16 h-16 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                          </svg>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
+                          <User className="w-12 h-12 text-white" />
                         </div>
                       )}
                     </div>
                     {isEditing && (
-                      <label className="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors shadow-lg border-2 border-white">
-                        <svg
-                          className="w-5 h-5 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
+                      <label className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors shadow-md border-2 border-white">
+                        <Camera className="w-4 h-4 text-white" />
                         <input
                           type="file"
                           accept="image/*"
@@ -302,32 +285,20 @@ const ProfilePage = () => {
                   </div>
 
                   {/* Upload Controls */}
-                  {isEditing && imageFile && (
-                    <div className="flex-1">
-                      <div className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <svg
-                              className="w-5 h-5 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                New image selected
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {imageFile.name}
-                              </p>
-                            </div>
+                  {isEditing && imageFile ? (
+                    <div className="flex-1 w-full">
+                      <div className="bg-white border border-slate-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Camera className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900">
+                              New image selected
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">
+                              {imageFile.name}
+                            </p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -335,12 +306,12 @@ const ProfilePage = () => {
                             type="button"
                             onClick={handleImageUpload}
                             disabled={uploadingImage}
-                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                           >
                             {uploadingImage ? (
                               <>
                                 <svg
-                                  className="animate-spin h-4 w-4"
+                                  className="animate-spin h-3 w-3"
                                   fill="none"
                                   viewBox="0 0 24 24"
                                 >
@@ -351,31 +322,19 @@ const ProfilePage = () => {
                                     r="10"
                                     stroke="currentColor"
                                     strokeWidth="4"
-                                  ></circle>
+                                  />
                                   <path
                                     className="opacity-75"
                                     fill="currentColor"
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
+                                  />
                                 </svg>
                                 <span>Uploading...</span>
                               </>
                             ) : (
                               <>
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                  />
-                                </svg>
-                                <span>Upload Image</span>
+                                <Upload className="w-3 h-3" />
+                                <span>Upload</span>
                               </>
                             )}
                           </button>
@@ -385,45 +344,59 @@ const ProfilePage = () => {
                               setImageFile(null);
                               setImagePreview(null);
                             }}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                            className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition-colors"
                           >
                             Cancel
                           </button>
                         </div>
                       </div>
                     </div>
-                  )}
-
-                  {!isEditing && (
+                  ) : !isEditing ? (
                     <div className="flex-1 text-center sm:text-left">
-                      <h2 className="text-xl font-bold text-gray-900">
+                      <h2 className="text-lg font-bold text-slate-900">
                         {formData.firstname} {formData.lastname}
                       </h2>
-                      <p className="text-gray-600">{formData.role}</p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-slate-600">{formData.role}</p>
+                      <p className="text-xs text-slate-500 mt-1">
                         {formData.email}
                       </p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
               {/* Form Content */}
-              <div className="px-6 py-6 sm:px-8">
+              <div className="px-6 py-5">
                 {!isEditing ? (
-                  // Display Mode
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InfoField label="Username" value={formData.username} />
-                    <InfoField label="Email" value={formData.email} />
+                  /* Display Mode */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InfoField
+                      icon={<User className="w-4 h-4" />}
+                      label="Username"
+                      value={formData.username}
+                    />
+                    <InfoField
+                      icon={<Mail className="w-4 h-4" />}
+                      label="Email"
+                      value={formData.email}
+                    />
                     <InfoField label="First Name" value={formData.firstname} />
                     <InfoField label="Last Name" value={formData.lastname} />
-                    <InfoField label="Age" value={formData.age} />
                     <InfoField
+                      icon={<Calendar className="w-4 h-4" />}
+                      label="Age"
+                      value={formData.age}
+                    />
+                    <InfoField
+                      icon={<MapPin className="w-4 h-4" />}
                       label="Barangay"
                       value={formData.barangay}
-                      readOnly
                     />
-                    <InfoField label="Address" value={formData.address} />
+                    <InfoField
+                      icon={<Home className="w-4 h-4" />}
+                      label="Address"
+                      value={formData.address}
+                    />
                     <InfoField
                       label="Civil Status"
                       value={
@@ -433,83 +406,46 @@ const ProfilePage = () => {
                           : null
                       }
                     />
-                    <InfoField label="Role" value={formData.role} badge />
+                    <InfoField
+                      icon={<Shield className="w-4 h-4" />}
+                      label="Role"
+                      value={formData.role}
+                      badge
+                    />
                   </div>
                 ) : (
-                  // Edit Mode
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  /* Edit Mode */
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <InputField
+                        icon={<User className="w-4 h-4" />}
                         label="Username"
                         name="username"
                         type="text"
                         value={formData.username}
                         onChange={handleChange}
-                        icon={
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                        }
                       />
                       <InputField
+                        icon={<Mail className="w-4 h-4" />}
                         label="Email"
                         name="email"
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        icon={
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                            />
-                          </svg>
-                        }
                       />
                     </div>
 
                     <InputField
+                      icon={<Lock className="w-4 h-4" />}
                       label="New Password"
                       name="password"
                       type="password"
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="Leave blank to keep current password"
-                      icon={
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                          />
-                        </svg>
-                      }
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <InputField
                         label="First Name"
                         name="firstname"
@@ -525,6 +461,7 @@ const ProfilePage = () => {
                         onChange={handleChange}
                       />
                       <InputField
+                        icon={<Calendar className="w-4 h-4" />}
                         label="Age"
                         name="age"
                         type="number"
@@ -532,69 +469,35 @@ const ProfilePage = () => {
                         onChange={handleChange}
                       />
                       <InputField
+                        icon={<MapPin className="w-4 h-4" />}
                         label="Barangay"
                         name="barangayName"
                         type="text"
                         value={formData.barangay}
                         onChange={handleChange}
                         readOnly
-                        icon={
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                        }
                       />
                     </div>
 
                     <InputField
+                      icon={<Home className="w-4 h-4" />}
                       label="Address"
                       name="address"
                       type="text"
                       value={formData.address}
                       onChange={handleChange}
-                      icon={
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                          />
-                        </svg>
-                      }
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold text-slate-900 mb-1.5">
                           Civil Status
                         </label>
                         <select
                           name="civil"
                           value={formData.civil}
                           onChange={handleChange}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         >
                           <option value="">Select status</option>
                           <option value="single">Single</option>
@@ -605,6 +508,7 @@ const ProfilePage = () => {
                       </div>
 
                       <InputField
+                        icon={<Shield className="w-4 h-4" />}
                         label="Role"
                         name="role"
                         type="text"
@@ -615,31 +519,20 @@ const ProfilePage = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t-2 border-slate-200">
                       <button
                         type="submit"
-                        className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
+                        className="flex-1 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-md"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <Check className="w-4 h-4" />
                         Save Changes
                       </button>
                       <button
                         type="button"
                         onClick={handleCancel}
-                        className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
+                        className="flex-1 px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
                       >
+                        <X className="w-4 h-4" />
                         Cancel
                       </button>
                     </div>
@@ -650,44 +543,45 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 
-// Helper Components
-const InfoField = ({ label, value, badge }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-500 mb-1">
-      {label}
-    </label>
+/* ==================== HELPER COMPONENTS ==================== */
+const InfoField = ({ icon, label, value, badge }) => (
+  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+    <div className="flex items-center gap-2 mb-1">
+      {icon && <div className="text-slate-500">{icon}</div>}
+      <label className="text-xs font-bold text-slate-600">{label}</label>
+    </div>
     {badge ? (
-      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+      <span className="inline-block px-2.5 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-bold">
         {value || "—"}
       </span>
     ) : (
-      <p className="text-base text-gray-900 font-medium">{value || "—"}</p>
+      <p className="text-sm text-slate-900 font-semibold">{value || "—"}</p>
     )}
   </div>
 );
 
 const InputField = ({
+  icon,
   label,
   name,
   type,
   value,
   onChange,
   placeholder,
-  icon,
   readOnly,
   disabled,
 }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
+    <label className="block text-xs font-bold text-slate-900 mb-1.5">
       {label}
     </label>
     <div className="relative">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
           {icon}
         </div>
       )}
@@ -700,9 +594,11 @@ const InputField = ({
         readOnly={readOnly}
         disabled={disabled}
         className={`w-full ${
-          icon ? "pl-10" : "pl-4"
-        } pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
-          disabled ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""
+          icon ? "pl-9" : "pl-3"
+        } pr-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+          disabled
+            ? "bg-slate-100 text-slate-600 cursor-not-allowed"
+            : "bg-white"
         }`}
       />
     </div>
