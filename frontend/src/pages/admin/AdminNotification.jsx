@@ -60,7 +60,7 @@ const AdminNotification = () => {
       // Sort by time
       allNotifications.sort((a, b) => new Date(b.time) - new Date(a.time));
 
-      // Load seen status from backend (not localStorage)
+      // Load seen status from backend
       const seenStatusResponse = await axios.get(
         `${API_BASE}/notifications/status`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -237,22 +237,20 @@ const AdminNotification = () => {
       console.log("Marking notification as seen:", notificationId);
 
       // Call API to mark as seen in database
-      const response = await axios.put(
+      await axios.put(
         `${API_BASE}/notifications/${notificationId}/seen`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      console.log("API response:", response.data);
-
       // Update local state immediately
-      setNotifications((prev) => {
-        const updated = prev.map((n) =>
-          n.id === notificationId ? { ...n, seen: true } : n,
-        );
-        console.log("Updated notifications:", updated);
-        return updated;
-      });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n)),
+      );
+
+      // Dispatch custom event to notify Sidebar
+      window.dispatchEvent(new Event("notificationMarkedAsSeen"));
+      console.log("Dispatched notificationMarkedAsSeen event");
     } catch (err) {
       console.error(
         "Failed to mark notification as seen:",
@@ -272,20 +270,18 @@ const AdminNotification = () => {
       console.log("Marking all notifications as seen");
 
       // Call API to mark all as seen in database
-      const response = await axios.put(
+      await axios.put(
         `${API_BASE}/notifications/all/seen`,
         {},
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      console.log("API response:", response.data);
-
       // Update local state immediately
-      setNotifications((prev) => {
-        const updated = prev.map((n) => ({ ...n, seen: true }));
-        console.log("All notifications marked as seen:", updated);
-        return updated;
-      });
+      setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
+
+      // Dispatch custom event to notify Sidebar
+      window.dispatchEvent(new Event("allNotificationsMarkedAsSeen"));
+      console.log("Dispatched allNotificationsMarkedAsSeen event");
     } catch (err) {
       console.error(
         "Failed to mark all notifications as seen:",

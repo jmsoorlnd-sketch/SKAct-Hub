@@ -38,11 +38,39 @@ const Sidebar = () => {
     if (user) {
       fetchUnseenCount();
 
-      // Refresh count every 30 seconds
-      const interval = setInterval(fetchUnseenCount, 30000);
+      // Refresh count every 10 seconds for real-time updates
+      const interval = setInterval(fetchUnseenCount, 10000);
       return () => clearInterval(interval);
     }
-  }, [user?.role]); // Only refetch when user role changes
+  }, [user?.role]);
+
+  // Listen for custom event when notification is marked as seen
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      console.log("Notification update event received, refreshing count...");
+      fetchUnseenCount();
+    };
+
+    window.addEventListener(
+      "notificationMarkedAsSeen",
+      handleNotificationUpdate,
+    );
+    window.addEventListener(
+      "allNotificationsMarkedAsSeen",
+      handleNotificationUpdate,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "notificationMarkedAsSeen",
+        handleNotificationUpdate,
+      );
+      window.removeEventListener(
+        "allNotificationsMarkedAsSeen",
+        handleNotificationUpdate,
+      );
+    };
+  }, [user]);
 
   const loadUser = () => {
     try {
@@ -57,12 +85,20 @@ const Sidebar = () => {
 
   const fetchUnseenCount = async () => {
     try {
-      const seenIds = getSeenNotifications();
-
-      // Fetch all notifications (same logic as AdminNotification)
-      const allNotifs = [];
       const token = localStorage.getItem("token");
       if (!token) return;
+
+      console.log("Fetching unseen notification count...");
+
+      // Get seen statuses from backend
+      const seenStatusResponse = await axios.get(
+        `${API_BASE}/notifications/status`,
+        { headers: getAuthHeaders() },
+      );
+      const seenMap = seenStatusResponse.data.seenStatuses || {};
+
+      // Fetch all notifications
+      const allNotifs = [];
 
       // 1) Pending messages
       try {
@@ -72,7 +108,7 @@ const Sidebar = () => {
         const inbox = res.data.messages || [];
         inbox
           .filter((m) => m.status === "pending")
-          .forEach((m) => allNotifs.push(m._id));
+          .forEach((m) => allNotifs.push({ id: m._id }));
       } catch {}
 
       // 2) Barangay storage updates
@@ -94,12 +130,12 @@ const Sidebar = () => {
               storage
                 .filter((s) => (s.document?.status || s.status) === "ongoing")
                 .slice(0, 2)
-                .forEach((s) => allNotifs.push(s._id));
+                .forEach((s) => allNotifs.push({ id: s._id }));
 
               storage
                 .filter((s) => (s.document?.status || s.status) === "completed")
                 .slice(0, 2)
-                .forEach((s) => allNotifs.push(s._id));
+                .forEach((s) => allNotifs.push({ id: s._id }));
             } catch {}
           }),
         );
@@ -115,7 +151,7 @@ const Sidebar = () => {
         activities
           .filter((a) => a.startDate)
           .slice(0, 10)
-          .forEach((a) => allNotifs.push(a._id));
+          .forEach((a) => allNotifs.push({ id: a._id }));
 
         await Promise.all(
           activities.map(async (a) => {
@@ -126,34 +162,26 @@ const Sidebar = () => {
               );
               const updates = updatesRes.data.updates || [];
               if (updates.length > 0) {
-                allNotifs.push(updates[0]._id);
+                allNotifs.push({ id: updates[0]._id });
               }
             } catch {}
           }),
         );
       } catch {}
 
-      // Count unseen
-      const unseen = allNotifs.filter((id) => !seenIds.includes(id)).length;
+      // Count unseen (those not in seenMap or marked as false)
+      const unseen = allNotifs.filter((n) => !seenMap[n.id]).length;
+
+      console.log(`Unseen count: ${unseen} out of ${allNotifs.length} total`);
       setUnseenCount(unseen);
     } catch (err) {
       console.error("Failed to fetch unseen count:", err);
     }
   };
 
-  const getSeenNotifications = () => {
-    try {
-      const seen = localStorage.getItem("seenNotifications");
-      return seen ? JSON.parse(seen) : [];
-    } catch {
-      return [];
-    }
-  };
-
   /* ==================== MENU CONFIGURATION ==================== */
   const role = user?.role || "Guest";
 
-  // Memoize menu items to prevent recalculation on every render
   const menuItems = useMemo(() => {
     const menus = {
       Admin: [
@@ -172,7 +200,6 @@ const Sidebar = () => {
           icon: BarChart2,
           path: "/admin/monitoring",
         },
-        // { name: "Settings", icon: Settings, path: "/admin/settings" },
       ],
       Official: [
         { name: "Inbox", icon: Inbox, path: "/official/inbox" },
@@ -188,7 +215,7 @@ const Sidebar = () => {
     };
 
     return menus[role] || menus.Guest;
-  }, [role, unseenCount]); // Only recalculate when role or unseenCount changes
+  }, [role, unseenCount]);
 
   /* ==================== RENDER HELPERS ==================== */
   const getMenuClass = (path) => {
@@ -253,6 +280,4 @@ const Sidebar = () => {
   );
 };
 
-// Wrap with React.memo to prevent re-renders when parent updates
-// but props haven't changed (Sidebar has no props)
 export default React.memo(Sidebar);
