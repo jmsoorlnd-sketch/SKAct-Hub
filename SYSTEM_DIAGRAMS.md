@@ -486,6 +486,153 @@ graph TB
 
 ---
 
+## 7. Entity Relationship Diagram (ERD) - COMPACT A4 VERSION
+
+```mermaid
+erDiagram
+    User ||--o{ Barangay : "belongs_to"
+    Barangay ||--|| SKPersonnel : "has"
+    User ||--o{ Message : "sends"
+    User ||--o{ Message : "receives"
+    User ||--o{ Project : "proposes"
+    User ||--o{ Notification : "receives"
+    Barangay ||--o{ BarangayStorage : "owns"
+    BarangayStorage ||--o{ Folder : "contains"
+    Folder ||--o{ Message : "stores"
+    Message ||--o{ ActivityUpdate : "has"
+
+    User {
+        string username PK
+        string email UK
+        string role "Youth|Official|Admin"
+        string password
+        string firstname
+        string lastname
+        string position "Chairman|Treasurer|Secretary|Admin"
+        number age
+        string barangayName
+        string profileImage
+        string civil "Single|Married"
+        ObjectId barangay FK
+        string status "Active|Inactive"
+        date createdAt
+    }
+
+    Barangay {
+        ObjectId _id PK
+        string barangayName
+        string city
+        string province
+        string region
+        ObjectId chairmanId FK
+    }
+
+    SKPersonnel {
+        ObjectId _id PK
+        ObjectId barangay FK
+        object chairman "{surname,firstName,middleName,age,status}"
+        object secretary "{surname,firstName,middleName,age,status}"
+        object treasurer "{surname,firstName,middleName,age,status}"
+        array kagawad "[{surname,firstName,middleName,age,status}]"
+    }
+
+    Message {
+        ObjectId _id PK
+        ObjectId sender FK
+        ObjectId recipient FK
+        string subject
+        string body
+        string attachmentUrl
+        string attachmentName
+        date startDate
+        date endDate
+        string status "pending|approved|ongoing|rejected|completed"
+        boolean isRead
+        boolean isAttached
+        date createdAt
+    }
+
+    Project {
+        ObjectId _id PK
+        string title
+        ObjectId proposer FK
+        string description
+        date startDate
+        date endDate
+        string status "planned|in-progress|completed|on-hold"
+        number budget
+        date createdAt
+        date updatedAt
+    }
+
+    Notification {
+        ObjectId _id PK
+        ObjectId recipient FK
+        string title
+        string message
+        string type "info|warning|success|error"
+        boolean isRead
+        date createdAt
+    }
+
+    BarangayStorage {
+        ObjectId _id PK
+        ObjectId barangay FK
+        string name
+        string description
+        date createdAt
+    }
+
+    Folder {
+        ObjectId _id PK
+        ObjectId barangayStorage FK
+        string name
+        string description
+        date createdAt
+    }
+
+    ActivityUpdate {
+        ObjectId _id PK
+        ObjectId message FK
+        string updateText
+        ObjectId updatedBy FK
+        date createdAt
+    }
+```
+
+### **ERD Legend & Relationships**
+
+| Symbol   | Meaning            |
+| -------- | ------------------ | ----- | ----------------- | --- | ---------------- |
+| `        |                    | --    |                   | `   | One-to-One (1:1) |
+| `        |                    | --o{` | One-to-Many (1:M) |
+| `}o--o{` | Many-to-Many (M:M) |
+| `PK`     | Primary Key        |
+| `FK`     | Foreign Key        |
+| `UK`     | Unique Key         |
+
+### **Key Relationships Summary**
+
+1. **User ↔ Barangay**: Users belong to barangays (many-to-one)
+2. **Barangay ↔ SKPersonnel**: Each barangay has one SK personnel record (one-to-one)
+3. **User ↔ Message**: Users send and receive messages (one-to-many)
+4. **User ↔ Project**: Users can propose multiple projects (one-to-many)
+5. **User ↔ Notification**: Users receive multiple notifications (one-to-many)
+6. **Barangay ↔ BarangayStorage**: Barangays have storage systems (one-to-many)
+7. **BarangayStorage ↔ Folder**: Storage contains folders (one-to-many)
+8. **Folder ↔ Message**: Folders store attached messages (one-to-many)
+9. **Message ↔ ActivityUpdate**: Messages can have activity updates (one-to-many)
+
+### **Database Schema Overview**
+
+- **Total Entities**: 9 main entities
+- **Total Relationships**: 11 relationships
+- **Primary Keys**: All entities have ObjectId \_id as PK
+- **Foreign Keys**: 12 foreign key relationships
+- **Database**: MongoDB with Mongoose ODM
+
+---
+
 ## How to Download
 
 ### **Method 1: Mermaid Live Editor**
@@ -512,15 +659,16 @@ graph TB
 
 ## Summary
 
-| Diagram              | Type              | Shows                                                          |
-| -------------------- | ----------------- | -------------------------------------------------------------- |
-| System Architecture  | Complete overview | All layers: Frontend → Backend → Database → External           |
-| Data Flow (SHORT)    | Simple flow       | User input → Processing → Database → Notifications             |
-| DFD Level 0          | Context           | Users, System, Admin, External Services                        |
-| DFD Level 1          | Main processes    | 5 major process groups (Events, Personnel, Comms, Auth, Admin) |
-| DFD Level 2          | Event detail      | Detailed event process with data stores and transforms         |
-| Multi-Layer DFD      | Architecture      | Frontend, API, Data, Services layers                           |
-| Request-Response DFD | Flow              | Complete 9-step data journey through system                    |
+| Diagram              | Type                | Shows                                                          |
+| -------------------- | ------------------- | -------------------------------------------------------------- |
+| System Architecture  | Complete overview   | All layers: Frontend → Backend → Database → External           |
+| Data Flow (SHORT)    | Simple flow         | User input → Processing → Database → Notifications             |
+| DFD Level 0          | Context             | Users, System, Admin, External Services                        |
+| DFD Level 1          | Main processes      | 5 major process groups (Events, Personnel, Comms, Auth, Admin) |
+| DFD Level 2          | Event detail        | Detailed event process with data stores and transforms         |
+| Multi-Layer DFD      | Architecture        | Frontend, API, Data, Services layers                           |
+| Request-Response DFD | Flow                | Complete 9-step data journey through system                    |
+| **ERD (COMPACT)**    | **Database Schema** | **9 entities, 11 relationships, A4-size friendly**             |
 
 ---
 
