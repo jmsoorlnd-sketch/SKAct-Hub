@@ -120,11 +120,15 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="flex w-full min-h-screen p-6 gap-6 bg-gray-50">
+      <div className="flex flex-col w-full min-h-screen p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 md:gap-6 bg-gray-50">
         {/* DASHBOARD CONTENT */}
-        <div className="w-full bg-white rounded-xl shadow-md p-6 overflow-auto max-h-[80vh]">
-          <h1 className="text-3xl font-bold mb-6">Welcome to Dashboard</h1>
-          <p className="text-gray-600">Dashboard content goes here</p>
+        <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 overflow-auto max-h-[80vh]">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">
+            Welcome to Dashboard
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Dashboard content goes here
+          </p>
         </div>
       </div>
 
@@ -132,9 +136,11 @@ const Dashboard = () => {
       {showBarangayModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black opacity-40" />
-          <div className="bg-white rounded-lg shadow-lg z-50 w-11/12 md:w-1/2 p-6">
+          <div className="bg-white rounded-lg shadow-lg z-50 w-11/12 sm:w-3/4 md:w-1/2 p-4 sm:p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Select Barangay</h3>
+              <h3 className="text-base sm:text-lg font-semibold">
+                Select Barangay
+              </h3>
               <button
                 onClick={() => setShowBarangayModal(false)}
                 className="text-gray-600 hover:text-black"

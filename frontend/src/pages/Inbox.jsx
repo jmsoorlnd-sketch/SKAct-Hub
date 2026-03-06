@@ -113,33 +113,33 @@ const Inbox = () => {
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
         {/* Page Header */}
         <div className="mb-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <InboxIcon className="w-5 h-5 text-white" />
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+                <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <InboxIcon className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
                 </div>
                 Sent Messages
               </h1>
-              <p className="text-slate-600 mt-1 text-sm">
+              <p className="text-slate-600 mt-1 text-xs sm:text-sm">
                 Track your submitted messages and approval status
               </p>
             </div>
             <button
               onClick={fetchSentMessages}
               disabled={loading}
-              className="px-4 py-2 bg-white hover:bg-slate-50 border-2 border-slate-200 rounded-lg font-semibold text-sm text-slate-700 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50"
+              className="px-3 sm:px-4 py-2 bg-white hover:bg-slate-50 border-2 border-slate-200 rounded-lg font-semibold text-xs sm:text-sm text-slate-700 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 whitespace-nowrap"
             >
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
               Refresh
             </button>
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
             <StatCard
               icon={Send}
               title="Total Sent"

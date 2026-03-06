@@ -149,25 +149,25 @@ const AdminDashboard = () => {
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
         {/* Page Header */}
         <div className="mb-4">
           <div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
                   Messages for Approval
                 </h1>
-                <p className="text-sm text-slate-600">
+                <p className="text-xs sm:text-sm text-slate-600">
                   Review pending messages from officials
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                  <Mail className="w-6 h-6 text-white" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Mail className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-xl sm:text-2xl font-bold text-blue-600">
                     {messages.length}
                   </p>
                   <p className="text-xs text-slate-500 font-medium">Pending</p>
@@ -178,15 +178,17 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* LEFT SIDE - Message List */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
               {/* List Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4">
-                <div className="flex items-center justify-between text-white">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-3 sm:px-5 py-3 sm:py-4">
+                <div className="flex items-center justify-between text-white flex-col sm:flex-row gap-2">
                   <div>
-                    <h2 className="text-base font-bold">Pending Messages</h2>
+                    <h2 className="text-sm sm:text-base font-bold">
+                      Pending Messages
+                    </h2>
                     <p className="text-xs text-blue-100 mt-0.5">
                       From Officials
                     </p>

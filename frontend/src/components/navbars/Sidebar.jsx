@@ -22,7 +22,7 @@ const getAuthHeaders = () => {
 };
 
 /* ===================== MAIN COMPONENT ===================== */
-const Sidebar = () => {
+const Sidebar = ({ onClose = () => {} }) => {
   /* ==================== STATE ==================== */
   const [user, setUser] = useState(null);
   const [unseenCount, setUnseenCount] = useState(0);
@@ -238,32 +238,33 @@ const Sidebar = () => {
     }
   };
 
-  /* ==================== RENDER ==================== */
+  /* ==================== RENDER ====================== */
   return (
     <div className="w-full h-full bg-white shadow-xl flex flex-col">
       {/* Header */}
-      <div className="py-3 px-9 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
-        <h1 className="text-2xl text-slate-900 tracking font-bold ">
+      <div className="py-3 px-6 sm:px-9 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
+        <h1 className="text-lg sm:text-2xl text-slate-900 tracking font-bold">
           {getPanelTitle()}
         </h1>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-2 sm:p-3 space-y-0.5 overflow-y-auto">
         {menuItems.map((menu) => {
           const Icon = menu.icon;
           return (
             <Link
               key={menu.path}
               to={menu.path}
+              onClick={onClose}
               className={getMenuClass(menu.path)}
             >
               <Icon size={18} />
-              <span className="flex-1">{menu.name}</span>
+              <span className="flex-1 text-sm sm:text-base">{menu.name}</span>
 
               {/* Notification Badge */}
               {menu.badge && menu.badge > 0 && (
-                <span className="px-0.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] text-center ">
+                <span className="px-0.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] text-center">
                   {menu.badge > 99 ? "99+" : menu.badge}
                 </span>
               )}
@@ -273,7 +274,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Profile Footer */}
-      <div className="p-3 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+      <div className="p-2 sm:p-3 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
         <SideProfile user={user} />
       </div>
     </div>

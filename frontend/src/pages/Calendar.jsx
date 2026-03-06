@@ -14,7 +14,7 @@ const Calendar = () => {
           "http://localhost:5000/api/messages/activities",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setActivities(res.data.activities || []);
       } catch (error) {
@@ -36,30 +36,40 @@ const Calendar = () => {
 
   return (
     <Layout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Activities Calendar</h1>
+      <div className="p-3 sm:p-4 md:p-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4">
+          Activities Calendar
+        </h1>
         {loading ? (
-          <p>Loading activities...</p>
+          <p className="text-sm sm:text-base">Loading activities...</p>
         ) : activities.length === 0 ? (
-          <p>No approved/ongoing activities yet.</p>
+          <p className="text-sm sm:text-base">
+            No approved/ongoing activities yet.
+          </p>
         ) : (
           Object.keys(grouped).map((date) => (
-            <div key={date} className="mb-6">
-              <h3 className="font-semibold mb-2">{date}</h3>
-              <div className="space-y-2">
+            <div key={date} className="mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">
+                {date}
+              </h3>
+              <div className="space-y-2 sm:space-y-3">
                 {grouped[date].map((act) => (
                   <div
                     key={act._id}
-                    className="p-3 bg-white rounded shadow-sm flex justify-between items-start"
+                    className="p-3 sm:p-4 bg-white rounded shadow-sm flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-0"
                   >
-                    <div>
-                      <p className="font-semibold">{act.subject}</p>
-                      <p className="text-sm text-gray-600">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm sm:text-base break-words">
+                        {act.subject}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-600">
                         By: {act.sender?.username}
                       </p>
-                      <p className="text-sm text-gray-700 mt-1">{act.body}</p>
+                      <p className="text-xs sm:text-sm text-gray-700 mt-1 line-clamp-2 sm:line-clamp-none">
+                        {act.body}
+                      </p>
                     </div>
-                    <div className="text-sm text-gray-500 text-right">
+                    <div className="text-xs sm:text-sm text-gray-500 text-right whitespace-nowrap">
                       <p>
                         {act.startDate
                           ? new Date(act.startDate).toLocaleTimeString()

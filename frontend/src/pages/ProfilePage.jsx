@@ -193,12 +193,12 @@ const ProfilePage = () => {
   /* ==================== RENDER ==================== */
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-6 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-4 sm:py-6 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto">
           {/* Alert Message */}
           {message && (
             <div
-              className={`mb-4 p-3 rounded-lg border-2 ${
+              className={`mb-4 p-3 rounded-lg border-2 text-xs sm:text-sm ${
                 messageType === "success"
                   ? "bg-emerald-50 border-emerald-200"
                   : "bg-red-50 border-red-200"
@@ -211,7 +211,7 @@ const ProfilePage = () => {
                   <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                 )}
                 <span
-                  className={`text-sm font-medium ${
+                  className={`font-medium ${
                     messageType === "success"
                       ? "text-emerald-800"
                       : "text-red-800"
@@ -224,15 +224,15 @@ const ProfilePage = () => {
           )}
 
           {/* Main Card */}
-          <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
             {/* Card Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 sm:px-6 py-4 sm:py-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-xl font-bold text-white mb-1">
+                  <h1 className="text-lg sm:text-xl font-bold text-white mb-1\">
                     My Profile
                   </h1>
-                  <p className="text-xs text-blue-100">
+                  <p className="text-xs text-blue-100\">
                     Manage your personal information
                   </p>
                 </div>
@@ -240,10 +240,10 @@ const ProfilePage = () => {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors shadow-md flex items-center gap-2"
+                    className="px-3 sm:px-4 py-2 bg-white text-blue-600 rounded-lg text-xs sm:text-sm font-bold hover:bg-blue-50 transition-colors shadow-md flex items-center gap-2 whitespace-nowrap"
                   >
                     <Edit2 className="w-4 h-4" />
-                    Edit Profile
+                    Edit
                   </button>
                 )}
               </div>

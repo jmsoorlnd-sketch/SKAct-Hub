@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { Menu, X } from "lucide-react";
 import SKLOGO from "../../assets/sklogo.png";
 
-const Navbar = () => {
+const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState(null);
@@ -17,8 +18,7 @@ const Navbar = () => {
   const token = localStorage.getItem("token");
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    logout();
     navigate("/");
   };
 
@@ -101,10 +101,23 @@ const Navbar = () => {
   console.log("Navbar debug - userRole:", userRole, "isAdmin:", isAdmin);
 
   return (
-    <nav className=" bg-white p-2 border-green-50 flex justify-between items-center shadow-2xs">
-      <div className="flex items-center gap-3">
-        <img src={SKLOGO} alt="Logo" className="h-10 w-10 object-contain" />
-        <h1 className="text-xl font-bold tracking-wide">SKActhub</h1>
+    <nav className="bg-white p-2 sm:p-4 border-green-50 flex justify-between items-center shadow-2xs gap-2 sm:gap-4">
+      {/* Mobile Menu Button & Logo */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition"
+        >
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+        <img
+          src={SKLOGO}
+          alt="Logo"
+          className="h-8 sm:h-10 w-8 sm:w-10 object-contain"
+        />
+        <h1 className="text-lg sm:text-xl font-bold tracking-wide hidden sm:block">
+          SKActhub
+        </h1>
       </div>
     </nav>
   );

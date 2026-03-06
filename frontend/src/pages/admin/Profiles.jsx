@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Layout from "../../layout/Layout";
+import { AuthContext } from "../../context/AuthContext";
 
 const Profiles = () => {
   const [users, setUsers] = useState([]);
@@ -20,6 +21,7 @@ const Profiles = () => {
     barangay: "",
   });
   const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
 
   const fetchUsers = async () => {
     try {
@@ -37,8 +39,7 @@ const Profiles = () => {
       console.error("Failed to fetch users:", error);
       // If unauthorized, clear token and redirect to signin
       if (error?.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        logout();
         alert("Session expired or unauthorized — please sign in again.");
         navigate && navigate("/", { replace: true });
         return;
@@ -64,12 +65,12 @@ const Profiles = () => {
       await axios.put(
         `http://localhost:5000/api/admins/status-official/${official._id}`,
         { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setUsers((prev) =>
         prev.map((u) =>
-          u._id === official._id ? { ...u, status: newStatus } : u
-        )
+          u._id === official._id ? { ...u, status: newStatus } : u,
+        ),
       );
     } catch (err) {
       console.error(err);
@@ -88,7 +89,7 @@ const Profiles = () => {
       const token = localStorage.getItem("token");
       await axios.delete(
         `http://localhost:5000/api/users/${deleteTarget._id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setUsers((prev) => prev.filter((u) => u._id !== deleteTarget._id));
       setShowDeleteConfirm(false);
@@ -125,7 +126,7 @@ const Profiles = () => {
           position: form.position,
           barangay: form.barangay,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       alert(res.data.message || "User created successfully");
       setForm({
@@ -312,7 +313,9 @@ const Profiles = () => {
             <div className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-red-600">Delete User</h3>
+                  <h3 className="text-lg font-semibold text-red-600">
+                    Delete User
+                  </h3>
                   <button
                     onClick={() => {
                       setShowDeleteConfirm(false);

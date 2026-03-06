@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
 import axios from "axios";
 import {
   UserPlus,
@@ -23,6 +23,7 @@ import { useToast } from "../../components/Toast";
 import CreateOfficialModal from "../../components/popforms/official/AddOfficial";
 import EditOfficial from "../../components/popforms/official/EditOfficial";
 import RowActions from "../../components/RowActions";
+import { AuthContext } from "../../context/AuthContext";
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -34,6 +35,7 @@ const getAuthHeaders = () => {
 
 const SkOfficial = () => {
   const { error } = useToast();
+  const { logout } = useContext(AuthContext);
 
   /* ===================== STATE ===================== */
   const [officials, setOfficials] = useState([]);
@@ -93,7 +95,7 @@ const SkOfficial = () => {
   /* ===================== HELPERS ===================== */
   const handleAuthError = (err) => {
     if (err?.response?.status === 401) {
-      localStorage.clear();
+      logout();
       alert("Session expired. Please sign in again.");
       window.location.href = "/";
     } else {

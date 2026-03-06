@@ -922,12 +922,14 @@ const BarangayStorage = () => {
     <>
       <style>{folderStyles}</style>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
           {/* Enhanced Header */}
           <div className="mb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
               <div>
-                <h1 className="text-2xl font-bold ">Barangay Management</h1>
+                <h1 className="text-xl sm:text-2xl font-bold">
+                  Barangay Management
+                </h1>
                 <p className="text-slate-600 mt-1 text-sm">
                   {" "}
                   Organize and manage barangay documents efficiently
