@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
+import User from "../models/UserModel.js";
 
-const requireAuth = (req, res, next) => {
+// requireAuth now resolves the user document so downstream handlers
+// can inspect position, barangay, etc. Token payload only contains _id/role.
+const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -14,9 +17,15 @@ const requireAuth = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    // load full user record (excluding password)
+    const user = await User.findById(decoded._id).select("-password");
+    if (!user) {
+      return res.status(401).json({ message: "Invalid user" });
+    }
+    req.user = user;
     next();
   } catch (error) {
+    console.error("Auth error", error);
     return res.status(401).json({ message: "Invalid token" });
   }
 };

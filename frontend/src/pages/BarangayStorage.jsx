@@ -18,6 +18,7 @@ import {
   Calendar,
   Image as ImageIcon,
   Plus,
+  FileText,
 } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 import { useToast } from "../components/Toast";
@@ -199,6 +200,8 @@ const BarangayStorage = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [showFolderSuccessModal, setShowFolderSuccessModal] = useState(false);
   const [createdFolderName, setCreatedFolderName] = useState("");
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -535,6 +538,16 @@ const BarangayStorage = () => {
 
   const handleCreateFolder = async (folderName) => {
     if (!selectedBarangay || !folderName.trim()) return;
+
+    // local guard: only secretaries/treasurers may create folders
+    if (
+      !user ||
+      (user.position !== "Secretary" && user.position !== "Treasurer")
+    ) {
+      toast.error("You are not authorized to create folders");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       await axios.post(
@@ -546,8 +559,12 @@ const BarangayStorage = () => {
       setShowFolderSuccessModal(true);
       fetchFolders(selectedBarangay);
     } catch (error) {
-      console.error("Error creating folder:", error);
-      toast.error("Failed to create folder.");
+      console.error("Error creating folder:", error.response || error);
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to create folder.";
+      toast.error(msg);
     }
   };
 
@@ -584,6 +601,18 @@ const BarangayStorage = () => {
   };
 
   const openConfirmationModal = (action, messageId, docId, title, message) => {
+    // for removal we need both a barangay and document id
+    if (action === "remove") {
+      if (!selectedBarangay) {
+        toast.error("Please select a barangay before removing documents");
+        return;
+      }
+      if (!docId) {
+        toast.error("No document specified for removal");
+        return;
+      }
+    }
+
     setConfirmationModal({
       isOpen: true,
       action,
@@ -611,6 +640,13 @@ const BarangayStorage = () => {
     if (action === "ongoing" || action === "completed") {
       await handleUpdateStatus(messageId, action);
     } else if (action === "remove") {
+      // validate references before calling backend
+      if (!selectedBarangay || !docId) {
+        toast.error("Invalid barangay or document selected");
+        closeConfirmationModal();
+        return;
+      }
+
       try {
         const token = localStorage.getItem("token");
         const url = `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`;
@@ -622,8 +658,12 @@ const BarangayStorage = () => {
         );
         toast.success("Message removed from barangay and returned to inbox");
       } catch (err) {
-        console.error("Detach failed:", err);
-        toast.error("Failed to remove message from barangay");
+        console.error("Detach failed:", err.response || err);
+        const msg =
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to remove message from barangay";
+        toast.error(msg);
       }
     } else if (action === "deleteFolder") {
       try {
@@ -1101,15 +1141,17 @@ const BarangayStorage = () => {
                             </select>
                           </div>
 
-                          {user?.role === "Official" && (
-                            <button
-                              onClick={() => setShowCreateFolderModal(true)}
-                              className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-                            >
-                              <FolderPlus size={18} />
-                              <span>New Folder</span>
-                            </button>
-                          )}
+                          {user?.role === "Official" &&
+                            (user.position === "Secretary" ||
+                              user.position === "Treasurer") && (
+                              <button
+                                onClick={() => setShowCreateFolderModal(true)}
+                                className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                              >
+                                <FolderPlus size={18} />
+                                <span>New Folder</span>
+                              </button>
+                            )}
                         </div>
                       </div>
 
@@ -1158,36 +1200,38 @@ const BarangayStorage = () => {
                                     </div>
 
                                     {/* Controls */}
-                                    {user?.role === "Official" && (
-                                      <div className="absolute -top-1 -right-4 flex gap-1.5 z-50">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedFolderForUpload(
-                                              folder._id,
-                                            );
-                                            setShowFolderComposeModal(true);
-                                          }}
-                                          className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
-                                          title="Add document"
-                                        >
-                                          <Plus size={14} />
-                                        </button>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteFolder(
-                                              folder._id,
-                                              folder.name,
-                                            );
-                                          }}
-                                          className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
-                                          title="Delete folder"
-                                        >
-                                          <Trash2 size={14} />
-                                        </button>
-                                      </div>
-                                    )}
+                                    {user?.role === "Official" &&
+                                      (user.position === "Secretary" ||
+                                        user.position === "Treasurer") && (
+                                        <div className="absolute -top-1 -right-4 flex gap-1.5 z-50">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedFolderForUpload(
+                                                folder._id,
+                                              );
+                                              setShowFolderComposeModal(true);
+                                            }}
+                                            className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                                            title="Add document"
+                                          >
+                                            <Plus size={14} />
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeleteFolder(
+                                                folder._id,
+                                                folder.name,
+                                              );
+                                            }}
+                                            className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                                            title="Delete folder"
+                                          >
+                                            <Trash2 size={14} />
+                                          </button>
+                                        </div>
+                                      )}
 
                                     {/* Folder Label */}
                                     <div className="folder-name">
@@ -1284,6 +1328,11 @@ const BarangayStorage = () => {
                                       closeConfirmationModal
                                     }
                                     handleConfirmAction={handleConfirmAction}
+                                    showPreviewModal={showPreviewModal}
+                                    setShowPreviewModal={setShowPreviewModal}
+                                    previewUrl={previewUrl}
+                                    setPreviewUrl={setPreviewUrl}
+                                    toast={toast}
                                   />
                                 ))}
                               </div>
@@ -1343,6 +1392,11 @@ const BarangayStorage = () => {
                                       closeConfirmationModal
                                     }
                                     handleConfirmAction={handleConfirmAction}
+                                    showPreviewModal={showPreviewModal}
+                                    setShowPreviewModal={setShowPreviewModal}
+                                    previewUrl={previewUrl}
+                                    setPreviewUrl={setPreviewUrl}
+                                    toast={toast}
                                   />
                                 ))}
                               </div>
@@ -1454,12 +1508,16 @@ const BarangayStorage = () => {
                                       {u.position || "—"}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                      <button
-                                        onClick={() => handleRemoveUser(u._id)}
-                                        className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold transition-colors"
-                                      >
-                                        Remove
-                                      </button>
+                                      {user?.position !== "Chairman" && (
+                                        <button
+                                          onClick={() =>
+                                            handleRemoveUser(u._id)
+                                          }
+                                          className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold transition-colors"
+                                        >
+                                          Remove
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
@@ -2123,6 +2181,11 @@ const DocumentItem = ({
   openConfirmationModal,
   closeConfirmationModal,
   handleConfirmAction,
+  showPreviewModal,
+  setShowPreviewModal,
+  previewUrl,
+  setPreviewUrl,
+  toast,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showFolderSubmenu, setShowFolderSubmenu] = useState(false);
@@ -2240,16 +2303,29 @@ const DocumentItem = ({
                 Activity
               </button>
             )}
-          {item.documentUrl && (
-            <a
-              href={`http://localhost:5000${item.documentUrl}`}
-              download={item.documentName}
-              className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Download
-            </a>
+          {item.document?.attachmentUrl && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setPreviewUrl(
+                    `http://localhost:5000${item.document.attachmentUrl}`,
+                  );
+                  setShowPreviewModal(true);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-indigo-50 hover:from-indigo-200 hover:to-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold border-2 border-indigo-200 transition-all"
+              >
+                View
+              </button>
+              <a
+                href={`http://localhost:5000${item.document.attachmentUrl}`}
+                download={item.document.attachmentName}
+                className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Download
+              </a>
+            </div>
           )}
           <div className="relative">
             <button
@@ -2311,24 +2387,26 @@ const DocumentItem = ({
           </>
         )}
 
-        {user?.role === "Official" && (
-          <>
-            <button
-              onClick={() =>
-                openConfirmationModal(
-                  "remove",
-                  null,
-                  item.document?._id || item.document,
-                  "Remove Document",
-                  "Are you sure you want to remove this message from the barangay? It will be returned to your inbox.",
-                )
-              }
-              className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
-            >
-              Remove
-            </button>
-          </>
-        )}
+        {user?.role === "Official" &&
+          (user.position === "Secretary" || user.position === "Treasurer") &&
+          selectedBarangay && (
+            <>
+              <button
+                onClick={() =>
+                  openConfirmationModal(
+                    "remove",
+                    null,
+                    item.document?._id || item.document,
+                    "Remove Document",
+                    "Are you sure you want to remove this message from the barangay? It will be returned to your inbox.",
+                  )
+                }
+                className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
+              >
+                Remove
+              </button>
+            </>
+          )}
       </div>
 
       {/* Calendar Modal */}
@@ -2433,6 +2511,67 @@ const DocumentItem = ({
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b-2 border-slate-100">
+              <h3 className="text-xl font-bold text-slate-900">
+                Document Preview
+              </h3>
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X size={24} className="text-slate-600" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center">
+              {previewUrl.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : previewUrl.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={previewUrl}
+                  className="w-full h-full border-0"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 px-6">
+                  <FileText size={64} className="text-slate-400 mb-4" />
+                  <p className="text-slate-600 text-lg font-semibold text-center mb-4">
+                    Preview not available for this file type
+                  </p>
+                  <a
+                    href={previewUrl}
+                    download
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all"
+                  >
+                    Download File
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t-2 border-slate-100 flex justify-end">
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="px-6 py-2.5 bg-slate-300 hover:bg-slate-400 text-slate-800 rounded-lg font-bold transition-all"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

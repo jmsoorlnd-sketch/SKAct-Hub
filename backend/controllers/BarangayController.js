@@ -484,6 +484,14 @@ export const detachMessageFromBarangay = async (req, res) => {
     const { barangayId, messageId } = req.params;
     const userId = req.user._id;
 
+    // validate object ids early to prevent CastError
+    if (
+      !mongoose.Types.ObjectId.isValid(barangayId) ||
+      !mongoose.Types.ObjectId.isValid(messageId)
+    ) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
     const barangay = await Barangay.findById(barangayId);
     if (!barangay)
       return res.status(404).json({ message: "Barangay not found" });
@@ -533,6 +541,14 @@ export const createFolder = async (req, res) => {
     const { barangayId } = req.params;
     const { name } = req.body;
     const createdBy = req.user._id;
+
+    // only secretaries and treasurers may create folders (admins just view)
+    const position = req.user.position || "";
+    if (!["Secretary", "Treasurer"].includes(position)) {
+      return res
+        .status(403)
+        .json({ message: "Only secretaries or treasurers can create folders" });
+    }
 
     if (!name) {
       return res.status(400).json({ message: "Folder name is required" });

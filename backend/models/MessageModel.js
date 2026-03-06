@@ -41,6 +41,11 @@ const messageSchema = new mongoose.Schema(
       enum: ["pending", "approved", "ongoing", "rejected", "completed"],
       default: "pending",
     },
+    // optional reason for rejection (admins can enter when rejecting)
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
     isRead: {
       type: Boolean,
       default: false,

@@ -34,6 +34,10 @@ const AdminDashboard = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [barangays, setBarangays] = useState([]);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
 
   /* ==================== DATA FETCHING ==================== */
   useEffect(() => {
@@ -112,14 +116,17 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleRejectMessage = async () => {
-    if (!window.confirm("Are you sure you want to reject this message?"))
-      return;
+  const handleRejectMessage = () => {
+    // open modal instead of browser confirm
+    setRejectReason("");
+    setShowRejectModal(true);
+  };
 
+  const confirmReject = async () => {
     try {
       await axios.post(
         `${API_BASE}/messages/admin/reject`,
-        { messageId: selectedMessage._id },
+        { messageId: selectedMessage._id, reason: rejectReason },
         { headers: getAuthHeaders() },
       );
       toast.success("Message rejected");
@@ -128,6 +135,8 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Reject failed:", error);
       toast.error("Failed to reject message");
+    } finally {
+      setShowRejectModal(false);
     }
   };
 
@@ -385,6 +394,20 @@ const AdminDashboard = () => {
                         </p>
                       </div>
                     </div>
+                    {/* Rejection reason (if previously rejected) */}
+                    {selectedMessage.status === "rejected" &&
+                      selectedMessage.rejectionReason && (
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-900 mb-2">
+                            Rejection Reason
+                          </h3>
+                          <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                              {selectedMessage.rejectionReason}
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                     {/* Activity Schedule */}
                     {(selectedMessage.startDate || selectedMessage.endDate) && (
@@ -457,16 +480,30 @@ const AdminDashboard = () => {
                               </div>
                             </div>
                             {selectedMessage.attachmentUrl && (
-                              <a
-                                href={`http://localhost:5000${selectedMessage.attachmentUrl}`}
-                                download={selectedMessage.attachmentName}
-                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 flex-shrink-0"
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <Download className="w-3 h-3" />
-                                Download
-                              </a>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <button
+                                  onClick={() => {
+                                    setPreviewUrl(
+                                      `http://localhost:5000${selectedMessage.attachmentUrl}`,
+                                    );
+                                    setShowPreviewModal(true);
+                                  }}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                                >
+                                  <FileText className="w-3 h-3" />
+                                  View
+                                </button>
+                                <a
+                                  href={`http://localhost:5000${selectedMessage.attachmentUrl}`}
+                                  download={selectedMessage.attachmentName}
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  <Download className="w-3 h-3" />
+                                  Download
+                                </a>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -536,6 +573,115 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Reject confirmation modal with reason input */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black opacity-40" />
+          <div className="bg-white rounded-lg shadow-lg z-50 w-11/12 md:w-1/3 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Reject Message</h3>
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="text-gray-600 hover:text-black"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-gray-700 mb-2">
+              Are you sure you want to reject this message? You may provide a
+              reason (optional).
+            </p>
+            <textarea
+              className="w-full border rounded p-2 mb-4"
+              rows={3}
+              placeholder="Reason for rejection"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReject}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachment Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-11/12 max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center bg-gradient-to-r from-blue-600 to-indigo-600 p-6 sticky top-0">
+              <h3 className="text-lg font-bold text-white">Preview</h3>
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              {previewUrl && (
+                <>
+                  {previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="max-w-full h-auto rounded-lg border border-slate-200"
+                    />
+                  ) : previewUrl.match(/\.pdf$/i) ? (
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-96 rounded-lg border border-slate-200"
+                      title="PDF Preview"
+                    />
+                  ) : previewUrl.match(/\.(doc|docx)$/i) ? (
+                    <div className="p-6 bg-slate-100 rounded-lg border border-slate-200 text-center">
+                      <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-700 mb-4">
+                        Document preview not supported in browser.
+                      </p>
+                      <a
+                        href={previewUrl}
+                        download
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download to View
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-slate-100 rounded-lg border border-slate-200 text-center">
+                      <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                      <p className="text-slate-700 mb-4">
+                        File preview not supported.
+                      </p>
+                      <a
+                        href={previewUrl}
+                        download
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download File
+                      </a>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

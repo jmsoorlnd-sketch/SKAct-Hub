@@ -265,6 +265,14 @@ const Inbox = () => {
                         {msg.body}
                       </p>
                     </div>
+                    {/* Rejection reason if message was rejected */}
+                    {msg.status === "rejected" && msg.rejectionReason && (
+                      <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p className="text-xs text-red-700 whitespace-pre-wrap break-words">
+                          <strong>Reason:</strong> {msg.rejectionReason}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Attachment */}
                     {(msg.isAttached && msg.attachmentUrl) ||
