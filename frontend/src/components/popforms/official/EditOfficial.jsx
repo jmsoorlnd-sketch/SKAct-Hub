@@ -304,16 +304,15 @@ const EditOfficial = ({ isOpen, onClose, official, onSubmit }) => {
               {/* Email */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Email Address *
+                  Email Address
                 </label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2.5 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="Enter email address"
+                  placeholder="Enter email address (optional)"
                 />
               </div>
             </div>

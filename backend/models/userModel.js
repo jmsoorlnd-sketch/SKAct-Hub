@@ -2,8 +2,9 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
-  // email is optional for admins creating accounts; officials can add later
-  email: { type: String, required: false, unique: true, sparse: true },
+  // email is optional - no unique constraint to allow multiple empty/null values
+  // Uniqueness is enforced at the application level in AdminController
+  email: { type: String, sparse: true },
 
   // MAIN ROLE FIELD
   role: {

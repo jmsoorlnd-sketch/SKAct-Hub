@@ -14,6 +14,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { useToast } from "../../Toast";
 
 /* ===================== CONSTANTS ===================== */
 const API_BASE = "http://localhost:5000/api";
@@ -39,6 +40,7 @@ const DEFAULT_FORM = {
 /* ===================== MAIN COMPONENT ===================== */
 const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
   /* ==================== STATE ==================== */
+  const { success, error: showError } = useToast();
   const [barangays, setBarangays] = useState([]);
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [errors, setErrors] = useState({});
@@ -102,9 +104,11 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     if (!formData.firstname.trim())
       newErrors.firstname = "First name is required";
     if (!formData.lastname.trim()) newErrors.lastname = "Last name is required";
-    // email is now required
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+    // email is optional - only validate format if provided
+    if (
+      formData.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    )
       newErrors.email = "Enter a valid email address";
     if (!formData.username.trim()) newErrors.username = "Username is required";
     if (!formData.position) newErrors.position = "Position is required";
@@ -129,7 +133,12 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     setApiError("");
 
     try {
-      const { confirmPassword, ...submitData } = formData;
+      const { confirmPassword, email: rawEmail, ...submitData } = formData;
+
+      // Only include email if it's not empty
+      if (rawEmail && rawEmail.trim()) {
+        submitData.email = rawEmail.trim();
+      }
 
       const response = await axios.post(
         `${API_BASE}/admins/create-official`,
@@ -142,6 +151,9 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
         },
       );
 
+      success(
+        `SK Official "${response.data.user.firstname} ${response.data.user.lastname}" created successfully!`,
+      );
       onSubmit(response.data.user);
       handleClose();
     } catch (error) {
@@ -150,6 +162,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
         error.response?.data?.message ||
           "Failed to create official. Please try again.",
       );
+      showError(error.response?.data?.message || "Failed to create official");
     } finally {
       setIsSubmitting(false);
     }

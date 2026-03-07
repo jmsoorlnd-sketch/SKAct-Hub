@@ -18,8 +18,12 @@ const createOfficial = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!email || !email.trim()) {
-      return res.status(400).json({ message: "Email is required" });
+    if (!firstname || !firstname.trim()) {
+      return res.status(400).json({ message: "First name is required" });
+    }
+
+    if (!lastname || !lastname.trim()) {
+      return res.status(400).json({ message: "Last name is required" });
     }
 
     if (!username || !username.trim()) {
@@ -32,10 +36,20 @@ const createOfficial = async (req, res) => {
         .json({ message: "Password must be at least 8 characters" });
     }
 
-    // 1️⃣ Check if email exists
-    const existEmail = await User.findOne({ email });
-    if (existEmail) {
-      return res.status(400).json({ message: "Email already exists" });
+    if (!position) {
+      return res.status(400).json({ message: "Position is required" });
+    }
+
+    if (!barangay) {
+      return res.status(400).json({ message: "Barangay is required" });
+    }
+
+    // Email is optional - only check uniqueness if provided
+    if (email && email.trim()) {
+      const existEmail = await User.findOne({ email });
+      if (existEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
     }
 
     // Check if username exists
@@ -44,22 +58,28 @@ const createOfficial = async (req, res) => {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    // 2️⃣ Hash password
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 3️⃣ Create official
-    const newOfficial = await User.create({
+    // Create official - only include email if provided
+    const newOfficialData = {
       username,
-      email,
       password: hashedPassword,
-      firstname: firstname || "",
-      lastname: lastname || "",
-      position: position || "",
+      firstname: firstname.trim(),
+      lastname: lastname.trim(),
+      position,
       role: "Official",
       status: "Active",
-      barangay: barangay || null, // store ObjectId reference
-    });
+      barangay,
+    };
+
+    // Only include email if it's provided and not empty
+    if (email && email.trim()) {
+      newOfficialData.email = email.trim();
+    }
+
+    const newOfficial = await User.create(newOfficialData);
 
     // Populate barangay name for frontend
     await newOfficial.populate("barangay");
@@ -69,12 +89,12 @@ const createOfficial = async (req, res) => {
       user: {
         _id: newOfficial._id,
         username: newOfficial.username,
-        email: newOfficial.email,
+        email: newOfficial.email || "",
         role: newOfficial.role,
         firstname: newOfficial.firstname,
         lastname: newOfficial.lastname,
         position: newOfficial.position,
-        barangay: newOfficial.barangay, // Send full barangay object
+        barangay: newOfficial.barangay,
         status: newOfficial.status,
       },
     });
@@ -172,8 +192,8 @@ const updateOfficial = async (req, res) => {
       return res.status(404).json({ message: "Official not found" });
     }
 
-    // Check if email is being changed and already exists
-    if (email && email !== official.email) {
+    // Check if email is being changed and already exists (only if email is provided and not empty)
+    if (email && email.trim() && email !== official.email) {
       const existEmail = await User.findOne({ email });
       if (existEmail) {
         return res.status(400).json({ message: "Email already exists" });
@@ -192,7 +212,15 @@ const updateOfficial = async (req, res) => {
     if (firstname) official.firstname = firstname;
     if (lastname) official.lastname = lastname;
     if (position) official.position = position;
-    if (email) official.email = email;
+    // Handle email - can be updated, cleared, or left as is
+    if (email !== undefined) {
+      if (email && email.trim()) {
+        official.email = email;
+      } else {
+        // Clear email if empty string is provided
+        official.email = undefined;
+      }
+    }
     if (username) official.username = username;
 
     // Hash new password if provided
@@ -208,7 +236,7 @@ const updateOfficial = async (req, res) => {
     return res.status(200).json({
       _id: updatedOfficial._id,
       username: updatedOfficial.username,
-      email: updatedOfficial.email,
+      email: updatedOfficial.email || "",
       firstname: updatedOfficial.firstname,
       lastname: updatedOfficial.lastname,
       position: updatedOfficial.position,
