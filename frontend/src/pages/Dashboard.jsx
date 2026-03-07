@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Layout from "../layout/Layout";
 import { useToast } from "../components/Toast";
 
 const Dashboard = () => {
@@ -119,7 +118,7 @@ const Dashboard = () => {
   };
 
   return (
-    <Layout>
+    <>
       <div className="flex flex-col w-full min-h-screen p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 md:gap-6 bg-gray-50">
         {/* DASHBOARD CONTENT */}
         <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-md p-4 sm:p-6 overflow-auto max-h-[80vh]">
@@ -218,7 +217,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-    </Layout>
+    </>
   );
 };
 
