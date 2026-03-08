@@ -212,6 +212,12 @@ const BarangayStorage = () => {
   const [folderModalActivityUpdates, setFolderModalActivityUpdates] = useState(
     [],
   );
+  const [folderModalShowUploadForm, setFolderModalShowUploadForm] =
+    useState(false);
+  const [folderModalUploadPhoto, setFolderModalUploadPhoto] = useState(null);
+  const [folderModalUploadCaption, setFolderModalUploadCaption] = useState("");
+  const [folderModalUploadingActivity, setFolderModalUploadingActivity] =
+    useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -906,6 +912,47 @@ const BarangayStorage = () => {
     } catch (error) {
       console.error("Error fetching activity updates:", error);
       setFolderModalActivityUpdates([]);
+    }
+  };
+
+  const handleFolderModalUploadActivity = async (e) => {
+    e.preventDefault();
+    if (!folderModalSelectedDoc)
+      return toast.warning("Select a document first");
+    if (!folderModalUploadPhoto) return toast.warning("Please select a photo");
+
+    try {
+      setFolderModalUploadingActivity(true);
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("photo", folderModalUploadPhoto);
+      formData.append("caption", folderModalUploadCaption);
+      formData.append("barangayId", selectedBarangay);
+
+      const messageId =
+        folderModalSelectedDoc.document?._id || folderModalSelectedDoc._id;
+      await axios.post(
+        `http://localhost:5000/api/messages/${messageId}/activity-updates`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      toast.success("Activity update uploaded successfully!");
+      setFolderModalUploadPhoto(null);
+      setFolderModalUploadCaption("");
+      setFolderModalShowUploadForm(false);
+      fetchFolderModalActivityUpdates(messageId);
+    } catch (error) {
+      console.error("Error uploading activity update:", error);
+      const serverMsg = error?.response?.data?.message;
+      toast.error(serverMsg || "Failed to upload activity update");
+    } finally {
+      setFolderModalUploadingActivity(false);
     }
   };
 
@@ -2361,8 +2408,133 @@ const BarangayStorage = () => {
                             <span>Download</span>
                           </button>
                         )}
+
+                        {user?.role === "Official" && (
+                          <button
+                            onClick={() => {
+                              setFolderModalShowUploadForm(
+                                !folderModalShowUploadForm,
+                              );
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              folderModalShowUploadForm
+                                ? "bg-purple-600 text-white"
+                                : "bg-purple-50 hover:bg-purple-100 text-purple-700"
+                            }`}
+                          >
+                            <Plus size={14} />
+                            <span>Upload Update</span>
+                          </button>
+                        )}
                       </div>
                     </div>
+
+                    {/* Upload Activity Form */}
+                    {folderModalShowUploadForm && user?.role === "Official" && (
+                      <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                        <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+                          <Plus size={16} />
+                          Upload Activity Update
+                        </h4>
+                        <form
+                          onSubmit={handleFolderModalUploadActivity}
+                          className="space-y-3"
+                        >
+                          {/* Photo Upload */}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-2">
+                              Select Photo
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) =>
+                                setFolderModalUploadPhoto(
+                                  e.target.files?.[0] || null,
+                                )
+                              }
+                              className="block w-full text-xs text-slate-500
+                                file:mr-4 file:py-1.5 file:px-3
+                                file:rounded-lg file:border-0
+                                file:text-xs file:font-semibold
+                                file:bg-purple-100 file:text-purple-700
+                                hover:file:bg-purple-200 transition-all cursor-pointer"
+                            />
+                            {folderModalUploadPhoto && (
+                              <div className="mt-2 relative inline-block">
+                                <img
+                                  src={URL.createObjectURL(
+                                    folderModalUploadPhoto,
+                                  )}
+                                  alt="Preview"
+                                  className="h-20 w-20 object-cover rounded-lg border border-purple-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setFolderModalUploadPhoto(null)
+                                  }
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Caption */}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-2">
+                              Caption (optional)
+                            </label>
+                            <textarea
+                              value={folderModalUploadCaption}
+                              onChange={(e) =>
+                                setFolderModalUploadCaption(e.target.value)
+                              }
+                              placeholder="Write a caption for this update..."
+                              rows={2}
+                              className="w-full text-xs px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                            />
+                          </div>
+
+                          {/* Submit Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              type="submit"
+                              disabled={
+                                !folderModalUploadPhoto ||
+                                folderModalUploadingActivity
+                              }
+                              className="flex-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1"
+                            >
+                              {folderModalUploadingActivity ? (
+                                <>
+                                  <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-r-transparent rounded-full"></span>
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <Check size={12} />
+                                  Upload
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFolderModalShowUploadForm(false);
+                                setFolderModalUploadPhoto(null);
+                                setFolderModalUploadCaption("");
+                              }}
+                              className="flex-1 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
 
                     {/* Content Area */}
                     {folderModalViewType === "updates" && (
