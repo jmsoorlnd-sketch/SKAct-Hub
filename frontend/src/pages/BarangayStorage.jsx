@@ -19,6 +19,9 @@ import {
   Image as ImageIcon,
   Plus,
   FileText,
+  Eye,
+  Download,
+  Activity,
 } from "lucide-react";
 import AddBarangay from "../components/popforms/barangay/AddBarangay";
 import { useToast } from "../components/Toast";
@@ -202,6 +205,13 @@ const BarangayStorage = () => {
   const [createdFolderName, setCreatedFolderName] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [showFolderViewModal, setShowFolderViewModal] = useState(false);
+  const [folderViewData, setFolderViewData] = useState(null);
+  const [folderModalSelectedDoc, setFolderModalSelectedDoc] = useState(null);
+  const [folderModalViewType, setFolderModalViewType] = useState(null); // 'updates' or 'details'
+  const [folderModalActivityUpdates, setFolderModalActivityUpdates] = useState(
+    [],
+  );
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -885,6 +895,20 @@ const BarangayStorage = () => {
     }
   };
 
+  const fetchFolderModalActivityUpdates = async (documentId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/messages/${documentId}/activity-updates`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setFolderModalActivityUpdates(res.data.updates || []);
+    } catch (error) {
+      console.error("Error fetching activity updates:", error);
+      setFolderModalActivityUpdates([]);
+    }
+  };
+
   const userBarangayId = user?.barangay?._id || user?.barangay || null;
   const filteredBarangays = barangays.filter((b) => {
     const matchesSearch = b.barangayName
@@ -1192,7 +1216,20 @@ const BarangayStorage = () => {
                                 >
                                   <div
                                     className="folder-container relative"
-                                    onClick={() => setSelectedFolder(folder)}
+                                    onClick={() => {
+                                      const folderDocs = filterDocuments(
+                                        storage.filter(
+                                          (item) =>
+                                            item.folder &&
+                                            item.folder._id === folder._id,
+                                        ),
+                                      );
+                                      setFolderViewData({
+                                        folder,
+                                        documents: folderDocs,
+                                      });
+                                      setShowFolderViewModal(true);
+                                    }}
                                   >
                                     <div className="animated-folder">
                                       {/* File cards */}
@@ -2121,40 +2158,369 @@ const BarangayStorage = () => {
         </div>
       )}
 
-      {/* Folder Success Modal */}
-      {showFolderSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            {/* Modal Body */}
-            <div className="p-8 text-center space-y-4 flex flex-col items-center justify-center">
-              {/* Success Icon */}
-              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center animate-pulse">
-                <Check size={32} className="text-white" />
+      {/* FOLDER VIEW MODAL */}
+      {showFolderViewModal && folderViewData && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3 text-white">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {folderViewData.folder.name}
+                  </h2>
+                  <p className="text-blue-100 text-sm">
+                    {folderViewData.documents.length} document
+                    {folderViewData.documents.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowFolderViewModal(false);
+                  setFolderViewData(null);
+                  setFolderModalSelectedDoc(null);
+                  setFolderModalViewType(null);
+                }}
+                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              >
+                <X size={22} className="text-white" />
+              </button>
+            </div>
+
+            {/* Modal Body - Two Column Layout */}
+            <div className="flex-1 overflow-hidden flex">
+              {/* Left Column - Document List */}
+              <div className="w-1/2 border-r border-slate-200 overflow-y-auto p-6 space-y-4">
+                {folderViewData.documents.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="h-10 w-10 text-slate-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-slate-500 font-medium">
+                      No documents in this folder
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {folderViewData.documents.map((item) => (
+                      <div
+                        key={item._id}
+                        onClick={() => {
+                          setFolderModalSelectedDoc(item);
+                          setFolderModalViewType(null);
+                        }}
+                        className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                          folderModalSelectedDoc?._id === item._id
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-slate-200 hover:border-blue-300 bg-slate-50"
+                        }`}
+                      >
+                        <h3 className="font-bold text-slate-900 text-sm">
+                          {item.documentName ||
+                            item.document?.subject ||
+                            "Document"}
+                        </h3>
+                        <p className="text-xs text-slate-600 mt-1">
+                          From:{" "}
+                          <span className="font-semibold">
+                            {item.document?.sender?.username ||
+                              item.uploadedBy?.username}
+                          </span>
+                        </p>
+                        <span
+                          className={`inline-block mt-2 px-2 py-1 rounded-lg text-xs font-bold border ${
+                            item.document?.status === "completed"
+                              ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                              : item.document?.status === "ongoing"
+                                ? "bg-amber-100 text-amber-700 border-amber-200"
+                                : "bg-slate-100 text-slate-700 border-slate-200"
+                          }`}
+                        >
+                          {item.document?.status || item.status}
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
 
-              {/* Success Message */}
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                  Folder Created!
-                </h2>
-                <p className="text-slate-600 text-sm">
-                  "{createdFolderName}" has been successfully created and is
-                  ready to use.
-                </p>
+              {/* Right Column - Details Panel */}
+              <div className="w-1/2 overflow-y-auto p-6 flex flex-col">
+                {!folderModalSelectedDoc ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <FileText size={48} className="text-slate-300 mb-3" />
+                    <p className="text-slate-500 font-medium">
+                      Select a document to view details
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 flex-1">
+                    {/* Document Info */}
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <h3 className="font-bold text-lg text-slate-900 mb-2">
+                        {folderModalSelectedDoc.documentName ||
+                          folderModalSelectedDoc.document?.subject ||
+                          "Document"}
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-3">
+                        From:{" "}
+                        <span className="font-semibold">
+                          {folderModalSelectedDoc.document?.sender?.username ||
+                            folderModalSelectedDoc.uploadedBy?.username}
+                        </span>
+                      </p>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => {
+                            fetchFolderModalActivityUpdates(
+                              folderModalSelectedDoc.document?._id ||
+                                folderModalSelectedDoc._id,
+                            );
+                            setFolderModalViewType("updates");
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            folderModalViewType === "updates"
+                              ? "bg-blue-600 text-white"
+                              : "bg-blue-50 hover:bg-blue-100 text-blue-700"
+                          }`}
+                        >
+                          <Activity size={14} />
+                          <span>Updates</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setFolderModalViewType("details");
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            folderModalViewType === "details"
+                              ? "bg-indigo-600 text-white"
+                              : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
+                          }`}
+                        >
+                          <Eye size={14} />
+                          <span>View</span>
+                        </button>
+
+                        {folderModalSelectedDoc.document?.attachment && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const token = localStorage.getItem("token");
+                                const response = await axios.get(
+                                  `http://localhost:5000/api/messages/${folderModalSelectedDoc.document._id}/attachment`,
+                                  {
+                                    headers: {
+                                      Authorization: `Bearer ${token}`,
+                                    },
+                                    responseType: "blob",
+                                  },
+                                );
+
+                                const url = window.URL.createObjectURL(
+                                  new Blob([response.data]),
+                                );
+                                const link = document.createElement("a");
+                                link.href = url;
+                                link.setAttribute(
+                                  "download",
+                                  folderModalSelectedDoc.document.attachment
+                                    .originalName || "attachment",
+                                );
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                                window.URL.revokeObjectURL(url);
+                                toast.success("File downloaded successfully!");
+                              } catch (error) {
+                                console.error("Download failed:", error);
+                                toast.error("Failed to download attachment");
+                              }
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-xs font-medium transition-colors"
+                          >
+                            <Download size={14} />
+                            <span>Download</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Content Area */}
+                    {folderModalViewType === "updates" && (
+                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 flex-1">
+                        <h4 className="font-bold text-slate-900 mb-3">
+                          Activity Updates
+                        </h4>
+                        {folderModalActivityUpdates.length === 0 ? (
+                          <p className="text-sm text-slate-600">
+                            No activity updates yet
+                          </p>
+                        ) : (
+                          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                            {folderModalActivityUpdates.map((update) => (
+                              <div
+                                key={update._id}
+                                className="bg-white rounded-lg p-3 border border-blue-100"
+                              >
+                                {update.photoUrl && (
+                                  <img
+                                    src={`http://localhost:5000${update.photoUrl}`}
+                                    alt="Activity Update"
+                                    className="w-full h-32 object-cover rounded mb-2"
+                                  />
+                                )}
+                                {update.caption && (
+                                  <p className="text-sm text-slate-700">
+                                    {update.caption}
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-between mt-2">
+                                  <p className="text-xs text-slate-500">
+                                    {new Date(
+                                      update.createdAt,
+                                    ).toLocaleDateString()}
+                                  </p>
+                                  {update.uploadedBy && (
+                                    <p className="text-xs text-slate-500">
+                                      by {update.uploadedBy.firstname}{" "}
+                                      {update.uploadedBy.lastname}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {folderModalViewType === "details" && (
+                      <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200 flex-1">
+                        <h4 className="font-bold text-slate-900 mb-3">
+                          Document Details
+                        </h4>
+                        <div className="space-y-3 text-sm">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600">
+                              Date Created
+                            </p>
+                            <p className="text-slate-800">
+                              {new Date(
+                                folderModalSelectedDoc.createdAt ||
+                                  folderModalSelectedDoc.document?.createdAt,
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600">
+                              Status
+                            </p>
+                            <p className="text-slate-800 capitalize">
+                              {folderModalSelectedDoc.document?.status ||
+                                folderModalSelectedDoc.status}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600">
+                              Content
+                            </p>
+                            <p className="text-slate-800 text-justify max-h-[200px] overflow-y-auto">
+                              {folderModalSelectedDoc.description ||
+                                folderModalSelectedDoc.document?.body ||
+                                "—"}
+                            </p>
+                          </div>
+                          {folderModalSelectedDoc.document?.attachmentUrl && (
+                            <div>
+                              <p className="text-xs font-semibold text-slate-600 mb-2">
+                                Attachment
+                              </p>
+                              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                  <FileText
+                                    size={16}
+                                    className="text-blue-600"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-slate-800 truncate">
+                                    {folderModalSelectedDoc.document
+                                      .attachmentName ||
+                                      folderModalSelectedDoc.document.attachment
+                                        ?.originalName ||
+                                      "attachment"}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    Click to view or download
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setPreviewUrl(
+                                        `http://localhost:5000${folderModalSelectedDoc.document.attachmentUrl}`,
+                                      );
+                                      setShowPreviewModal(true);
+                                    }}
+                                    className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition-colors"
+                                  >
+                                    View
+                                  </button>
+                                  <a
+                                    href={`http://localhost:5000${folderModalSelectedDoc.document.attachmentUrl}`}
+                                    download={
+                                      folderModalSelectedDoc.document
+                                        .attachmentName ||
+                                      folderModalSelectedDoc.document.attachment
+                                        ?.originalName
+                                    }
+                                    className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded text-xs font-medium transition-colors"
+                                  >
+                                    Download
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-8 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3">
+            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
               <button
                 onClick={() => {
-                  setShowFolderSuccessModal(false);
-                  setCreatedFolderName("");
+                  setShowFolderViewModal(false);
+                  setFolderViewData(null);
+                  setFolderModalSelectedDoc(null);
+                  setFolderModalViewType(null);
                 }}
-                className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
               >
-                <Check size={18} />
-                <span>Done</span>
+                Close
               </button>
             </div>
           </div>
