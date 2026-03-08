@@ -212,18 +212,18 @@ const EventCalendar = () => {
         return;
       }
 
-      await axios.post(
-        "http://localhost:5000/api/messages/send",
-        {
-          subject: formData.subject,
-          body: formData.body,
-          startDate: formData.startDate,
-          endDate: formData.endDate || null,
-          barangayId: userBarangay?._id || null,
-          // no recipientId: backend will default to sender
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const fd = new FormData();
+      fd.append("subject", formData.subject);
+      fd.append("body", formData.body);
+      fd.append("startDate", formData.startDate);
+      if (formData.endDate) fd.append("endDate", formData.endDate);
+      if (userBarangay?._id) fd.append("barangayId", userBarangay._id);
+      fd.append("recipientId", user._id); // REQUIRED for backend
+      // If you have a file upload, add: fd.append('attachment', file);
+
+      await axios.post("http://localhost:5000/api/messages/send", fd, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       handleCloseCreateModal();
       fetchEvents();

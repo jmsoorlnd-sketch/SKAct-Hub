@@ -30,11 +30,6 @@ export const sendMessage = async (req, res) => {
       finalRecipientId = adminUser._id;
     }
 
-    // if no recipient specified (e.g. official scheduling an event), default to sender
-    if (!finalRecipientId) {
-      finalRecipientId = senderId;
-    }
-
     if (!finalRecipientId || !subject || !body) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -56,17 +51,8 @@ export const sendMessage = async (req, res) => {
     const senderUser = await User.findById(senderId);
     const isAdminEvent = senderUser?.role === "Admin";
 
-    // Events (messages with startDate) should be approved immediately so they
-    // appear on the calendar. Admin-scheduled events are also approved automatically.
-    let messageStatus;
-    if (isAdminEvent) {
-      messageStatus = "approved";
-    } else if (s) {
-      // s is parsed startDate; treat any message with a startDate as an event
-      messageStatus = "approved";
-    } else {
-      messageStatus = status || "pending";
-    }
+    // Admin-scheduled events are automatically approved
+    const messageStatus = isAdminEvent ? "approved" : status || "pending";
 
     const message = await Message.create({
       sender: senderId,
@@ -155,25 +141,17 @@ export const updateStatus = async (req, res) => {
 // Get activities that are approved or ongoing (for calendar)
 export const getActivities = async (req, res) => {
   try {
-    // return every message that has a startDate (i.e. an event)
-    // populate sender with full details including their barangay
     const activities = await Message.find({
-      startDate: { $exists: true },
+      startDate: { $exists: true, $ne: null }, // Ensure startDate exists and is not null
     })
-      .populate({
-        path: "sender",
-        select: "username email role barangay",
-        populate: {
-          path: "barangay",
-          select: "barangayName city province",
-        },
-      })
-      .populate("attachedToBarangay", "barangayName city province")
+      .populate("sender", "username email role")
       .sort({ startDate: 1 });
 
     res.status(200).json({ activities });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to fetch activities", error: error.message });
   }
 };
 
@@ -327,7 +305,7 @@ export const approveMessageForBarangay = async (req, res) => {
 // Admin rejects a message from an official
 export const rejectMessage = async (req, res) => {
   try {
-    const { messageId, reason } = req.body;
+    const { messageId } = req.body;
 
     if (!messageId) {
       return res.status(400).json({ message: "messageId is required" });
@@ -338,11 +316,8 @@ export const rejectMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    // Update message status to rejected and store reason if provided
+    // Update message status to rejected
     message.status = "rejected";
-    if (reason) {
-      message.rejectionReason = reason;
-    }
     await message.save();
     await message.populate("sender", "username email role");
 
