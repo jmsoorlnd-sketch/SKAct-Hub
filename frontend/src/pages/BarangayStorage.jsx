@@ -991,19 +991,31 @@ const BarangayStorage = () => {
 
   // Update folder status (ongoing/completed)
   const handleUpdateFolderStatus = async (folderId, status) => {
+    setStatusConfirm({ open: true, folderId, status });
+  };
+
+  const confirmUpdateFolderStatus = async () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}/status`,
-        { status },
+        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${statusConfirm.folderId}/status`,
+        { status: statusConfirm.status },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      toast.success(`Folder marked as ${status}!`);
+      toast.success(`Folder marked as ${statusConfirm.status}!`);
       fetchFolders(selectedBarangay);
     } catch (error) {
       toast.error("Failed to update folder status.");
+    } finally {
+      setStatusConfirm({ open: false, folderId: null, status: null });
     }
   };
+
+  const [statusConfirm, setStatusConfirm] = useState({
+    open: false,
+    folderId: null,
+    status: null,
+  });
 
   return (
     <>
@@ -1345,7 +1357,7 @@ const BarangayStorage = () => {
                                     </div>
 
                                     {/* Status badge */}
-                                    <div className="mt-2 flex items-center justify-center gap-2">
+                                    <div className="mt-2 flex flex-col items-center justify-center gap-2">
                                       <div className="text-sm font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
                                         {folder.status
                                           ? folder.status
@@ -2752,6 +2764,45 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
+
+      {/* Folder Status Confirmation Modal */}
+      {statusConfirm.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full">
+            <h2 className="text-lg font-bold mb-4 text-slate-900">
+              Confirm Status Change
+            </h2>
+            <p className="mb-6 text-slate-700">
+              Are you sure you want to set this folder as{" "}
+              <span className="font-semibold">
+                {statusConfirm.status.charAt(0).toUpperCase() +
+                  statusConfirm.status.slice(1)}
+              </span>
+              ?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                className="px-4 py-2 bg-slate-200 rounded font-semibold text-slate-700 hover:bg-slate-300"
+                onClick={() =>
+                  setStatusConfirm({
+                    open: false,
+                    folderId: null,
+                    status: null,
+                  })
+                }
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
+                onClick={confirmUpdateFolderStatus}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -3091,18 +3142,27 @@ const DocumentItem = ({
                 {confirmationModal.message}
               </p>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-end">
                 <button
-                  onClick={handleConfirmAction}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={closeConfirmationModal}
-                  className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+                  className="px-4 py-2 bg-slate-200 rounded font-semibold text-slate-700 hover:bg-slate-300"
+                  onClick={() =>
+                    setConfirmationModal({
+                      isOpen: false,
+                      action: null,
+                      messageId: null,
+                      docId: null,
+                      message: "",
+                      title: "",
+                    })
+                  }
                 >
                   Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
+                  onClick={handleConfirmAction}
+                >
+                  Confirm
                 </button>
               </div>
             </div>
