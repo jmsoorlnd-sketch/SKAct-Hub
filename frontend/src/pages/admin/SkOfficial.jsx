@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useContext } from "react";
 import axios from "axios";
+import { createPortal } from "react-dom";
 import {
   UserPlus,
   Search,
@@ -17,6 +18,8 @@ import {
   Calendar,
   MessageSquare,
   Award,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 import { useToast } from "../../components/Toast";
@@ -34,7 +37,7 @@ const getAuthHeaders = () => {
 };
 
 const SkOfficial = () => {
-  const { error } = useToast();
+  const { error, success } = useToast();
   const { logout } = useContext(AuthContext);
 
   /* ===================== STATE ===================== */
@@ -56,6 +59,11 @@ const SkOfficial = () => {
     position: "",
     barangay: "",
     search: "",
+  });
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    isOpen: false,
+    official: null,
   });
 
   /* ===================== DATA FETCH ===================== */
@@ -114,10 +122,10 @@ const SkOfficial = () => {
       if (filters.search) {
         const q = filters.search.toLowerCase();
         return (
-          o.firstname.toLowerCase().includes(q) ||
-          o.lastname.toLowerCase().includes(q) ||
-          o.username.toLowerCase().includes(q) ||
-          o.email.toLowerCase().includes(q)
+          (o.firstname || "").toLowerCase().includes(q) ||
+          (o.lastname || "").toLowerCase().includes(q) ||
+          (o.username || "").toLowerCase().includes(q) ||
+          (o.email || "").toLowerCase().includes(q)
         );
       }
 
@@ -193,6 +201,32 @@ const SkOfficial = () => {
     } catch (err) {
       error("Failed to update status");
     }
+  };
+
+  const handleDelete = async (official) => {
+    setDeleteConfirmation({ isOpen: true, official });
+  };
+
+  const confirmDelete = async () => {
+    const official = deleteConfirmation.official;
+    setDeleteConfirmation({ isOpen: false, official: null });
+
+    try {
+      await axios.delete(`${API_BASE}/admins/delete-official/${official._id}`, {
+        headers: getAuthHeaders(),
+      });
+
+      setOfficials((prev) => prev.filter((o) => o._id !== official._id));
+      success(
+        `${official.firstname} ${official.lastname} has been deleted successfully.`,
+      );
+    } catch (err) {
+      error("Failed to delete official");
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({ isOpen: false, official: null });
   };
 
   const openProfile = async (official) => {
@@ -605,6 +639,7 @@ const SkOfficial = () => {
                                     }}
                                     onView={(o) => openProfile(o)}
                                     onToggleStatus={(o) => toggleStatus(o)}
+                                    onDelete={(o) => handleDelete(o)}
                                   />
                                 </td>
                               </tr>
@@ -887,6 +922,71 @@ const SkOfficial = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen &&
+        deleteConfirmation.official &&
+        createPortal(
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000] backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
+              {/* Header with Warning Icon */}
+              <div className="bg-gradient-to-r from-red-50 to-red-100 px-6 py-6 border-b-2 border-red-200 flex items-center gap-4">
+                <div className="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle size={24} className="text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-red-900">
+                    Delete Official
+                  </h2>
+                  <p className="text-sm text-red-700">
+                    This action is permanent
+                  </p>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <p className="text-slate-700 text-base mb-2">
+                  Are you sure you want to permanently delete:
+                </p>
+                <div className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 mb-6">
+                  <p className="font-bold text-slate-900 text-lg">
+                    {deleteConfirmation.official.firstname}{" "}
+                    {deleteConfirmation.official.lastname}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    @{deleteConfirmation.official.username}
+                  </p>
+                  <p className="text-sm text-slate-600 mt-2">
+                    {deleteConfirmation.official.email}
+                  </p>
+                </div>
+                <p className="text-red-600 text-sm font-semibold mb-6 flex items-center gap-2">
+                  <Trash2 size={16} />
+                  This action cannot be undone.
+                </p>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
+                <button
+                  onClick={cancelDelete}
+                  className="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-slate-900 font-semibold rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 };

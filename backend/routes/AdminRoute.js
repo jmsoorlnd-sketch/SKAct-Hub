@@ -6,6 +6,7 @@ import {
   getOfficialById,
   updateOfficialStatus,
   updateOfficial,
+  deleteOfficial,
 } from "../controllers/AdminController.js";
 
 const router = express.Router();
@@ -24,5 +25,8 @@ router.put("/status-official/:id", requireAuth, updateOfficialStatus);
 
 // ✅ Update official details
 router.put("/update-official/:id", requireAuth, updateOfficial);
+
+// ✅ Delete official
+router.delete("/delete-official/:id", requireAuth, adminOnly, deleteOfficial);
 
 export default router;

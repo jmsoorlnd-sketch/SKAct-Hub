@@ -179,6 +179,29 @@ const updateOfficialStatus = async (req, res) => {
 };
 
 /**
+ * @desc Delete an official
+ */
+const deleteOfficial = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const official = await User.findById(id);
+    if (!official || official.role !== "Official") {
+      return res.status(404).json({ message: "Official not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "Official deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete Official error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
  * @desc Update official details
  */
 const updateOfficial = async (req, res) => {
@@ -260,4 +283,5 @@ export {
   getOfficialById,
   updateOfficialStatus,
   updateOfficial,
+  deleteOfficial,
 };
