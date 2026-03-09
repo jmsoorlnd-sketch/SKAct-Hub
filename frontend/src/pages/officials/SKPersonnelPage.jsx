@@ -31,28 +31,21 @@ const SKPersonnelPage = () => {
   const [editingKagawad, setEditingKagawad] = useState(null);
   const [showAddKagawad, setShowAddKagawad] = useState(false);
 
-  // Form states
-  const [chairmanForm, setChairmanForm] = useState({
+  // Form states - unified to reduce duplication
+  const defaultFormData = {
     surname: "",
     firstName: "",
     middleName: "",
     age: "",
     status: "Active",
+  };
+
+  const [forms, setForms] = useState({
+    chairman: { ...defaultFormData },
+    vicePresident: { ...defaultFormData },
+    secretary: { ...defaultFormData },
   });
-  const [vpForm, setVpForm] = useState({
-    surname: "",
-    firstName: "",
-    middleName: "",
-    age: "",
-    status: "Active",
-  });
-  const [secretaryForm, setSecretaryForm] = useState({
-    surname: "",
-    firstName: "",
-    middleName: "",
-    age: "",
-    status: "Active",
-  });
+
   const [kagawadForm, setKagawadForm] = useState({
     surname: "",
     firstName: "",
@@ -166,41 +159,21 @@ const SKPersonnelPage = () => {
       if (data.skPersonnel) {
         setSkPersonnel(data.skPersonnel);
 
-        // Populate forms
-        if (
-          data.skPersonnel.chairman?.firstName ||
-          data.skPersonnel.chairman?.surname
-        ) {
-          setChairmanForm({
-            surname: data.skPersonnel.chairman.surname || "",
-            firstName: data.skPersonnel.chairman.firstName || "",
-            middleName: data.skPersonnel.chairman.middleName || "",
-            age: data.skPersonnel.chairman.age || "",
-            status: data.skPersonnel.chairman.status || "Active",
-          });
-        }
+        // Create a helper function to populate form data
+        const populateFormData = (personelData) => ({
+          surname: personelData?.surname || "",
+          firstName: personelData?.firstName || "",
+          middleName: personelData?.middleName || "",
+          age: personelData?.age || "",
+          status: personelData?.status || "Active",
+        });
 
-        const secretaryData = data.skPersonnel.secretary;
-        if (secretaryData?.firstName || secretaryData?.surname) {
-          setVpForm({
-            surname: secretaryData.surname || "",
-            firstName: secretaryData.firstName || "",
-            middleName: secretaryData.middleName || "",
-            age: secretaryData.age || "",
-            status: secretaryData.status || "Active",
-          });
-        }
-
-        const treasurerData = data.skPersonnel.treasurer;
-        if (treasurerData?.firstName || treasurerData?.surname) {
-          setSecretaryForm({
-            surname: treasurerData.surname || "",
-            firstName: treasurerData.firstName || "",
-            middleName: treasurerData.middleName || "",
-            age: treasurerData.age || "",
-            status: treasurerData.status || "Active",
-          });
-        }
+        // Populate forms using unified object
+        setForms({
+          chairman: populateFormData(data.skPersonnel.chairman),
+          vicePresident: populateFormData(data.skPersonnel.vicePresident),
+          secretary: populateFormData(data.skPersonnel.secretary),
+        });
       }
     } catch (error) {
       console.error("Error fetching SK Personnel:", error);
@@ -481,11 +454,13 @@ const SKPersonnelPage = () => {
               <OfficialCard
                 title="SK Chairman"
                 color="blue"
-                formData={chairmanForm}
-                setFormData={setChairmanForm}
+                formData={forms.chairman}
+                setFormData={(newData) =>
+                  setForms({ ...forms, chairman: newData })
+                }
                 isEditing={editingPosition === "chairman"}
                 onEdit={() => setEditingPosition("chairman")}
-                onSave={() => handleUpdatePosition("chairman", chairmanForm)}
+                onSave={() => handleUpdatePosition("chairman", forms.chairman)}
                 onCancel={() => setEditingPosition(null)}
               />
 
@@ -493,11 +468,15 @@ const SKPersonnelPage = () => {
               <OfficialCard
                 title="SK Secretary"
                 color="purple"
-                formData={vpForm}
-                setFormData={setVpForm}
+                formData={forms.vicePresident}
+                setFormData={(newData) =>
+                  setForms({ ...forms, vicePresident: newData })
+                }
                 isEditing={editingPosition === "vicePresident"}
                 onEdit={() => setEditingPosition("vicePresident")}
-                onSave={() => handleUpdatePosition("vicePresident", vpForm)}
+                onSave={() =>
+                  handleUpdatePosition("vicePresident", forms.vicePresident)
+                }
                 onCancel={() => setEditingPosition(null)}
               />
 
@@ -505,11 +484,15 @@ const SKPersonnelPage = () => {
               <OfficialCard
                 title="SK Treasurer"
                 color="emerald"
-                formData={secretaryForm}
-                setFormData={setSecretaryForm}
+                formData={forms.secretary}
+                setFormData={(newData) =>
+                  setForms({ ...forms, secretary: newData })
+                }
                 isEditing={editingPosition === "secretary"}
                 onEdit={() => setEditingPosition("secretary")}
-                onSave={() => handleUpdatePosition("secretary", secretaryForm)}
+                onSave={() =>
+                  handleUpdatePosition("secretary", forms.secretary)
+                }
                 onCancel={() => setEditingPosition(null)}
               />
             </div>
@@ -866,6 +849,134 @@ const StatCard = ({
   );
 };
 
+const OfficialEditModal = ({
+  title,
+  formData,
+  setFormData,
+  onSave,
+  onCancel,
+}) => {
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
+        {/* Modal Header */}
+        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Edit {title}</h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Update officer details
+            </p>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-slate-600" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Surname *
+            </label>
+            <input
+              type="text"
+              placeholder="Enter surname"
+              value={formData.surname}
+              onChange={(e) =>
+                setFormData({ ...formData, surname: e.target.value })
+              }
+              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              First Name *
+            </label>
+            <input
+              type="text"
+              placeholder="Enter first name"
+              value={formData.firstName}
+              onChange={(e) =>
+                setFormData({ ...formData, firstName: e.target.value })
+              }
+              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Middle Name
+            </label>
+            <input
+              type="text"
+              placeholder="Enter middle name (optional)"
+              value={formData.middleName}
+              onChange={(e) =>
+                setFormData({ ...formData, middleName: e.target.value })
+              }
+              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Age *
+            </label>
+            <input
+              type="number"
+              placeholder="Enter age"
+              value={formData.age}
+              onChange={(e) =>
+                setFormData({ ...formData, age: e.target.value })
+              }
+              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Status *
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({ ...formData, status: e.target.value })
+              }
+              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+            >
+              <option>Active</option>
+              <option>Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-slate-900 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <Ban size={16} />
+            Cancel
+          </button>
+          <button
+            onClick={onSave}
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <Save size={16} />
+            Save
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+};
+
 const OfficialCard = ({
   title,
   color,
@@ -901,94 +1012,31 @@ const OfficialCard = ({
   const isAssigned = formData.firstName && formData.surname;
 
   return (
-    <div
-      className={`p-5 bg-gradient-to-r ${c.bg} rounded-xl border-2 ${c.border} shadow-md`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div
-            className={`w-10 h-10 ${c.badge} rounded-lg flex items-center justify-center shadow-md`}
-          >
-            <span className="text-white font-bold text-base">
-              {isAssigned
-                ? `${formData.firstName.charAt(0)}${formData.surname.charAt(0)}`
-                : "?"}
-            </span>
-          </div>
-          <div>
-            <span
-              className={`inline-block px-2.5 py-0.5 text-[11px] font-bold rounded-md ${c.badge} text-white`}
+    <>
+      <div
+        className={`p-5 bg-gradient-to-r ${c.bg} rounded-xl border-2 ${c.border} shadow-md`}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div
+              className={`w-10 h-10 ${c.badge} rounded-lg flex items-center justify-center shadow-md`}
             >
-              {title}
-            </span>
+              <span className="text-white font-bold text-base">
+                {isAssigned
+                  ? `${formData.firstName.charAt(0)}${formData.surname.charAt(0)}`
+                  : "?"}
+              </span>
+            </div>
+            <div>
+              <span
+                className={`inline-block px-2.5 py-0.5 text-[11px] font-bold rounded-md ${c.badge} text-white`}
+              >
+                {title}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {isEditing ? (
-        <div className="space-y-2.5">
-          <input
-            type="text"
-            placeholder="Surname"
-            value={formData.surname}
-            onChange={(e) =>
-              setFormData({ ...formData, surname: e.target.value })
-            }
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-          />
-          <input
-            type="text"
-            placeholder="First Name"
-            value={formData.firstName}
-            onChange={(e) =>
-              setFormData({ ...formData, firstName: e.target.value })
-            }
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-          />
-          <input
-            type="text"
-            placeholder="Middle Name (Optional)"
-            value={formData.middleName}
-            onChange={(e) =>
-              setFormData({ ...formData, middleName: e.target.value })
-            }
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-          />
-          <input
-            type="number"
-            placeholder="Age"
-            value={formData.age}
-            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-          />
-          <select
-            value={formData.status}
-            onChange={(e) =>
-              setFormData({ ...formData, status: e.target.value })
-            }
-            className="w-full px-3 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
-          >
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={onSave}
-              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg font-bold text-sm shadow-md transition-all flex items-center justify-center gap-1.5"
-            >
-              <Save size={14} />
-              Save
-            </button>
-            <button
-              onClick={onCancel}
-              className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-1.5"
-            >
-              <Ban size={14} />
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
         <div>
           <h4 className={`text-base font-bold ${c.text} mb-1.5`}>
             {isAssigned ? (
@@ -1027,8 +1075,19 @@ const OfficialCard = ({
             Edit
           </button>
         </div>
+      </div>
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <OfficialEditModal
+          title={title}
+          formData={formData}
+          setFormData={setFormData}
+          onSave={onSave}
+          onCancel={onCancel}
+        />
       )}
-    </div>
+    </>
   );
 };
 
