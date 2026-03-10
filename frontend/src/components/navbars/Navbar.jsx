@@ -101,7 +101,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   console.log("Navbar debug - userRole:", userRole, "isAdmin:", isAdmin);
 
   return (
-    <nav className="bg-white p-2 sm:p-4 border-green-50 flex justify-between items-center shadow-2xs gap-2 sm:gap-4">
+    <nav className="bg-white p-2  border-green-50 flex justify-between items-center shadow-2xs gap-2 ">
       {/* Mobile Menu Button & Logo */}
       <div className="flex items-center gap-2 sm:gap-3">
         <button

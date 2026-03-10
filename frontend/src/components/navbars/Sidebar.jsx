@@ -220,19 +220,19 @@ const Sidebar = ({ onClose = () => {} }) => {
   /* ==================== RENDER HELPERS ==================== */
   const getMenuClass = (path) => {
     const isActive = currentPath === path;
-    return `relative flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold text-sm transform transition-all duration-200 ease-in-out ${
+    return `relative flex items-center gap-2 px-2.5 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
       isActive
-        ? "bg-blue-600 text-white shadow-lg"
-        : "text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:scale-105"
+        ? "bg-blue-600 text-white shadow-md"
+        : "text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700"
     }`;
   };
 
   const getPanelTitle = () => {
     switch (role) {
       case "Admin":
-        return "Admin ";
+        return "Admin";
       case "Official":
-        return "Officials ";
+        return "Officials";
       default:
         return "SKhub";
     }
@@ -242,14 +242,14 @@ const Sidebar = ({ onClose = () => {} }) => {
   return (
     <div className="w-full h-full bg-white shadow-xl flex flex-col">
       {/* Header */}
-      <div className="py-3 px-6 sm:px-9 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
-        <h1 className="text-lg sm:text-2xl text-slate-900 tracking font-bold">
+      <div className="py-2.5 px-4 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
+        <h1 className="text-base font-bold text-slate-900">
           {getPanelTitle()}
         </h1>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 sm:p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {menuItems.map((menu) => {
           const Icon = menu.icon;
           return (
@@ -259,12 +259,12 @@ const Sidebar = ({ onClose = () => {} }) => {
               onClick={onClose}
               className={getMenuClass(menu.path)}
             >
-              <Icon size={18} />
-              <span className="flex-1 text-sm sm:text-base">{menu.name}</span>
+              <Icon size={15} className="flex-shrink-0" />
+              <span className="flex-1">{menu.name}</span>
 
               {/* Notification Badge */}
               {menu.badge && menu.badge > 0 && (
-                <span className="px-0.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] text-center">
+                <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[16px] text-center flex-shrink-0">
                   {menu.badge > 99 ? "99+" : menu.badge}
                 </span>
               )}
@@ -274,7 +274,7 @@ const Sidebar = ({ onClose = () => {} }) => {
       </nav>
 
       {/* Profile Footer */}
-      <div className="p-2 sm:p-3 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+      <div className="p-2 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
         <SideProfile user={user} />
       </div>
     </div>
