@@ -2,20 +2,39 @@ import jwt from "jsonwebtoken";
 import User from "../models/UserModel.js";
 import bcrypt from "bcryptjs";
 
+// helper for random strings used when credentials are auto-generated
+const randomString = (length = 8) => {
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let s = "";
+  for (let i = 0; i < length; i++) {
+    s += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return s;
+};
+
 /**
  * @desc Admin creates a new official account
  */
 const createOfficial = async (req, res) => {
   try {
-    const {
-      username,
-      email,
-      password,
-      firstname,
-      lastname,
-      position,
-      barangay,
-    } = req.body;
+    let { username, email, password, firstname, lastname, position, barangay } =
+      req.body;
+
+    // auto‑generate username / password if missing
+    if (!username || !username.trim()) {
+      const base = `${firstname || ""}${lastname || ""}`
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "");
+      username = base
+        ? `${base}${Math.floor(Math.random() * 9000) + 1000}`
+        : `user${randomString(5)}`;
+    }
+
+    if (!password || password.length < 8) {
+      password = randomString(10);
+    }
 
     // Validate required fields
     if (!firstname || !firstname.trim()) {
@@ -53,9 +72,15 @@ const createOfficial = async (req, res) => {
     }
 
     // Check if username exists
-    const existUsername = await User.findOne({ username });
+    // ensure uniqueness of generated or provided username
+    let existUsername = await User.findOne({ username });
     if (existUsername) {
-      return res.status(400).json({ message: "Username already exists" });
+      // try again with suffix if collision
+      username = `${username}${Math.floor(Math.random() * 9000) + 1000}`;
+      existUsername = await User.findOne({ username });
+      if (existUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
     }
 
     // Hash password
@@ -96,6 +121,11 @@ const createOfficial = async (req, res) => {
         position: newOfficial.position,
         barangay: newOfficial.barangay,
         status: newOfficial.status,
+      },
+      // if credentials were auto generated we return them for admin reference
+      credentials: {
+        username,
+        password,
       },
     });
   } catch (error) {

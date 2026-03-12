@@ -13,6 +13,7 @@ import {
   Save,
   AlertCircle,
   CheckCircle,
+  RefreshCw as RefreshIcon,
 } from "lucide-react";
 import { useToast } from "../../Toast";
 
@@ -37,6 +38,19 @@ const DEFAULT_FORM = {
   status: "Active",
 };
 
+// helper to generate random string
+const randomString = (length = 8) => {
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let s = "";
+  for (let i = 0; i < length; i++) {
+    s += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return s;
+};
+
+// note: generateCredentials will be defined inside component where setFormData exists
+
 /* ===================== MAIN COMPONENT ===================== */
 const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
   /* ==================== STATE ==================== */
@@ -50,6 +64,21 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fetchingBarangays, setFetchingBarangays] = useState(false);
 
+  // helper to generate username/password and update form
+  const generateCredentials = (first = "", last = "") => {
+    const base = `${first}${last}`.trim().toLowerCase().replace(/\s+/g, "");
+    const uname = base
+      ? `${base}${Math.floor(Math.random() * 9000) + 1000}`
+      : `user${randomString(5)}`;
+    const pwd = randomString(10);
+    setFormData((prev) => ({
+      ...prev,
+      username: uname,
+      password: pwd,
+      confirmPassword: pwd,
+    }));
+  };
+
   /* ==================== DATA FETCHING ==================== */
   useEffect(() => {
     if (isOpen) {
@@ -57,6 +86,14 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
       resetForm();
     }
   }, [isOpen]);
+
+  // whenever firstname/lastname change, regenerate username suggestion
+  useEffect(() => {
+    if (isOpen) {
+      generateCredentials(formData.firstname, formData.lastname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.firstname, formData.lastname]);
 
   const fetchBarangays = async () => {
     setFetchingBarangays(true);
@@ -79,6 +116,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
     setApiError("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    generateCredentials();
   };
 
   const handleClose = () => {
@@ -151,9 +189,12 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
         },
       );
 
-      success(
-        `SK Official "${response.data.user.firstname} ${response.data.user.lastname}" created successfully!`,
-      );
+      // show success with credentials if provided
+      let msg = `SK Official "${response.data.user.firstname} ${response.data.user.lastname}" created successfully!`;
+      if (response.data.credentials) {
+        msg += `\nUsername: ${response.data.credentials.username}\nPassword: ${response.data.credentials.password}`;
+      }
+      success(msg);
       onSubmit(response.data.user);
       handleClose();
     } catch (error) {
@@ -319,15 +360,27 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
               icon={<User size={15} className="text-blue-600" />}
               error={errors.username}
             >
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="juandelacruz"
-                autoComplete="off"
-                className={inputClass(errors.username)}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="juandelacruz"
+                  autoComplete="off"
+                  className={`${inputClass(errors.username)} pr-10`}
+                />
+                <button
+                  type="button"
+                  title="Regenerate"
+                  onClick={() =>
+                    generateCredentials(formData.firstname, formData.lastname)
+                  }
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <RefreshIcon size={16} />
+                </button>
+              </div>
             </FormField>
 
             {/* ---- Email ---- */}
@@ -362,14 +415,24 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="Min. 8 characters"
                   autoComplete="new-password"
-                  className={`${inputClass(errors.password)} pr-12`}
+                  className={`${inputClass(errors.password)} pr-20`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+                <button
+                  type="button"
+                  title="Regenerate"
+                  onClick={() =>
+                    generateCredentials(formData.firstname, formData.lastname)
+                  }
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <RefreshIcon size={16} />
                 </button>
               </div>
               {/* Password Strength Indicator */}
