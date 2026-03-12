@@ -534,6 +534,18 @@ const AdminDashboard = () => {
                           </p>
                         </div>
 
+                        {selectedMessage.intendedFolder && (
+                          <div className="mb-4 p-3 bg-white rounded-lg border border-emerald-200">
+                            <p className="text-xs text-slate-600 mb-1 font-semibold">
+                              Target Folder:
+                            </p>
+                            <p className="text-sm font-bold text-slate-900">
+                              {selectedMessage.intendedFolder.name ||
+                                "Unknown Folder"}
+                            </p>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             onClick={handleRejectMessage}

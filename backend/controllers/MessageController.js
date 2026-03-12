@@ -166,6 +166,7 @@ export const getInbox = async (req, res) => {
 
     const messages = await Message.find(query)
       .populate("sender", "username email role")
+      .populate("intendedFolder", "name")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
