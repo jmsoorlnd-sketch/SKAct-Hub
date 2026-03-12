@@ -14,7 +14,7 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
+    <div className="flex flex-col h-screen  bg-slate-50">
       {/* ===== NAVBAR ===== */}
       <header className="flex-shrink-0 h-14 bg-white shadow-sm border-b border-slate-200 z-50">
         <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />

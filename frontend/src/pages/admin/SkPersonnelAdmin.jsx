@@ -5,11 +5,8 @@ import {
   UserCheck,
   UserX,
   MapPin,
-  Search,
   Shield,
   FileText,
-  TrendingUp,
-  ChevronRight,
 } from "lucide-react";
 
 import { useToast } from "../../components/Toast";

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, lazy, Suspense } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,11 +20,17 @@ import {
   Plus,
   FileText,
   Eye,
+  ArrowLeft,
   Download,
   Activity,
 } from "lucide-react";
-import AddBarangay from "../components/popforms/barangay/AddBarangay";
+import DocumentItem from "../components/popforms/barangay/DocumentItem";
 import { useToast } from "../components/Toast";
+
+const AddBarangay = lazy(
+  () => import("../components/popforms/barangay/AddBarangay"),
+);
+// Wrap modal in Suspense
 
 /* ===================== CUSTOM FOLDER STYLES ===================== */
 const folderStyles = `
@@ -201,8 +207,6 @@ const BarangayStorage = () => {
   const [folderComposeFile, setFolderComposeFile] = useState(null);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [showFolderSuccessModal, setShowFolderSuccessModal] = useState(false);
-  const [createdFolderName, setCreatedFolderName] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [showFolderViewModal, setShowFolderViewModal] = useState(false);
@@ -1071,14 +1075,16 @@ const BarangayStorage = () => {
               </div>
             </div>
 
-            <AddBarangay
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onSubmit={() => {
-                toast.success("Barangay added successfully!");
-                fetchBarangays();
-              }}
-            />
+            <Suspense fallback={<div>Loading...</div>}>
+              <AddBarangay
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSubmit={() => {
+                  toast.success("Barangay added successfully!");
+                  fetchBarangays();
+                }}
+              />
+            </Suspense>
           </div>
 
           {/* Main Content Grid */}
@@ -1873,7 +1879,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       </div>
-
       {/* ==================== COMPOSE MESSAGE MODAL ==================== */}
       {showComposeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
@@ -2005,7 +2010,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
       {/* Folder Compose Modal */}
       {showFolderComposeModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
@@ -2172,7 +2176,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
       {/* Hidden File Input for Folder Upload */}
       <input
         ref={fileInputRef}
@@ -2186,10 +2189,9 @@ const BarangayStorage = () => {
         }}
         accept="*/*"
       />
-
       {/* Create Folder Modal */}
       {showCreateFolderModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40  flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5">
@@ -2270,10 +2272,11 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
-      {/* FOLDER VIEW MODAL */}
+      {/* ==================== FOLDER VIEW MODAL - UPDATED ====================
+       Replace the existing FOLDER VIEW MODAL section in
+      BarangayStorage.jsx with this code  */}
       {showFolderViewModal && folderViewData && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex items-center justify-between flex-shrink-0">
@@ -2291,225 +2294,273 @@ const BarangayStorage = () => {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setShowFolderViewModal(false);
-                  setFolderViewData(null);
-                  setFolderModalSelectedDoc(null);
-                  setFolderModalViewType(null);
-                }}
-                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-              >
-                <X size={22} className="text-white" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Back button - Only show when viewing document details */}
+                {folderModalSelectedDoc && (
+                  <button
+                    onClick={() => {
+                      setFolderModalSelectedDoc(null);
+                      setFolderModalViewType(null);
+                      setFolderModalShowUploadForm(false);
+                    }}
+                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors flex items-center gap-2 font-semibold text-sm"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Back to List</span>
+                  </button>
+                )}
+
+                {/* Close button */}
+                <button
+                  onClick={() => {
+                    setShowFolderViewModal(false);
+                    setFolderViewData(null);
+                    setFolderModalSelectedDoc(null);
+                    setFolderModalViewType(null);
+                    setFolderModalShowUploadForm(false);
+                  }}
+                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                >
+                  <X size={22} className="text-white" />
+                </button>
+              </div>
             </div>
 
-            {/* Modal Body - Two Column Layout */}
-            <div className="flex-1 overflow-hidden flex">
-              {/* Left Column - Document List */}
-              <div className="w-1/2 border-r border-slate-200 overflow-y-auto p-6 space-y-4">
-                {folderViewData.documents.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg
-                        className="h-10 w-10 text-slate-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                    </div>
-                    <p className="text-slate-500 font-medium">
-                      No documents in this folder
-                    </p>
+            {/* Modal Body - Conditional Panel Display */}
+            <div className="flex-1 overflow-y-auto">
+              {/* LEFT PANEL - Document List (Show when no document selected) */}
+              {!folderModalSelectedDoc && (
+                <div className="w-full h-full overflow-y-auto p-6">
+                  <div className="max-w-4xl mx-auto">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4">
+                      Documents in this folder
+                    </h3>
+
+                    {folderViewData.documents.length === 0 ? (
+                      <div className="text-center py-16">
+                        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <FileText className="h-10 w-10 text-slate-400" />
+                        </div>
+                        <p className="text-slate-500 font-medium">
+                          No documents in this folder
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {folderViewData.documents.map((item) => (
+                          <div
+                            key={item._id}
+                            onClick={() => {
+                              setFolderModalSelectedDoc(item);
+                              setFolderModalViewType("details"); // Auto-show details
+                            }}
+                            className="border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 hover:shadow-lg bg-slate-50 hover:bg-blue-50"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-6 h-6 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                                  {item.documentName ||
+                                    item.document?.subject ||
+                                    "Document"}
+                                </h3>
+                                <p className="text-xs text-slate-600 mb-2">
+                                  From:{" "}
+                                  <span className="font-semibold">
+                                    {item.document?.sender?.username ||
+                                      item.uploadedBy?.username}
+                                  </span>
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
+                                      item.document?.status === "completed"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : item.document?.status === "ongoing"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : "bg-slate-100 text-slate-700"
+                                    }`}
+                                  >
+                                    {item.document?.status || item.status}
+                                  </span>
+                                  <span className="text-xs text-slate-500">
+                                    {new Date(
+                                      item.createdAt,
+                                    ).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <>
-                    {folderViewData.documents.map((item) => (
-                      <div
-                        key={item._id}
-                        onClick={() => {
-                          setFolderModalSelectedDoc(item);
-                          setFolderModalViewType(null);
-                        }}
-                        className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                          folderModalSelectedDoc?._id === item._id
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-slate-200 hover:border-blue-300 bg-slate-50"
+                </div>
+              )}
+
+              {/* RIGHT PANEL - Document Details (Show when document selected) */}
+              {folderModalSelectedDoc && (
+                <div className="w-full h-full overflow-y-auto p-6">
+                  <div className="max-w-4xl mx-auto space-y-4">
+                    {/* Document Header Card */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border-2 border-blue-200">
+                      <div className="flex items-start gap-4">
+                        <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-xl text-slate-900 mb-2">
+                            {folderModalSelectedDoc.documentName ||
+                              folderModalSelectedDoc.document?.subject ||
+                              "Document"}
+                          </h3>
+                          <p className="text-sm text-slate-600 mb-2">
+                            From:{" "}
+                            <span className="font-semibold">
+                              {folderModalSelectedDoc.document?.sender
+                                ?.username ||
+                                folderModalSelectedDoc.uploadedBy?.username}
+                            </span>
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${
+                                folderModalSelectedDoc.document?.status ===
+                                "completed"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : folderModalSelectedDoc.document?.status ===
+                                      "ongoing"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {folderModalSelectedDoc.document?.status ||
+                                folderModalSelectedDoc.status}
+                            </span>
+                            <span className="text-sm text-slate-600">
+                              {new Date(
+                                folderModalSelectedDoc.createdAt,
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Tabs */}
+                    <div className="flex items-center gap-2 border-b-2 border-slate-200 pb-2">
+                      <button
+                        onClick={() => setFolderModalViewType("details")}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                          folderModalViewType === "details"
+                            ? "bg-blue-600 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
-                        <h3 className="font-bold text-slate-900 text-sm">
-                          {item.documentName ||
-                            item.document?.subject ||
-                            "Document"}
-                        </h3>
-                        <p className="text-xs text-slate-600 mt-1">
-                          From:{" "}
-                          <span className="font-semibold">
-                            {item.document?.sender?.username ||
-                              item.uploadedBy?.username}
-                          </span>
-                        </p>
-                        <span
-                          className={`inline-block mt-2 px-2 py-1 rounded-lg text-xs font-bold border ${
-                            item.document?.status === "completed"
-                              ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                              : item.document?.status === "ongoing"
-                                ? "bg-amber-100 text-amber-700 border-amber-200"
-                                : "bg-slate-100 text-slate-700 border-slate-200"
-                          }`}
-                        >
-                          {item.document?.status || item.status}
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
+                        <Eye size={16} />
+                        <span>Details</span>
+                      </button>
 
-              {/* Right Column - Details Panel */}
-              <div className="w-1/2 overflow-y-auto p-6 flex flex-col">
-                {!folderModalSelectedDoc ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <FileText size={48} className="text-slate-300 mb-3" />
-                    <p className="text-slate-500 font-medium">
-                      Select a document to view details
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4 flex-1">
-                    {/* Document Info */}
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                      <h3 className="font-bold text-lg text-slate-900 mb-2">
-                        {folderModalSelectedDoc.documentName ||
-                          folderModalSelectedDoc.document?.subject ||
-                          "Document"}
-                      </h3>
-                      <p className="text-sm text-slate-600 mb-3">
-                        From:{" "}
-                        <span className="font-semibold">
-                          {folderModalSelectedDoc.document?.sender?.username ||
-                            folderModalSelectedDoc.uploadedBy?.username}
-                        </span>
-                      </p>
+                      <button
+                        onClick={() => {
+                          fetchFolderModalActivityUpdates(
+                            folderModalSelectedDoc.document?._id ||
+                              folderModalSelectedDoc._id,
+                          );
+                          setFolderModalViewType("updates");
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                          folderModalViewType === "updates"
+                            ? "bg-purple-600 text-white shadow-md"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        <Activity size={16} />
+                        <span>Activity Updates</span>
+                      </button>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {folderModalSelectedDoc.document?.attachment && (
                         <button
-                          onClick={() => {
-                            fetchFolderModalActivityUpdates(
-                              folderModalSelectedDoc.document?._id ||
-                                folderModalSelectedDoc._id,
-                            );
-                            setFolderModalViewType("updates");
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            folderModalViewType === "updates"
-                              ? "bg-blue-600 text-white"
-                              : "bg-blue-50 hover:bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          <Activity size={14} />
-                          <span>Updates</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setFolderModalViewType("details");
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            folderModalViewType === "details"
-                              ? "bg-indigo-600 text-white"
-                              : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700"
-                          }`}
-                        >
-                          <Eye size={14} />
-                          <span>View</span>
-                        </button>
-
-                        {folderModalSelectedDoc.document?.attachment && (
-                          <button
-                            onClick={async () => {
-                              try {
-                                const token = localStorage.getItem("token");
-                                const response = await axios.get(
-                                  `http://localhost:5000/api/messages/${folderModalSelectedDoc.document._id}/attachment`,
-                                  {
-                                    headers: {
-                                      Authorization: `Bearer ${token}`,
-                                    },
-                                    responseType: "blob",
+                          onClick={async () => {
+                            try {
+                              const token = localStorage.getItem("token");
+                              const response = await axios.get(
+                                `http://localhost:5000/api/messages/${folderModalSelectedDoc.document._id}/attachment`,
+                                {
+                                  headers: {
+                                    Authorization: `Bearer ${token}`,
                                   },
-                                );
-
-                                const url = window.URL.createObjectURL(
-                                  new Blob([response.data]),
-                                );
-                                const link = document.createElement("a");
-                                link.href = url;
-                                link.setAttribute(
-                                  "download",
-                                  folderModalSelectedDoc.document.attachment
-                                    .originalName || "attachment",
-                                );
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                                window.URL.revokeObjectURL(url);
-                                toast.success("File downloaded successfully!");
-                              } catch (error) {
-                                console.error("Download failed:", error);
-                                toast.error("Failed to download attachment");
-                              }
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-xs font-medium transition-colors"
-                          >
-                            <Download size={14} />
-                            <span>Download</span>
-                          </button>
-                        )}
-
-                        {user?.role === "Official" && (
-                          <button
-                            onClick={() => {
-                              setFolderModalShowUploadForm(
-                                !folderModalShowUploadForm,
+                                  responseType: "blob",
+                                },
                               );
-                            }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                              folderModalShowUploadForm
-                                ? "bg-purple-600 text-white"
-                                : "bg-purple-50 hover:bg-purple-100 text-purple-700"
-                            }`}
-                          >
-                            <Plus size={14} />
-                            <span>Upload Update</span>
-                          </button>
-                        )}
-                      </div>
+
+                              const url = window.URL.createObjectURL(
+                                new Blob([response.data]),
+                              );
+                              const link = document.createElement("a");
+                              link.href = url;
+                              link.setAttribute(
+                                "download",
+                                folderModalSelectedDoc.document.attachment
+                                  .originalName || "attachment",
+                              );
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                              window.URL.revokeObjectURL(url);
+                              toast.success("File downloaded successfully!");
+                            } catch (error) {
+                              console.error("Download failed:", error);
+                              toast.error("Failed to download attachment");
+                            }
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg text-sm font-semibold transition-all"
+                        >
+                          <Download size={16} />
+                          <span>Download Attachment</span>
+                        </button>
+                      )}
+
+                      {user?.role === "Official" && (
+                        <button
+                          onClick={() => {
+                            setFolderModalShowUploadForm(
+                              !folderModalShowUploadForm,
+                            );
+                          }}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                            folderModalShowUploadForm
+                              ? "bg-indigo-600 text-white shadow-md"
+                              : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                          }`}
+                        >
+                          <Plus size={16} />
+                          <span>Post Update</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Upload Activity Form */}
                     {folderModalShowUploadForm && user?.role === "Official" && (
-                      <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-                        <h4 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                          <Plus size={16} />
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border-2 border-purple-200">
+                        <h4 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                          <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                            <Plus className="w-4 h-4 text-white" />
+                          </div>
                           Upload Activity Update
                         </h4>
                         <form
                           onSubmit={handleFolderModalUploadActivity}
-                          className="space-y-3"
+                          className="space-y-4"
                         >
                           {/* Photo Upload */}
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-2">
-                              Select Photo
+                            <label className="block text-sm font-bold text-slate-900 mb-2">
+                              Select Photo *
                             </label>
                             <input
                               type="file"
@@ -2519,30 +2570,30 @@ const BarangayStorage = () => {
                                   e.target.files?.[0] || null,
                                 )
                               }
-                              className="block w-full text-xs text-slate-500
-                                file:mr-4 file:py-1.5 file:px-3
-                                file:rounded-lg file:border-0
-                                file:text-xs file:font-semibold
-                                file:bg-purple-100 file:text-purple-700
-                                hover:file:bg-purple-200 transition-all cursor-pointer"
+                              className="block w-full text-sm text-slate-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-lg file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-purple-100 file:text-purple-700
+                          hover:file:bg-purple-200 transition-all cursor-pointer"
                             />
                             {folderModalUploadPhoto && (
-                              <div className="mt-2 relative inline-block">
+                              <div className="mt-3 relative inline-block">
                                 <img
                                   src={URL.createObjectURL(
                                     folderModalUploadPhoto,
                                   )}
                                   alt="Preview"
-                                  className="h-20 w-20 object-cover rounded-lg border border-purple-200"
+                                  className="h-32 w-32 object-cover rounded-lg border-2 border-purple-200"
                                 />
                                 <button
                                   type="button"
                                   onClick={() =>
                                     setFolderModalUploadPhoto(null)
                                   }
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600"
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center font-bold hover:bg-red-600 transition-colors"
                                 >
-                                  ✕
+                                  <X size={16} />
                                 </button>
                               </div>
                             )}
@@ -2550,7 +2601,7 @@ const BarangayStorage = () => {
 
                           {/* Caption */}
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-slate-900 mb-2">
                               Caption (optional)
                             </label>
                             <textarea
@@ -2558,31 +2609,31 @@ const BarangayStorage = () => {
                               onChange={(e) =>
                                 setFolderModalUploadCaption(e.target.value)
                               }
-                              placeholder="Write a caption for this update..."
-                              rows={2}
-                              className="w-full text-xs px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                              placeholder="Add a caption for this update..."
+                              rows={3}
+                              className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none text-sm"
                             />
                           </div>
 
                           {/* Submit Buttons */}
-                          <div className="flex gap-2">
+                          <div className="flex gap-3">
                             <button
                               type="submit"
                               disabled={
                                 !folderModalUploadPhoto ||
                                 folderModalUploadingActivity
                               }
-                              className="flex-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1"
+                              className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
                             >
                               {folderModalUploadingActivity ? (
                                 <>
-                                  <span className="animate-spin inline-block w-3 h-3 border-2 border-white border-r-transparent rounded-full"></span>
+                                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-r-transparent rounded-full"></span>
                                   Uploading...
                                 </>
                               ) : (
                                 <>
-                                  <Check size={12} />
-                                  Upload
+                                  <Check size={16} />
+                                  Upload Photo
                                 </>
                               )}
                             </button>
@@ -2593,7 +2644,7 @@ const BarangayStorage = () => {
                                 setFolderModalUploadPhoto(null);
                                 setFolderModalUploadCaption("");
                               }}
-                              className="flex-1 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                              className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-bold transition-all"
                             >
                               Cancel
                             </button>
@@ -2602,116 +2653,75 @@ const BarangayStorage = () => {
                       </div>
                     )}
 
-                    {/* Content Area */}
-                    {folderModalViewType === "updates" && (
-                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 flex-1">
-                        <h4 className="font-bold text-slate-900 mb-3">
-                          Activity Updates
-                        </h4>
-                        {folderModalActivityUpdates.length === 0 ? (
-                          <p className="text-sm text-slate-600">
-                            No activity updates yet
-                          </p>
-                        ) : (
-                          <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                            {folderModalActivityUpdates.map((update) => (
-                              <div
-                                key={update._id}
-                                className="bg-white rounded-lg p-3 border border-blue-100"
-                              >
-                                {update.photoUrl && (
-                                  <img
-                                    src={`http://localhost:5000${update.photoUrl}`}
-                                    alt="Activity Update"
-                                    className="w-full h-32 object-cover rounded mb-2"
-                                  />
-                                )}
-                                {update.caption && (
-                                  <p className="text-sm text-slate-700">
-                                    {update.caption}
-                                  </p>
-                                )}
-                                <div className="flex items-center justify-between mt-2">
-                                  <p className="text-xs text-slate-500">
-                                    {new Date(
-                                      update.createdAt,
-                                    ).toLocaleDateString()}
-                                  </p>
-                                  {update.uploadedBy && (
-                                    <p className="text-xs text-slate-500">
-                                      by {update.uploadedBy.firstname}{" "}
-                                      {update.uploadedBy.lastname}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
+                    {/* DETAILS VIEW */}
                     {folderModalViewType === "details" && (
-                      <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200 flex-1">
-                        <h4 className="font-bold text-slate-900 mb-3">
-                          Document Details
+                      <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
+                        <h4 className="font-bold text-lg text-slate-900 mb-4">
+                          Document Information
                         </h4>
-                        <div className="space-y-3 text-sm">
-                          <div>
-                            <p className="text-xs font-semibold text-slate-600">
-                              Date Created
-                            </p>
-                            <p className="text-slate-800">
-                              {new Date(
-                                folderModalSelectedDoc.createdAt ||
-                                  folderModalSelectedDoc.document?.createdAt,
-                              ).toLocaleDateString()}
-                            </p>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs font-bold text-slate-600 mb-1">
+                                Created Date
+                              </p>
+                              <p className="text-sm text-slate-900 font-semibold">
+                                {new Date(
+                                  folderModalSelectedDoc.createdAt ||
+                                    folderModalSelectedDoc.document?.createdAt,
+                                ).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-600 mb-1">
+                                Status
+                              </p>
+                              <p className="text-sm text-slate-900 font-semibold capitalize">
+                                {folderModalSelectedDoc.document?.status ||
+                                  folderModalSelectedDoc.status}
+                              </p>
+                            </div>
                           </div>
+
                           <div>
-                            <p className="text-xs font-semibold text-slate-600">
-                              Status
+                            <p className="text-xs font-bold text-slate-600 mb-2">
+                              Document Content
                             </p>
-                            <p className="text-slate-800 capitalize">
-                              {folderModalSelectedDoc.document?.status ||
-                                folderModalSelectedDoc.status}
-                            </p>
+                            <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                              <p className="text-sm text-slate-800 whitespace-pre-wrap">
+                                {folderModalSelectedDoc.description ||
+                                  folderModalSelectedDoc.document?.body ||
+                                  "No content available"}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-xs font-semibold text-slate-600">
-                              Content
-                            </p>
-                            <p className="text-slate-800 text-justify max-h-[200px] overflow-y-auto">
-                              {folderModalSelectedDoc.description ||
-                                folderModalSelectedDoc.document?.body ||
-                                "—"}
-                            </p>
-                          </div>
+
                           {folderModalSelectedDoc.document?.attachmentUrl && (
                             <div>
-                              <p className="text-xs font-semibold text-slate-600 mb-2">
+                              <p className="text-xs font-bold text-slate-600 mb-2">
                                 Attachment
                               </p>
-                              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                  <FileText
-                                    size={16}
-                                    className="text-blue-600"
-                                  />
+                              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <FileText size={24} className="text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-slate-800 truncate">
+                                  <p className="text-sm font-bold text-slate-900 truncate">
                                     {folderModalSelectedDoc.document
                                       .attachmentName ||
                                       folderModalSelectedDoc.document.attachment
                                         ?.originalName ||
-                                      "attachment"}
+                                      "Attachment"}
                                   </p>
-                                  <p className="text-xs text-slate-500">
+                                  <p className="text-xs text-slate-600">
                                     Click to view or download
                                   </p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-shrink-0">
                                   <button
                                     onClick={() => {
                                       setPreviewUrl(
@@ -2719,7 +2729,7 @@ const BarangayStorage = () => {
                                       );
                                       setShowPreviewModal(true);
                                     }}
-                                    className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition-colors"
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
                                   >
                                     View
                                   </button>
@@ -2731,7 +2741,7 @@ const BarangayStorage = () => {
                                       folderModalSelectedDoc.document.attachment
                                         ?.originalName
                                     }
-                                    className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 rounded text-xs font-medium transition-colors"
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
                                   >
                                     Download
                                   </a>
@@ -2742,9 +2752,68 @@ const BarangayStorage = () => {
                         </div>
                       </div>
                     )}
+
+                    {/* ACTIVITY UPDATES VIEW */}
+                    {folderModalViewType === "updates" && (
+                      <div className="bg-white rounded-xl p-5 border-2 border-slate-200">
+                        <h4 className="font-bold text-lg text-slate-900 mb-4">
+                          Activity Updates ({folderModalActivityUpdates.length})
+                        </h4>
+                        {folderModalActivityUpdates.length === 0 ? (
+                          <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <Activity className="w-8 h-8 text-slate-400" />
+                            </div>
+                            <p className="text-sm text-slate-600 font-medium">
+                              No activity updates yet
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {folderModalActivityUpdates.map((update) => (
+                              <div
+                                key={update._id}
+                                className="border-2 border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
+                              >
+                                {update.photoUrl && (
+                                  <img
+                                    src={`http://localhost:5000${update.photoUrl}`}
+                                    alt="Activity Update"
+                                    className="w-full h-48 object-cover"
+                                  />
+                                )}
+                                <div className="p-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div>
+                                      <p className="text-sm font-bold text-slate-900">
+                                        {update.uploadedBy?.firstname}{" "}
+                                        {update.uploadedBy?.lastname}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {new Date(
+                                          update.createdAt,
+                                        ).toLocaleDateString()}{" "}
+                                        {new Date(
+                                          update.createdAt,
+                                        ).toLocaleTimeString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {update.caption && (
+                                    <p className="text-sm text-slate-700 mt-2">
+                                      {update.caption}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
@@ -2755,8 +2824,9 @@ const BarangayStorage = () => {
                   setFolderViewData(null);
                   setFolderModalSelectedDoc(null);
                   setFolderModalViewType(null);
+                  setFolderModalShowUploadForm(false);
                 }}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+                className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
               >
                 Close
               </button>
@@ -2764,7 +2834,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
       {/* Folder Status Confirmation Modal */}
       {statusConfirm.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -2808,430 +2877,5 @@ const BarangayStorage = () => {
 };
 
 // Enhanced Document Item Component
-const DocumentItem = ({
-  item,
-  user,
-  folders,
-  handleUpdateStatus,
-  handleMoveToFolder,
-  selectedBarangay,
-  setStorage,
-  storage,
-  setSelectedDocument,
-  fetchActivityUpdates,
-  showUsersModal,
-  setShowUsersModal,
-  fileInputRef,
-  confirmationModal,
-  openConfirmationModal,
-  closeConfirmationModal,
-  handleConfirmAction,
-  showPreviewModal,
-  setShowPreviewModal,
-  previewUrl,
-  setPreviewUrl,
-  toast,
-}) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const [showFolderSubmenu, setShowFolderSubmenu] = useState(false);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [calendarFormData, setCalendarFormData] = useState({
-    startDate: "",
-    endDate: "",
-  });
-  const [addingToCalendar, setAddingToCalendar] = useState(false);
-
-  const handleAddToCalendar = async (e) => {
-    e.preventDefault();
-    if (!calendarFormData.startDate) {
-      toast.warning("Please fill in the start date and time");
-      return;
-    }
-
-    try {
-      setAddingToCalendar(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Authentication token not found. Please log in again.");
-        return;
-      }
-
-      const documentSubject =
-        item.documentName || item.document?.subject || "Document";
-
-      await axios.post(
-        "http://localhost:5000/api/messages/send",
-        {
-          recipientId: user?._id,
-          subject: `Document: ${documentSubject}`,
-          body:
-            item.description ||
-            item.document?.body ||
-            "Document scheduled from storage",
-          startDate: calendarFormData.startDate,
-          endDate: calendarFormData.endDate,
-          barangayId: selectedBarangay,
-          status: "approved",
-          isAdminScheduled: true,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      toast.success("Document added to calendar successfully");
-      setShowCalendarModal(false);
-      setCalendarFormData({ startDate: "", endDate: "" });
-      setShowMenu(false);
-    } catch (error) {
-      console.error("Failed to add to calendar:", error);
-      toast.error("Failed to add document to calendar");
-    } finally {
-      setAddingToCalendar(false);
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "completed":
-        return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200";
-      case "ongoing":
-        return "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border-amber-200";
-      default:
-        return "bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-200";
-    }
-  };
-
-  return (
-    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-slate-900 text-lg mb-2">
-            {item.documentName || item.document?.subject || "Document"}
-          </h3>
-          <p className="text-sm text-slate-600 mb-3">
-            From:{" "}
-            <span className="font-semibold">
-              {item.document?.sender?.username || item.uploadedBy?.username}
-            </span>{" "}
-            ({item.document?.sender?.firstname || item.uploadedBy?.firstname}{" "}
-            {item.document?.sender?.lastname || item.uploadedBy?.lastname})
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${getStatusColor(
-                item.document?.status || item.status,
-              )}`}
-            >
-              {item.document?.status || item.status}
-            </span>
-            <span className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
-              {new Date(item.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-          {item.description && (
-            <p className="text-xs text-slate-700 mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 line-clamp-2">
-              {item.description}
-            </p>
-          )}
-        </div>
-        <div className="ml-4 flex items-start gap-2">
-          {user?.role &&
-            (user.role === "Official" || user.role === "Admin") && (
-              <button
-                onClick={() => {
-                  setSelectedDocument(item);
-                  fetchActivityUpdates(item.document?._id || item._id);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
-              >
-                Activity
-              </button>
-            )}
-          {item.document?.attachmentUrl && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setPreviewUrl(
-                    `http://localhost:5000${item.document.attachmentUrl}`,
-                  );
-                  setShowPreviewModal(true);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-indigo-50 hover:from-indigo-200 hover:to-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold border-2 border-indigo-200 transition-all"
-              >
-                View
-              </button>
-              <a
-                href={`http://localhost:5000${item.document.attachmentUrl}`}
-                download={item.document.attachmentName}
-                className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download
-              </a>
-            </div>
-          )}
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-2.5 hover:bg-slate-100 rounded-lg transition-colors border-2 border-slate-200"
-              title="More options"
-            >
-              <MoreVertical size={18} className="text-slate-600" />
-            </button>
-            {showMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border-2 border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                <button
-                  onClick={() => {
-                    setShowCalendarModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm text-slate-700 font-semibold transition-colors flex items-center gap-2"
-                >
-                  <Calendar size={16} className="text-blue-600" />
-                  Add to Calendar
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
-        {String(item.document?.sender?._id) === String(user?._id) && (
-          <>
-            <button
-              onClick={() =>
-                openConfirmationModal(
-                  "ongoing",
-                  item.document?._id,
-                  null,
-                  "Mark as Ongoing",
-                  "Are you sure you want to mark this document as ongoing?",
-                )
-              }
-              className="px-4 py-2 bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 rounded-lg text-sm font-semibold border-2 border-amber-200 transition-all"
-            >
-              Mark Ongoing
-            </button>
-            <button
-              onClick={() =>
-                openConfirmationModal(
-                  "completed",
-                  item.document?._id,
-                  null,
-                  "Mark as Completed",
-                  "Are you sure you want to mark this document as completed?",
-                )
-              }
-              className="px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 hover:from-emerald-200 hover:to-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold border-2 border-emerald-200 transition-all"
-            >
-              Mark Completed
-            </button>
-          </>
-        )}
-
-        {user?.role === "Official" &&
-          (user.position === "Secretary" || user.position === "Treasurer") &&
-          selectedBarangay && (
-            <>
-              <button
-                onClick={() =>
-                  openConfirmationModal(
-                    "remove",
-                    null,
-                    item.document?._id || item.document,
-                    "Remove Document",
-                    "Are you sure you want to remove this message from the barangay? It will be returned to your inbox.",
-                  )
-                }
-                className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
-              >
-                Remove
-              </button>
-            </>
-          )}
-      </div>
-
-      {/* Calendar Modal */}
-      {showCalendarModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Calendar size={24} />
-                  Add to Calendar
-                </h3>
-                <button
-                  onClick={() => setShowCalendarModal(false)}
-                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X size={24} className="text-white" />
-                </button>
-              </div>
-            </div>
-            <form onSubmit={handleAddToCalendar} className="p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2">
-                  Start Date & Time *
-                </label>
-                <input
-                  type="datetime-local"
-                  value={calendarFormData.startDate}
-                  onChange={(e) =>
-                    setCalendarFormData({
-                      ...calendarFormData,
-                      startDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2">
-                  End Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={calendarFormData.endDate}
-                  onChange={(e) =>
-                    setCalendarFormData({
-                      ...calendarFormData,
-                      endDate: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={addingToCalendar}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
-                >
-                  {addingToCalendar ? "Adding..." : "Add to Calendar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCalendarModal(false)}
-                  className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal */}
-      {confirmationModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
-              <h3 className="text-xl font-bold text-white">
-                {confirmationModal.title}
-              </h3>
-            </div>
-
-            <div className="p-6">
-              <p className="text-slate-700 text-base mb-6">
-                {confirmationModal.message}
-              </p>
-
-              <div className="flex gap-3 justify-end">
-                <button
-                  className="px-4 py-2 bg-slate-200 rounded font-semibold text-slate-700 hover:bg-slate-300"
-                  onClick={() =>
-                    setConfirmationModal({
-                      isOpen: false,
-                      action: null,
-                      messageId: null,
-                      docId: null,
-                      message: "",
-                      title: "",
-                    })
-                  }
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
-                  onClick={handleConfirmAction}
-                >
-                  Confirm
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Preview Modal */}
-      {showPreviewModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
-            {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b-2 border-slate-100">
-              <h3 className="text-xl font-bold text-slate-900">
-                Document Preview
-              </h3>
-              <button
-                onClick={() => setShowPreviewModal(false)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X size={24} className="text-slate-600" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center">
-              {previewUrl.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="max-w-full max-h-full object-contain"
-                />
-              ) : previewUrl.toLowerCase().endsWith(".pdf") ? (
-                <iframe
-                  src={previewUrl}
-                  className="w-full h-full border-0"
-                  title="PDF Preview"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 px-6">
-                  <FileText size={64} className="text-slate-400 mb-4" />
-                  <p className="text-slate-600 text-lg font-semibold text-center mb-4">
-                    Preview not available for this file type
-                  </p>
-                  <a
-                    href={previewUrl}
-                    download
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all"
-                  >
-                    Download File
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-6 border-t-2 border-slate-100 flex justify-end">
-              <button
-                onClick={() => setShowPreviewModal(false)}
-                className="px-6 py-2.5 bg-slate-300 hover:bg-slate-400 text-slate-800 rounded-lg font-bold transition-all"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 export default BarangayStorage;

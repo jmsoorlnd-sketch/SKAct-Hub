@@ -4,7 +4,6 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
-  Plus,
   X,
   Clock,
   MapPin,
@@ -12,10 +11,10 @@ import {
   Trash2,
   CalendarDays,
   TrendingUp,
-  Save,
-  AlignLeft,
-  Tag,
 } from "lucide-react";
+import ConfirmationModal from "../../components/popforms/eventComponents/ConfirmationModals";
+import StatCard from "../../components/popforms/eventComponents/StatCard";
+import DateModal from "../../components/popforms/eventComponents/DateModal";
 
 /* ===================== MAIN COMPONENT ===================== */
 const AdminCalendar = () => {
@@ -535,216 +534,32 @@ const AdminCalendar = () => {
           )}
         </div>
       </div>
-
       {/* ==================== DATE MODAL ==================== */}
       {showDateModal && selectedDate && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex-shrink-0">
-              <div className="flex justify-between items-start">
-                <div className="text-white">
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <CalendarIcon size={26} />
-                    {selectedDate.toLocaleDateString("default", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </h2>
-                  <p className="text-blue-100 text-sm mt-1">
-                    {getEventsForDate(selectedDate).length} event
-                    {getEventsForDate(selectedDate).length !== 1
-                      ? "s"
-                      : ""}{" "}
-                    scheduled
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDateModal(false)}
-                  className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                >
-                  <X size={24} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 overflow-y-auto flex-1">
-              {getEventsForDate(selectedDate).length > 0 ? (
-                <div className="space-y-4">
-                  {getEventsForDate(selectedDate).map((evt) => {
-                    const barangayName = barangays.find(
-                      (b) => b._id === evt.attachedToBarangay,
-                    )?.barangayName;
-                    return (
-                      <div
-                        key={evt._id}
-                        className="p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl"
-                      >
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                                <CalendarIcon className="w-5 h-5 text-white" />
-                              </div>
-                              <h3 className="font-bold text-slate-900 text-lg">
-                                {evt.subject}
-                              </h3>
-                            </div>
-                            {evt.body && (
-                              <p className="text-sm text-slate-700 mb-3 p-3 bg-white rounded-lg border border-blue-200">
-                                {evt.body}
-                              </p>
-                            )}
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm">
-                                <Clock className="w-4 h-4 text-blue-600" />
-                                <span className="font-semibold text-slate-700">
-                                  Start:{" "}
-                                  {new Date(evt.startDate).toLocaleString()}
-                                </span>
-                              </div>
-                              {evt.endDate && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Clock className="w-4 h-4 text-purple-600" />
-                                  <span className="font-semibold text-slate-700">
-                                    End:{" "}
-                                    {new Date(evt.endDate).toLocaleString()}
-                                  </span>
-                                </div>
-                              )}
-                              {barangayName && (
-                                <div className="flex items-center gap-2 text-sm">
-                                  <MapPin className="w-4 h-4 text-emerald-600" />
-                                  <span className="font-semibold text-slate-700">
-                                    Barangay: {barangayName}
-                                  </span>
-                                </div>
-                              )}
-                              {!barangayName &&
-                                evt.sender?.barangay?.barangayName && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <MapPin className="w-4 h-4 text-slate-400" />
-                                    <span className="font-semibold text-slate-600">
-                                      Barangay:{" "}
-                                      {evt.sender.barangay.barangayName}
-                                    </span>
-                                  </div>
-                                )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteEvent(evt._id)}
-                            className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
-                          >
-                            <Trash2 size={16} />
-                            <span>Cancel</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CalendarIcon className="text-slate-400" size={40} />
-                  </div>
-                  <p className="text-slate-500 font-medium text-lg">
-                    No events on this date
-                  </p>
-                  <p className="text-slate-400 text-sm mt-2">
-                    Officials can schedule events
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <DateModal
+          date={selectedDate}
+          events={getEventsForDate(selectedDate)}
+          barangays={barangays}
+          onClose={() => setShowDateModal(false)}
+          onDelete={handleDeleteEvent}
+        />
       )}
-
       {/* Confirmation modal for bulk actions */}
       {confirmationModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
-              <h3 className="text-xl font-bold text-white">
-                {confirmationModal.title}
-              </h3>
-            </div>
-            <div className="p-6">
-              <p className="text-slate-700 text-base mb-6">
-                {confirmationModal.message}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleConfirmAction}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={closeConfirmationModal}
-                  className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ConfirmationModal
+          isOpen={confirmationModal.isOpen}
+          title={confirmationModal.title}
+          message={confirmationModal.message}
+          onConfirm={handleConfirmAction}
+          onClose={() =>
+            setConfirmationModal({ ...confirmationModal, isOpen: false })
+          }
+        />
       )}
     </>
   );
 };
 
 /* ==================== STAT CARD ==================== */
-const StatCard = ({ icon: Icon, title, value, color, subtitle, badge }) => {
-  const colors = {
-    blue: {
-      bg: "from-blue-500 to-blue-600",
-      badge: "bg-blue-100 text-blue-700",
-      icon: "text-blue-500",
-    },
-    emerald: {
-      bg: "from-emerald-500 to-emerald-600",
-      badge: "bg-emerald-100 text-emerald-700",
-      icon: "text-emerald-500",
-    },
-    purple: {
-      bg: "from-purple-500 to-purple-600",
-      badge: "bg-purple-100 text-purple-700",
-      icon: "text-purple-500",
-    },
-    slate: {
-      bg: "from-slate-500 to-slate-600",
-      badge: "bg-slate-100 text-slate-700",
-      icon: "text-slate-500",
-    },
-  };
-  const c = colors[color];
-
-  return (
-    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
-        >
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        <span
-          className={`px-2 py-0.5 ${c.badge} rounded-md text-[11px] font-bold`}
-        >
-          {badge}
-        </span>
-      </div>
-      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">{title}</h3>
-      <p className="text-2xl font-bold text-slate-900 mb-2">{value}</p>
-      <div className="flex items-center text-[11px] text-slate-500">
-        <CalendarDays className={`w-3 h-3 mr-1 ${c.icon}`} />
-        <span>{subtitle}</span>
-      </div>
-    </div>
-  );
-};
+<StatCard />;
 export default AdminCalendar;

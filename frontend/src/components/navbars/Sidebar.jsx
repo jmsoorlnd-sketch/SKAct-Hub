@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import SideProfile from "../SideProfile";
+import SideProfile from "./SideProfile";
 import {
   CalendarDays,
   Home,
@@ -274,7 +274,8 @@ const Sidebar = ({ onClose = () => {} }) => {
       </nav>
 
       {/* Profile Footer */}
-      <div className="p-2 border-t-2 border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 flex-shrink-0">
+      <div className="pb-5 p-3 border-t-2 border-slate-200 bg-blue-50">
+        {" "}
         <SideProfile user={user} />
       </div>
     </div>

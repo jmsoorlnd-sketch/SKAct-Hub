@@ -1,0 +1,431 @@
+import React, { useState } from "react";
+import axios from "axios";
+import { MoreVertical, Calendar, X, FileText } from "lucide-react";
+
+const DocumentItem = ({
+  item,
+  user,
+  folders,
+  handleUpdateStatus,
+  handleMoveToFolder,
+  selectedBarangay,
+  setStorage,
+  storage,
+  setSelectedDocument,
+  fetchActivityUpdates,
+  showUsersModal,
+  setShowUsersModal,
+  fileInputRef,
+  confirmationModal,
+  openConfirmationModal,
+  closeConfirmationModal,
+  handleConfirmAction,
+  showPreviewModal,
+  setShowPreviewModal,
+  previewUrl,
+  setPreviewUrl,
+  toast,
+}) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [showFolderSubmenu, setShowFolderSubmenu] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [calendarFormData, setCalendarFormData] = useState({
+    startDate: "",
+    endDate: "",
+  });
+  const [addingToCalendar, setAddingToCalendar] = useState(false);
+
+  const handleAddToCalendar = async (e) => {
+    e.preventDefault();
+    if (!calendarFormData.startDate) {
+      toast.warning("Please fill in the start date and time");
+      return;
+    }
+
+    try {
+      setAddingToCalendar(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Authentication token not found. Please log in again.");
+        return;
+      }
+
+      const documentSubject =
+        item.documentName || item.document?.subject || "Document";
+
+      await axios.post(
+        "http://localhost:5000/api/messages/send",
+        {
+          recipientId: user?._id,
+          subject: `Document: ${documentSubject}`,
+          body:
+            item.description ||
+            item.document?.body ||
+            "Document scheduled from storage",
+          startDate: calendarFormData.startDate,
+          endDate: calendarFormData.endDate,
+          barangayId: selectedBarangay,
+          status: "approved",
+          isAdminScheduled: true,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      toast.success("Document added to calendar successfully");
+      setShowCalendarModal(false);
+      setCalendarFormData({ startDate: "", endDate: "" });
+      setShowMenu(false);
+    } catch (error) {
+      console.error("Failed to add to calendar:", error);
+      toast.error("Failed to add document to calendar");
+    } finally {
+      setAddingToCalendar(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "completed":
+        return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200";
+      case "ongoing":
+        return "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border-amber-200";
+      default:
+        return "bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-200";
+    }
+  };
+
+  return (
+    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-slate-900 text-lg mb-2">
+            {item.documentName || item.document?.subject || "Document"}
+          </h3>
+          <p className="text-sm text-slate-600 mb-3">
+            From:{" "}
+            <span className="font-semibold">
+              {item.document?.sender?.username || item.uploadedBy?.username}
+            </span>{" "}
+            ({item.document?.sender?.firstname || item.uploadedBy?.firstname}{" "}
+            {item.document?.sender?.lastname || item.uploadedBy?.lastname})
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${getStatusColor(
+                item.document?.status || item.status,
+              )}`}
+            >
+              {item.document?.status || item.status}
+            </span>
+            <span className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
+              {new Date(item.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+          {item.description && (
+            <p className="text-xs text-slate-700 mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 line-clamp-2">
+              {item.description}
+            </p>
+          )}
+        </div>
+        <div className="ml-4 flex items-start gap-2">
+          {user?.role &&
+            (user.role === "Official" || user.role === "Admin") && (
+              <button
+                onClick={() => {
+                  setSelectedDocument(item);
+                  fetchActivityUpdates(item.document?._id || item._id);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
+              >
+                Activity
+              </button>
+            )}
+          {item.document?.attachmentUrl && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setPreviewUrl(
+                    `http://localhost:5000${item.document.attachmentUrl}`,
+                  );
+                  setShowPreviewModal(true);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-indigo-50 hover:from-indigo-200 hover:to-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold border-2 border-indigo-200 transition-all"
+              >
+                View
+              </button>
+              <a
+                href={`http://localhost:5000${item.document.attachmentUrl}`}
+                download={item.document.attachmentName}
+                className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Download
+              </a>
+            </div>
+          )}
+          <div className="relative">
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2.5 hover:bg-slate-100 rounded-lg transition-colors border-2 border-slate-200"
+              title="More options"
+            >
+              <MoreVertical size={18} className="text-slate-600" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white border-2 border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                <button
+                  onClick={() => {
+                    setShowCalendarModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm text-slate-700 font-semibold transition-colors flex items-center gap-2"
+                >
+                  <Calendar size={16} className="text-blue-600" />
+                  Add to Calendar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
+        {String(item.document?.sender?._id) === String(user?._id) && (
+          <>
+            <button
+              onClick={() =>
+                openConfirmationModal(
+                  "ongoing",
+                  item.document?._id,
+                  null,
+                  "Mark as Ongoing",
+                  "Are you sure you want to mark this document as ongoing?",
+                )
+              }
+              className="px-4 py-2 bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 rounded-lg text-sm font-semibold border-2 border-amber-200 transition-all"
+            >
+              Mark Ongoing
+            </button>
+            <button
+              onClick={() =>
+                openConfirmationModal(
+                  "completed",
+                  item.document?._id,
+                  null,
+                  "Mark as Completed",
+                  "Are you sure you want to mark this document as completed?",
+                )
+              }
+              className="px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 hover:from-emerald-200 hover:to-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold border-2 border-emerald-200 transition-all"
+            >
+              Mark Completed
+            </button>
+          </>
+        )}
+
+        {user?.role === "Official" &&
+          (user.position === "Secretary" || user.position === "Treasurer") &&
+          selectedBarangay && (
+            <>
+              <button
+                onClick={() =>
+                  openConfirmationModal(
+                    "remove",
+                    null,
+                    item.document?._id || item.document,
+                    "Remove Document",
+                    "Are you sure you want to remove this message from the barangay? It will be returned to your inbox.",
+                  )
+                }
+                className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
+              >
+                Remove
+              </button>
+            </>
+          )}
+      </div>
+
+      {/* Calendar Modal */}
+      {showCalendarModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Calendar size={24} />
+                  Add to Calendar
+                </h3>
+                <button
+                  onClick={() => setShowCalendarModal(false)}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={24} className="text-white" />
+                </button>
+              </div>
+            </div>
+            <form onSubmit={handleAddToCalendar} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  Start Date & Time *
+                </label>
+                <input
+                  type="datetime-local"
+                  value={calendarFormData.startDate}
+                  onChange={(e) =>
+                    setCalendarFormData({
+                      ...calendarFormData,
+                      startDate: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-900 mb-2">
+                  End Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={calendarFormData.endDate}
+                  onChange={(e) =>
+                    setCalendarFormData({
+                      ...calendarFormData,
+                      endDate: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={addingToCalendar}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                >
+                  {addingToCalendar ? "Adding..." : "Add to Calendar"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCalendarModal(false)}
+                  className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmationModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+              <h3 className="text-xl font-bold text-white">
+                {confirmationModal.title}
+              </h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-slate-700 text-base mb-6">
+                {confirmationModal.message}
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  className="px-4 py-2 bg-slate-200 rounded font-semibold text-slate-700 hover:bg-slate-300"
+                  onClick={() =>
+                    setConfirmationModal({
+                      isOpen: false,
+                      action: null,
+                      messageId: null,
+                      docId: null,
+                      message: "",
+                      title: "",
+                    })
+                  }
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
+                  onClick={handleConfirmAction}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b-2 border-slate-100">
+              <h3 className="text-xl font-bold text-slate-900">
+                Document Preview
+              </h3>
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X size={24} className="text-slate-600" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center">
+              {previewUrl.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : previewUrl.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={previewUrl}
+                  className="w-full h-full border-0"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 px-6">
+                  <FileText size={64} className="text-slate-400 mb-4" />
+                  <p className="text-slate-600 text-lg font-semibold text-center mb-4">
+                    Preview not available for this file type
+                  </p>
+                  <a
+                    href={previewUrl}
+                    download
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all"
+                  >
+                    Download File
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t-2 border-slate-100 flex justify-end">
+              <button
+                onClick={() => setShowPreviewModal(false)}
+                className="px-6 py-2.5 bg-slate-300 hover:bg-slate-400 text-slate-800 rounded-lg font-bold transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DocumentItem;

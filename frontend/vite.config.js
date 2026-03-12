@@ -1,16 +1,22 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  server: {
-    proxy: {
-      "/api": {
-        target: "http://localhost:5000",
-        changeOrigin: true,
-        rewrite: (path) => path,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "axios-vendor": ["axios"],
+          "lucide-vendor": ["lucide-react"],
+
+          // Feature chunks
+          modals: ["./src/components/popforms/barangay/AddBarangay"],
+        },
       },
     },
+    chunkSizeWarningLimit: 600,
   },
 });

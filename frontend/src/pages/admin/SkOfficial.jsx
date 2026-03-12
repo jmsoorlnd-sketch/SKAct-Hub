@@ -9,14 +9,12 @@ import {
   UserCheck,
   UserX,
   TrendingUp,
-  Edit2,
-  Eye,
-  Mail,
-  MapPin,
   Briefcase,
   X,
   Calendar,
+  Mail,
   MessageSquare,
+  MapPin,
   Award,
   Trash2,
   AlertTriangle,
@@ -25,7 +23,7 @@ import {
 import { useToast } from "../../components/Toast";
 import CreateOfficialModal from "../../components/popforms/official/AddOfficial";
 import EditOfficial from "../../components/popforms/official/EditOfficial";
-import RowActions from "../../components/RowActions";
+import RowActions from "../../components/popforms/official/RowActions";
 import { AuthContext } from "../../context/AuthContext";
 
 const API_BASE = "http://localhost:5000/api";
@@ -790,7 +788,7 @@ const SkOfficial = () => {
 
       {/* Profile Modal */}
       {profileOpen && selectedOfficial && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
               <div className="flex justify-between items-start">
@@ -927,7 +925,7 @@ const SkOfficial = () => {
       {deleteConfirmation.isOpen &&
         deleteConfirmation.official &&
         createPortal(
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000] backdrop-blur-sm">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000] ">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
               {/* Header with Warning Icon */}
               <div className="bg-gradient-to-r from-red-50 to-red-100 px-6 py-6 border-b-2 border-red-200 flex items-center gap-4">

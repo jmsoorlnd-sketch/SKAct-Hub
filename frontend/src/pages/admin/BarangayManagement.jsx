@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Layout from "../../layout/Layout";
 
 const BarangayManagement = () => {
   const [barangays, setBarangays] = useState([]);
