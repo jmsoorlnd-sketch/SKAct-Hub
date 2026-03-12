@@ -23,6 +23,7 @@ import {
   ArrowLeft,
   Download,
   Activity,
+  Edit,
 } from "lucide-react";
 import DocumentItem from "../components/popforms/barangay/DocumentItem";
 import { useToast } from "../components/Toast";
@@ -1077,7 +1078,7 @@ const BarangayStorage = () => {
                 )}
                 {user &&
                   user.role !== "Admin" &&
-                  user.role !== "Official" &&
+                  user.role === "Official" &&
                   selectedBarangay &&
                   String(user?.barangay?._id || user?.barangay) ===
                     String(selectedBarangay) && (
@@ -1267,7 +1268,8 @@ const BarangayStorage = () => {
 
                           {user?.role === "Official" &&
                             (user.position === "Secretary" ||
-                              user.position === "Treasurer") && (
+                              user.position === "Treasurer" ||
+                              user.position === "Chairman") && (
                               <button
                                 onClick={() => setShowCreateFolderModal(true)}
                                 className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-xl text-sm font-semibold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
