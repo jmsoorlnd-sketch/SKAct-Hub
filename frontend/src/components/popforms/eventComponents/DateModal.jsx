@@ -49,6 +49,12 @@ const DateModal = ({ date, events, barangays, onClose, onDelete }) => {
             const barangayName = barangays.find(
               (b) => b._id === evt.attachedToBarangay,
             )?.barangayName;
+            const endTime = evt.endDate
+              ? new Date(evt.endDate).toLocaleTimeString()
+              : null;
+            const startTime = evt.startDate
+              ? new Date(evt.startDate).toLocaleTimeString()
+              : null;
             return (
               <div
                 key={evt._id}
@@ -69,6 +75,48 @@ const DateModal = ({ date, events, barangays, onClose, onDelete }) => {
                         {evt.body}
                       </p>
                     )}
+
+                    {/* Time Information */}
+                    {startTime && (
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock
+                            size={16}
+                            className="text-blue-600 flex-shrink-0"
+                          />
+                          <span className="font-semibold text-slate-700">
+                            Start:{" "}
+                            <span className="text-blue-600">{startTime}</span>
+                          </span>
+                        </div>
+                        {endTime && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock
+                              size={16}
+                              className="text-purple-600 flex-shrink-0"
+                            />
+                            <span className="font-semibold text-slate-700">
+                              End:{" "}
+                              <span className="text-purple-600">{endTime}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Barangay Information */}
+                    <div className="flex items-center gap-2 text-sm p-2.5 bg-white rounded-lg border border-slate-200">
+                      <MapPin
+                        size={16}
+                        className="text-emerald-600 flex-shrink-0"
+                      />
+                      <span className="font-semibold text-slate-700">
+                        {evt.attachedToBarangay === null ||
+                        evt.attachedToBarangay === undefined
+                          ? "All Barangays"
+                          : `Barangay: ${barangayName}`}
+                      </span>
+                    </div>
                   </div>
                   <button
                     onClick={() => onDelete(evt._id)}
