@@ -222,6 +222,7 @@ const BarangayStorage = () => {
   const [folderModalUploadCaption, setFolderModalUploadCaption] = useState("");
   const [folderModalUploadingActivity, setFolderModalUploadingActivity] =
     useState(false);
+  const [folderSearchQuery, setFolderSearchQuery] = useState("");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -2334,6 +2335,7 @@ const BarangayStorage = () => {
                     setFolderModalSelectedDoc(null);
                     setFolderModalViewType(null);
                     setFolderModalShowUploadForm(false);
+                    setFolderSearchQuery("");
                   }}
                   className="p-2 hover:bg-white/20 rounded-xl transition-colors"
                 >
@@ -2352,6 +2354,17 @@ const BarangayStorage = () => {
                       Documents in this folder
                     </h3>
 
+                    {/* Search Bar */}
+                    <div className="mb-6">
+                      <input
+                        type="text"
+                        placeholder="Search documents by name..."
+                        value={folderSearchQuery}
+                        onChange={(e) => setFolderSearchQuery(e.target.value)}
+                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      />
+                    </div>
+
                     {folderViewData.documents.length === 0 ? (
                       <div className="text-center py-16">
                         <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -2363,56 +2376,88 @@ const BarangayStorage = () => {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {folderViewData.documents.map((item) => (
-                          <div
-                            key={item._id}
-                            onClick={() => {
-                              setFolderModalSelectedDoc(item);
-                              setFolderModalViewType("details"); // Auto-show details
-                            }}
-                            className="border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 hover:shadow-lg bg-slate-50 hover:bg-blue-50"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-6 h-6 text-blue-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
-                                  {item.documentName ||
-                                    item.document?.subject ||
-                                    "Document"}
-                                </h3>
-                                <p className="text-xs text-slate-600 mb-2">
-                                  From:{" "}
-                                  <span className="font-semibold">
-                                    {item.document?.sender?.username ||
-                                      item.uploadedBy?.username}
-                                  </span>
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
-                                      item.document?.status === "completed"
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : item.document?.status === "ongoing"
-                                          ? "bg-amber-100 text-amber-700"
-                                          : "bg-slate-100 text-slate-700"
-                                    }`}
-                                  >
-                                    {item.document?.status || item.status}
-                                  </span>
-                                  <span className="text-xs text-slate-500">
-                                    {new Date(
-                                      item.createdAt,
-                                    ).toLocaleDateString()}
-                                  </span>
+                        {folderViewData.documents
+                          .filter((item) => {
+                            const documentName = (
+                              item.documentName ||
+                              item.document?.subject ||
+                              "Document"
+                            ).toLowerCase();
+                            return documentName.includes(
+                              folderSearchQuery.toLowerCase(),
+                            );
+                          })
+                          .map((item) => (
+                            <div
+                              key={item._id}
+                              onClick={() => {
+                                setFolderModalSelectedDoc(item);
+                                setFolderModalViewType("details"); // Auto-show details
+                              }}
+                              className="border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 hover:shadow-lg bg-slate-50 hover:bg-blue-50"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <FileText className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                                    {item.documentName ||
+                                      item.document?.subject ||
+                                      "Document"}
+                                  </h3>
+                                  <p className="text-xs text-slate-600 mb-2">
+                                    From:{" "}
+                                    <span className="font-semibold">
+                                      {item.document?.sender?.username ||
+                                        item.uploadedBy?.username}
+                                    </span>
+                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
+                                        item.document?.status === "completed"
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : item.document?.status === "ongoing"
+                                            ? "bg-amber-100 text-amber-700"
+                                            : "bg-slate-100 text-slate-700"
+                                      }`}
+                                    >
+                                      {item.document?.status || item.status}
+                                    </span>
+                                    <span className="text-xs text-slate-500">
+                                      {new Date(
+                                        item.createdAt,
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     )}
+
+                    {folderViewData.documents.filter((item) => {
+                      const documentName = (
+                        item.documentName ||
+                        item.document?.subject ||
+                        "Document"
+                      ).toLowerCase();
+                      return documentName.includes(
+                        folderSearchQuery.toLowerCase(),
+                      );
+                    }).length === 0 &&
+                      folderViewData.documents.length > 0 && (
+                        <div className="text-center py-16">
+                          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <FileText className="h-10 w-10 text-slate-400" />
+                          </div>
+                          <p className="text-slate-500 font-medium">
+                            No documents match your search
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -2888,6 +2933,7 @@ const BarangayStorage = () => {
                   setFolderModalSelectedDoc(null);
                   setFolderModalViewType(null);
                   setFolderModalShowUploadForm(false);
+                  setFolderSearchQuery("");
                 }}
                 className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
               >
