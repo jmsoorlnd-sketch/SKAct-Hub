@@ -22,7 +22,7 @@ const getAuthHeaders = () => {
 };
 
 /* ===================== MAIN COMPONENT ===================== */
-const EditOfficial = ({ isOpen, onClose, official, onSubmit }) => {
+const EditOfficialModal = ({ isOpen, onClose, official, onSubmit }) => {
   /* ==================== STATE ==================== */
   const [formData, setFormData] = useState({
     username: "",
@@ -465,4 +465,4 @@ const EditOfficial = ({ isOpen, onClose, official, onSubmit }) => {
   );
 };
 
-export default EditOfficial;
+export default EditOfficialModal;

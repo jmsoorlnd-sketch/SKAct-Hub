@@ -1,9 +1,9 @@
 import { useState, useContext, useRef, useEffect } from "react";
-import { LogOut, User, X, AlertTriangle } from "lucide-react";
+import { LogOut, User, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { AuthContext } from "../../context/AuthContext";
-
+import ConfirmModal from "../ConfirmModal";
 const SideProfile = ({ user }) => {
   /* ==================== STATE ==================== */
   const [open, setOpen] = useState(false);
@@ -112,69 +112,41 @@ const SideProfile = ({ user }) => {
       {/* Logout Confirmation Modal */}
       {showLogoutModal &&
         createPortal(
-          <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-[100] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-fadeIn">
-              {/* Modal Header */}
-              <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
-                <div className="flex items-center gap-3 text-white">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold">Confirm Logout</h2>
-                    <p className="text-xs text-red-100 mt-0.5">
-                      Please confirm your action
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Modal Body */}
-              <div className="p-6">
-                <p className="text-sm text-slate-700 leading-relaxed">
-                  Are you sure you want to logout? You will need to sign in
-                  again to access your account.
-                </p>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="px-6 py-4 bg-slate-50 border-t-2 border-slate-200 flex gap-3">
-                <button
-                  onClick={handleCancelLogout}
-                  className="flex-1 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-sm font-bold transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmLogout}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                >
-                  <LogOut size={16} />
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
-          </div>,
+          <ConfirmModal
+            isOpen={showLogoutModal} // ✅ use the correct state variable
+            title="Confirm Logout"
+            message="Are you sure you want to logout? You will need to sign in again to access your account."
+            icon={AlertTriangle}
+            iconBgClass="bg-red-600"
+            iconColorClass="text-white"
+            confirmText="Logout"
+            confirmIcon={LogOut}
+            confirmClass="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+            onConfirm={handleConfirmLogout}
+            onCancel={handleCancelLogout}
+          />,
           document.body,
         )}
 
       {/* Fade-in Animation */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+      <style>
+        {`
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-      `}</style>
+    .animate-fadeIn {
+      animation: fadeIn 0.2s ease-out;
+    }
+  `}
+      </style>
     </>
   );
 };

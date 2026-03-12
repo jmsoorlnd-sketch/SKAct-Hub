@@ -1,30 +1,36 @@
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useEffect, useMemo, useState, useContext, useCallback } from "react";
 import axios from "axios";
 import { createPortal } from "react-dom";
 import {
   UserPlus,
-  Search,
-  Filter,
   Users,
-  UserCheck,
-  UserX,
-  TrendingUp,
-  Briefcase,
   X,
   Calendar,
   Mail,
   MessageSquare,
-  MapPin,
-  Award,
   Trash2,
   AlertTriangle,
 } from "lucide-react";
 
-import { useToast } from "../../components/Toast";
-import CreateOfficialModal from "../../components/popforms/official/AddOfficial";
-import EditOfficial from "../../components/popforms/official/EditOfficial";
-import RowActions from "../../components/popforms/official/RowActions";
 import { AuthContext } from "../../context/AuthContext";
+import { useToast } from "../../components/Toast";
+
+import { lazy, Suspense } from "react";
+
+import OfficialsStats from "../../components/skOfficialComponents/OfficialsStats";
+import OfficialsTable from "../../components/skOfficialComponents/OfficialsTable";
+import OfficialsFilters from "../../components/skOfficialComponents/OfficialsFilter";
+
+import SkProfileModal from "../../components/skOfficialComponents/SkProfileModal";
+import ConfirmModal from "../../components/ConfirmModal";
+
+const CreateOfficialModal = lazy(
+  () => import("../../components/popforms/official/AddOfficial"),
+);
+
+const EditOfficialModal = lazy(
+  () => import("../../components/popforms/official/EditOfficial"),
+);
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -66,13 +72,21 @@ const SkOfficial = () => {
 
   /* ===================== DATA FETCH ===================== */
   useEffect(() => {
-    const fetchOfficials = async () => {
+    const fetchData = async () => {
       setLoading(true);
+
       try {
-        const res = await axios.get(`${API_BASE}/admins/getofficials`, {
-          headers: getAuthHeaders(),
-        });
-        setOfficials(res.data);
+        const [officialsRes, barangaysRes] = await Promise.all([
+          axios.get(`${API_BASE}/admins/getofficials`, {
+            headers: getAuthHeaders(),
+          }),
+          axios.get(`${API_BASE}/barangays/all-barangays`, {
+            headers: getAuthHeaders(),
+          }),
+        ]);
+
+        setOfficials(officialsRes.data);
+        setBarangays(barangaysRes.data.barangays || []);
       } catch (err) {
         handleAuthError(err);
       } finally {
@@ -80,24 +94,8 @@ const SkOfficial = () => {
       }
     };
 
-    fetchOfficials();
+    fetchData();
   }, []);
-
-  useEffect(() => {
-    const fetchBarangays = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/barangays/all-barangays`, {
-          headers: getAuthHeaders(),
-        });
-        setBarangays(res.data.barangays || []);
-      } catch (err) {
-        console.error("Error fetching barangays:", err);
-      }
-    };
-
-    fetchBarangays();
-  }, []);
-
   /* ===================== HELPERS ===================== */
   const handleAuthError = (err) => {
     if (err?.response?.status === 401) {
@@ -174,32 +172,21 @@ const SkOfficial = () => {
   }, [officials]);
 
   /* ===================== ACTIONS ===================== */
-  const toggleStatus = async (official) => {
+  const toggleStatus = useCallback(async (official) => {
     const newStatus = official.status === "Active" ? "Inactive" : "Active";
 
-    if (
-      !window.confirm(
-        `Are you sure you want to ${newStatus.toLowerCase()} this official?`,
-      )
-    )
-      return;
+    await axios.put(
+      `${API_BASE}/admins/status-official/${official._id}`,
+      { status: newStatus },
+      { headers: getAuthHeaders() },
+    );
 
-    try {
-      await axios.put(
-        `${API_BASE}/admins/status-official/${official._id}`,
-        { status: newStatus },
-        { headers: getAuthHeaders() },
-      );
-
-      setOfficials((prev) =>
-        prev.map((o) =>
-          o._id === official._id ? { ...o, status: newStatus } : o,
-        ),
-      );
-    } catch (err) {
-      error("Failed to update status");
-    }
-  };
+    setOfficials((prev) =>
+      prev.map((o) =>
+        o._id === official._id ? { ...o, status: newStatus } : o,
+      ),
+    );
+  }, []);
 
   const handleDelete = async (official) => {
     setDeleteConfirmation({ isOpen: true, official });
@@ -280,374 +267,25 @@ const SkOfficial = () => {
           ) : (
             <>
               {/* Key Performance Indicators */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {/* KPI Card 1 - Total Officials */}
-                <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                      <Users className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold">
-                      Total
-                    </span>
-                  </div>
-                  <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                    Total Officials
-                  </h3>
-                  <p className="text-2xl font-bold text-slate-900 mb-2">
-                    {stats.total}
-                  </p>
-                  <div className="flex items-center text-[11px] text-slate-500">
-                    <Award className="w-3 h-3 text-blue-500 mr-1" />
-                    <span>Registered in system</span>
-                  </div>
-                </div>
-
-                {/* KPI Card 2 - Active */}
-                <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-                      <UserCheck className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-[11px] font-bold">
-                      {stats.activeRate}%
-                    </span>
-                  </div>
-                  <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                    Active Officials
-                  </h3>
-                  <p className="text-2xl font-bold text-slate-900 mb-2">
-                    {stats.active}
-                  </p>
-                  <div className="flex items-center text-[11px] text-slate-500">
-                    <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
-                      <div
-                        className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-1.5 rounded-full transition-all duration-1000"
-                        style={{ width: `${stats.activeRate}%` }}
-                      ></div>
-                    </div>
-                    <span className="font-semibold">{stats.activeRate}%</span>
-                  </div>
-                </div>
-
-                {/* KPI Card 3 - Inactive */}
-                <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
-                      <UserX className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-md text-[11px] font-bold">
-                      Inactive
-                    </span>
-                  </div>
-                  <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                    Inactive Officials
-                  </h3>
-                  <p className="text-2xl font-bold text-slate-900 mb-2">
-                    {stats.inactive}
-                  </p>
-                  <div className="flex items-center text-[11px] text-slate-500">
-                    <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
-                      <div
-                        className="bg-gradient-to-r from-red-500 to-red-600 h-1.5 rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${((stats.inactive / stats.total) * 100).toFixed(1)}%`,
-                        }}
-                      ></div>
-                    </div>
-                    <span className="font-semibold">
-                      {((stats.inactive / stats.total) * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* KPI Card 4 - Barangays */}
-                <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                      <MapPin className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-md text-[11px] font-bold">
-                      Active
-                    </span>
-                  </div>
-                  <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                    Barangays
-                  </h3>
-                  <p className="text-2xl font-bold text-slate-900 mb-2">
-                    {barangays.length}
-                  </p>
-                  <div className="flex items-center text-[11px] text-slate-500">
-                    <TrendingUp className="w-3 h-3 text-purple-500 mr-1" />
-                    <span>With SK officials</span>
-                  </div>
-                </div>
-              </div>
-
+              <OfficialsStats stats={stats} barangays={barangays} />{" "}
               {/* Filters Section */}
-              <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Filter className="w-4 h-4 text-slate-600" />
-                  <h2 className="text-base font-bold text-slate-900">
-                    Filters
-                  </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="relative">
-                    <Search
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
-                      size={16}
-                    />
-                    <input
-                      placeholder="Search officials..."
-                      className="w-full pl-9 pr-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      value={filters.search}
-                      onChange={(e) =>
-                        setFilters({ ...filters, search: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <select
-                    className="px-3 py-2 border-2 border-slate-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
-                    value={filters.status}
-                    onChange={(e) =>
-                      setFilters({ ...filters, status: e.target.value })
-                    }
-                  >
-                    <option value="">All Status</option>
-                    <option>Active</option>
-                    <option>Inactive</option>
-                  </select>
-
-                  <select
-                    className="px-3 py-2 border-2 border-slate-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
-                    value={filters.position}
-                    onChange={(e) =>
-                      setFilters({ ...filters, position: e.target.value })
-                    }
-                  >
-                    <option value="">All Positions</option>
-                    <option>Chairman</option>
-                    <option>Secretary</option>
-                    <option>Treasurer</option>
-                  </select>
-
-                  <select
-                    className="px-3 py-2 border-2 border-slate-200 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
-                    value={filters.barangay}
-                    onChange={(e) =>
-                      setFilters({ ...filters, barangay: e.target.value })
-                    }
-                  >
-                    <option value="">All Barangays</option>
-                    {barangays.map((b) => (
-                      <option key={b._id} value={b._id}>
-                        {b.barangayName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Active Filters Display */}
-                {(filters.search ||
-                  filters.status ||
-                  filters.position ||
-                  filters.barangay) && (
-                  <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-slate-600 font-semibold">
-                      Active Filters:
-                    </span>
-                    {filters.search && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold">
-                        Search: {filters.search}
-                      </span>
-                    )}
-                    {filters.status && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold">
-                        Status: {filters.status}
-                      </span>
-                    )}
-                    {filters.position && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold">
-                        Position: {filters.position}
-                      </span>
-                    )}
-                    {filters.barangay && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[11px] font-bold">
-                        Barangay:{" "}
-                        {
-                          barangays.find((b) => b._id === filters.barangay)
-                            ?.barangayName
-                        }
-                      </span>
-                    )}
-                    <button
-                      onClick={() =>
-                        setFilters({
-                          status: "",
-                          position: "",
-                          barangay: "",
-                          search: "",
-                        })
-                      }
-                      className="px-2 py-0.5 bg-red-100 text-red-700 rounded-md text-[11px] font-bold hover:bg-red-200 transition-colors"
-                    >
-                      Clear All
-                    </button>
-                  </div>
-                )}
-              </div>
-
+              <OfficialsFilters
+                filters={filters}
+                setFilters={setFilters}
+                barangays={barangays}
+              />
               {/* Main Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
                 {/* Officials Table */}
-                <div className="lg:col-span-3 bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b-2 border-slate-200">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">
-                          Officials List
-                        </h2>
-                        <p className="text-sm text-slate-600 mt-1">
-                          Showing {filteredOfficials.length} of{" "}
-                          {officials.length} officials
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <div className="max-h-[600px] overflow-y-auto relative">
-                      <table className="w-full">
-                        <thead className="sticky top-0 z-0 pointer-events-none bg-gradient-to-r from-slate-100 to-slate-50">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              Name
-                            </th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              Position
-                            </th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              Barangay
-                            </th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              Contact
-                            </th>
-                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              Status
-                            </th>
-                            <th className="px-3 py-3 w-[6%] text-center">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-slate-200 relative z-10 pointer-events-auto text-sm">
-                          {filteredOfficials.length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan="6"
-                                className="px-6 py-12 text-center"
-                              >
-                                <div className="flex flex-col items-center">
-                                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
-                                    <Users
-                                      className="text-slate-400"
-                                      size={32}
-                                    />
-                                  </div>
-                                  <p className="text-slate-500 font-medium">
-                                    No officials found
-                                  </p>
-                                  <p className="text-slate-400 text-sm mt-1">
-                                    Try adjusting your filters
-                                  </p>
-                                </div>
-                              </td>
-                            </tr>
-                          ) : (
-                            filteredOfficials.map((official) => (
-                              <tr
-                                key={official._id}
-                                className={`relative z-20 transition-colors ${
-                                  official.status === "Inactive"
-                                    ? "bg-red-50 hover:bg-red-100"
-                                    : "bg-white hover:bg-blue-50"
-                                }`}
-                              >
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-3">
-                                    <div>
-                                      <p className="font-semibold text-slate-900">
-                                        {official.firstname} {official.lastname}
-                                      </p>
-                                      <p className="text-xs text-slate-500">
-                                        @{official.username}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
-                                    <Briefcase className="w-4 h-4 text-slate-400" />
-                                    <span className="font-medium text-slate-900">
-                                      {official.position}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-slate-400" />
-                                    <span className="text-slate-700">
-                                      {official.barangay?.barangayName || "—"}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
-                                    <Mail className="w-4 h-4 text-slate-400" />
-                                    <span className="text-slate-700 text-sm">
-                                      {official.email}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                                      official.status === "Active"
-                                        ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
-                                        : "bg-red-100 text-red-700 border-2 border-red-200"
-                                    }`}
-                                  >
-                                    {official.status === "Active" ? (
-                                      <UserCheck size={14} />
-                                    ) : (
-                                      <UserX size={14} />
-                                    )}
-                                    {official.status}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-2 text-center">
-                                  <RowActions
-                                    official={official}
-                                    onEdit={(o) => {
-                                      setSelectedOfficial(o);
-                                      setIsEditOpen(true);
-                                    }}
-                                    onView={(o) => openProfile(o)}
-                                    onToggleStatus={(o) => toggleStatus(o)}
-                                    onDelete={(o) => handleDelete(o)}
-                                  />
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
+                <OfficialsTable
+                  officials={officials}
+                  filteredOfficials={filteredOfficials}
+                  setSelectedOfficial={setSelectedOfficial}
+                  toggleStatus={toggleStatus}
+                  setIsEditOpen={setIsEditOpen}
+                  handleDelete={handleDelete}
+                  openProfile={openProfile} // make sure this exists in parent
+                />
 
                 {/* Side Panel - Statistics */}
                 <div className="lg:col-span-1 space-y-6">
@@ -766,223 +404,85 @@ const SkOfficial = () => {
       </div>
 
       {/* Modals */}
-      <CreateOfficialModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSubmit={(data) => setOfficials((prev) => [...prev, data])}
-      />
+      <Suspense fallback={null}>
+        {isCreateOpen && (
+          <CreateOfficialModal
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+          />
+        )}
+      </Suspense>
 
-      <EditOfficial
-        isOpen={isEditOpen}
-        official={selectedOfficial}
-        onClose={() => {
-          setIsEditOpen(false);
-          setSelectedOfficial(null);
-        }}
-        onSubmit={(updated) =>
-          setOfficials((prev) =>
-            prev.map((o) => (o._id === updated._id ? updated : o)),
-          )
-        }
-      />
+      <Suspense fallback={null}>
+        {/* Edit Modal */}
+        {isEditOpen && selectedOfficial && (
+          <EditOfficialModal
+            isOpen={isEditOpen}
+            official={selectedOfficial}
+            onClose={() => {
+              setIsEditOpen(false);
+              setSelectedOfficial(null);
+            }}
+            onSubmit={(updated) =>
+              setOfficials((prev) =>
+                prev.map((o) => (o._id === updated._id ? updated : o)),
+              )
+            }
+          />
+        )}
+      </Suspense>
 
       {/* Profile Modal */}
+
       {profileOpen && selectedOfficial && (
-        <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 text-2xl shadow-lg">
-                    {selectedOfficial.firstname.charAt(0)}
-                    {selectedOfficial.lastname.charAt(0)}
-                  </div>
-                  <div className="text-white">
-                    <h3 className="text-2xl font-bold">
-                      {selectedOfficial.firstname} {selectedOfficial.lastname}
-                    </h3>
-                    <p className="text-blue-100 mt-1">
-                      {selectedOfficial.position}
-                    </p>
-                    <p className="text-blue-200 text-sm mt-1">
-                      {selectedOfficial.barangay?.barangayName}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setProfileOpen(false);
-                    setSelectedOfficial(null);
-                    setProfileMessages([]);
-                  }}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X size={24} className="text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div
-              className="p-6 overflow-y-auto"
-              style={{ maxHeight: "calc(90vh - 180px)" }}
-            >
-              {/* Contact Information */}
-              <div className="mb-6">
-                <h4 className="text-lg font-bold text-slate-900 mb-4">
-                  Contact Information
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
-                    <Mail className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="text-xs text-slate-500 font-semibold">
-                        Email
-                      </p>
-                      <p className="text-sm text-slate-900 font-medium">
-                        {selectedOfficial.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
-                    <Users className="w-5 h-5 text-purple-600" />
-                    <div>
-                      <p className="text-xs text-slate-500 font-semibold">
-                        Username
-                      </p>
-                      <p className="text-sm text-slate-900 font-medium">
-                        @{selectedOfficial.username}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-blue-600" />
-                    Messages ({profileMessages.length})
-                  </h4>
-                </div>
-
-                {profileLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
-                    <p className="text-slate-500 text-sm mt-2">
-                      Loading messages...
-                    </p>
-                  </div>
-                ) : profileMessages.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <MessageSquare className="text-slate-400" size={32} />
-                    </div>
-                    <p className="text-slate-500 font-medium">
-                      No messages found
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {profileMessages.map((msg) => (
-                      <div
-                        key={msg._id}
-                        className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h5 className="font-bold text-slate-900">
-                            {msg.subject}
-                          </h5>
-                          <span className="px-2 py-1 bg-blue-200 text-blue-700 rounded-md text-xs font-bold">
-                            {msg.status}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-700 mb-2">
-                          {msg.body}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <div className="flex items-center gap-1">
-                            <Calendar size={12} />
-                            {new Date(msg.createdAt).toLocaleDateString()}
-                          </div>
-                          {msg.sender && (
-                            <span>
-                              From: {msg.sender.firstname} {msg.sender.lastname}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <SkProfileModal
+          selectedOfficial={selectedOfficial}
+          setSelectedOfficial={setSelectedOfficial}
+          setProfileOpen={setProfileOpen}
+          profileLoading={profileLoading}
+          profileMessages={profileMessages}
+          setProfileMessages={setProfileMessages}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
+
       {deleteConfirmation.isOpen &&
         deleteConfirmation.official &&
         createPortal(
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[3000] ">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
-              {/* Header with Warning Icon */}
-              <div className="bg-gradient-to-r from-red-50 to-red-100 px-6 py-6 border-b-2 border-red-200 flex items-center gap-4">
-                <div className="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle size={24} className="text-red-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-red-900">
-                    Delete Official
-                  </h2>
-                  <p className="text-sm text-red-700">
-                    This action is permanent
-                  </p>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <p className="text-slate-700 text-base mb-2">
-                  Are you sure you want to permanently delete:
+          <ConfirmModal
+            isOpen={deleteConfirmation.isOpen}
+            title="Delete Official"
+            icon={AlertTriangle}
+            iconBgClass="bg-red-200"
+            iconColorClass="text-red-600"
+            confirmText="Delete"
+            confirmIcon={Trash2}
+            confirmClass="bg-red-600 hover:bg-red-700 text-white"
+            onConfirm={confirmDelete}
+            onCancel={cancelDelete}
+          >
+            <div>
+              <p className="text-slate-700 text-base mb-2">
+                Are you sure you want to permanently delete:
+              </p>
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 mb-6">
+                <p className="font-bold text-slate-900 text-lg">
+                  {deleteConfirmation.official.firstname}{" "}
+                  {deleteConfirmation.official.lastname}
                 </p>
-                <div className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 mb-6">
-                  <p className="font-bold text-slate-900 text-lg">
-                    {deleteConfirmation.official.firstname}{" "}
-                    {deleteConfirmation.official.lastname}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    @{deleteConfirmation.official.username}
-                  </p>
-                  <p className="text-sm text-slate-600 mt-2">
-                    {deleteConfirmation.official.email}
-                  </p>
-                </div>
-                <p className="text-red-600 text-sm font-semibold mb-6 flex items-center gap-2">
-                  <Trash2 size={16} />
-                  This action cannot be undone.
+                <p className="text-sm text-slate-600">
+                  @{deleteConfirmation.official.username}
+                </p>
+                <p className="text-sm text-slate-600 mt-2">
+                  {deleteConfirmation.official.email}
                 </p>
               </div>
-
-              {/* Footer Buttons */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
-                <button
-                  onClick={cancelDelete}
-                  className="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-slate-900 font-semibold rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
-              </div>
+              <p className="text-red-600 text-sm font-semibold mb-0 flex items-center gap-2">
+                <Trash2 size={16} /> This action cannot be undone.
+              </p>
             </div>
-          </div>,
+          </ConfirmModal>,
           document.body,
         )}
     </>
