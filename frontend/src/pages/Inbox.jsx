@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Inbox as InboxIcon,
   Send,
+  ArrowDownLeft,
 } from "lucide-react";
 
 /* ===================== CONSTANTS ===================== */
@@ -24,16 +25,18 @@ const getAuthHeaders = () => {
 /* ===================== MAIN COMPONENT ===================== */
 const Inbox = () => {
   /* ==================== STATE ==================== */
-  const [messages, setMessages] = useState([]);
+  const [activeTab, setActiveTab] = useState("received"); // "sent" or "received"
+  const [sentMessages, setSentMessages] = useState([]);
+  const [receivedMessages, setReceivedMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   /* ==================== DATA FETCHING ==================== */
   useEffect(() => {
-    fetchSentMessages();
+    fetchMessages();
   }, []);
 
-  const fetchSentMessages = async () => {
+  const fetchMessages = async () => {
     setLoading(true);
     setError(null);
 
@@ -45,11 +48,14 @@ const Inbox = () => {
         return;
       }
 
-      const res = await axios.get(`${API_BASE}/messages/sent`, {
-        headers: getAuthHeaders(),
-      });
+      // Fetch both sent and received messages in parallel
+      const [sentRes, receivedRes] = await Promise.all([
+        axios.get(`${API_BASE}/messages/sent`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE}/messages/inbox`, { headers: getAuthHeaders() }),
+      ]);
 
-      setMessages(res.data.messages || []);
+      setSentMessages(sentRes.data.messages || []);
+      setReceivedMessages(receivedRes.data.messages || []);
     } catch (err) {
       console.error("Failed to fetch messages:", err);
       setError(
@@ -103,12 +109,17 @@ const Inbox = () => {
   };
 
   /* ==================== STATISTICS ==================== */
+  const messages = activeTab === "sent" ? sentMessages : receivedMessages;
   const stats = {
     total: messages.length,
     pending: messages.filter((m) => m.status === "pending").length,
     approved: messages.filter((m) => m.status === "approved").length,
     rejected: messages.filter((m) => m.status === "rejected").length,
   };
+
+  const adminEventCount = receivedMessages.filter(
+    (m) => m.isAdminScheduled,
+  ).length;
 
   /* ==================== RENDER ==================== */
   return (
@@ -122,14 +133,16 @@ const Inbox = () => {
                 <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                   <InboxIcon className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
                 </div>
-                Sent Messages
+                Messages
               </h1>
               <p className="text-slate-600 mt-1 text-xs sm:text-sm">
-                Track your submitted messages and approval status
+                {activeTab === "sent"
+                  ? "Track your submitted messages and approval status"
+                  : "View received messages and admin notifications"}
               </p>
             </div>
             <button
-              onClick={fetchSentMessages}
+              onClick={fetchMessages}
               disabled={loading}
               className="px-3 sm:px-4 py-2 bg-white hover:bg-slate-50 border-2 border-slate-200 rounded-lg font-semibold text-xs sm:text-sm text-slate-700 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 whitespace-nowrap"
             >
@@ -138,32 +151,93 @@ const Inbox = () => {
             </button>
           </div>
 
+          {/* Tab Switcher */}
+          <div className="flex gap-2 mb-4 border-b-2 border-slate-200">
+            <button
+              onClick={() => setActiveTab("received")}
+              className={`px-4 py-2 font-semibold text-sm transition-all border-b-2 ${
+                activeTab === "received"
+                  ? "text-blue-600 border-blue-600"
+                  : "text-slate-600 border-transparent hover:text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <ArrowDownLeft size={16} />
+                Received ({receivedMessages.length})
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("sent")}
+              className={`px-4 py-2 font-semibold text-sm transition-all border-b-2 ${
+                activeTab === "sent"
+                  ? "text-blue-600 border-blue-600"
+                  : "text-slate-600 border-transparent hover:text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Send size={16} />
+                Sent ({sentMessages.length})
+              </div>
+            </button>
+          </div>
+
           {/* Statistics Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-            <StatCard
-              icon={Send}
-              title="Total Sent"
-              value={stats.total}
-              color="blue"
-            />
-            <StatCard
-              icon={AlertCircle}
-              title="Pending"
-              value={stats.pending}
-              color="amber"
-            />
-            <StatCard
-              icon={CheckCircle}
-              title="Approved"
-              value={stats.approved}
-              color="emerald"
-            />
-            <StatCard
-              icon={XCircle}
-              title="Rejected"
-              value={stats.rejected}
-              color="red"
-            />
+            {activeTab === "sent" ? (
+              <>
+                <StatCard
+                  icon={Send}
+                  title="Total Sent"
+                  value={stats.total}
+                  color="blue"
+                />
+                <StatCard
+                  icon={AlertCircle}
+                  title="Pending"
+                  value={stats.pending}
+                  color="amber"
+                />
+                <StatCard
+                  icon={CheckCircle}
+                  title="Approved"
+                  value={stats.approved}
+                  color="emerald"
+                />
+                <StatCard
+                  icon={XCircle}
+                  title="Rejected"
+                  value={stats.rejected}
+                  color="red"
+                />
+              </>
+            ) : (
+              <>
+                <StatCard
+                  icon={Mail}
+                  title="Total Received"
+                  value={stats.total}
+                  color="blue"
+                />
+                <StatCard
+                  icon={Calendar}
+                  title="Admin Events"
+                  value={adminEventCount}
+                  color="purple"
+                />
+                <StatCard
+                  icon={AlertCircle}
+                  title="Pending"
+                  value={stats.pending}
+                  color="amber"
+                />
+                <StatCard
+                  icon={CheckCircle}
+                  title="Approved"
+                  value={stats.approved}
+                  color="emerald"
+                />
+              </>
+            )}
           </div>
         </div>
 
@@ -180,7 +254,7 @@ const Inbox = () => {
                 </h3>
                 <p className="text-sm text-red-700">{error}</p>
                 <button
-                  onClick={fetchSentMessages}
+                  onClick={fetchMessages}
                   className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
                 >
                   Try Again
@@ -202,13 +276,21 @@ const Inbox = () => {
           /* Empty State */
           <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-12 text-center">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-10 h-10 text-slate-400" />
+              {activeTab === "sent" ? (
+                <Send className="w-10 h-10 text-slate-400" />
+              ) : (
+                <Mail className="w-10 h-10 text-slate-400" />
+              )}
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">
-              No Messages Yet
+              {activeTab === "sent"
+                ? "No Sent Messages"
+                : "No Received Messages"}
             </h3>
             <p className="text-slate-500 text-sm">
-              Messages you send for approval will appear here
+              {activeTab === "sent"
+                ? "Messages you send for approval will appear here"
+                : "Admin notifications and received messages will appear here"}
             </p>
           </div>
         ) : (
@@ -227,17 +309,37 @@ const Inbox = () => {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                          <Mail className="w-4 h-4 text-white" />
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md ${
+                            activeTab === "received" && msg.isAdminScheduled
+                              ? "bg-gradient-to-br from-purple-500 to-purple-600"
+                              : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                          }`}
+                        >
+                          {activeTab === "received" && msg.isAdminScheduled ? (
+                            <Calendar className="w-4 h-4 text-white" />
+                          ) : (
+                            <Mail className="w-4 h-4 text-white" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-slate-900 text-base leading-tight mb-0.5">
-                            {msg.subject}
-                          </h3>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="font-bold text-slate-900 text-base leading-tight">
+                              {msg.subject}
+                            </h3>
+                            {activeTab === "received" &&
+                              msg.isAdminScheduled && (
+                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold whitespace-nowrap">
+                                  Admin Event
+                                </span>
+                              )}
+                          </div>
                           <p className="text-[11px] text-slate-500">
-                            To:{" "}
+                            {activeTab === "sent" ? "To:" : "From:"}{" "}
                             <span className="font-semibold text-slate-700">
-                              {msg.recipient?.username || "Admin"}
+                              {activeTab === "sent"
+                                ? msg.recipient?.username || "Admin"
+                                : msg.sender?.username || "Unknown"}
                             </span>
                           </p>
                         </div>
@@ -355,6 +457,10 @@ const StatCard = ({ icon: Icon, title, value, color }) => {
     red: {
       bg: "from-red-500 to-red-600",
       text: "text-red-600",
+    },
+    purple: {
+      bg: "from-purple-500 to-purple-600",
+      text: "text-purple-600",
     },
   };
 

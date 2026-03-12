@@ -123,14 +123,48 @@ export const sendMessage = async (req, res) => {
 export const getInbox = async (req, res) => {
   try {
     const userId = req.user._id;
+    const user = await User.findById(userId);
 
-    // Exclude messages that have already been attached/moved into a barangay
-    // Also exclude admin-scheduled events (they only appear in the calendar)
-    const messages = await Message.find({
-      recipient: userId,
-      isAttached: { $ne: true },
-      isAdminScheduled: { $ne: true },
-    })
+    let query;
+
+    if (user?.role === "Admin") {
+      // Admins: exclude admin-scheduled events from inbox (they see them in calendar only)
+      query = {
+        recipient: userId,
+        isAttached: { $ne: true },
+        isAdminScheduled: { $ne: true },
+      };
+    } else {
+      // Non-admins (Youth/Official): include admin-scheduled events relevant to them
+      // Admin events are broadcast, not sent to individual users, so don't check recipient for them
+      const orConditions = [
+        // Regular messages - must be recipient
+        {
+          recipient: userId,
+          isAdminScheduled: { $ne: true },
+        },
+        // Admin-created events for all barangays - broadcast to all
+        {
+          isAdminScheduled: true,
+          attachedToBarangay: null,
+        },
+      ];
+
+      // If user has a barangay assigned, include events for their barangay
+      if (user?.barangay) {
+        orConditions.push({
+          isAdminScheduled: true,
+          attachedToBarangay: user.barangay,
+        });
+      }
+
+      query = {
+        isAttached: { $ne: true },
+        $or: orConditions,
+      };
+    }
+
+    const messages = await Message.find(query)
       .populate("sender", "username email role")
       .sort({ createdAt: -1 });
 
@@ -178,11 +212,40 @@ export const updateStatus = async (req, res) => {
 };
 
 // Get activities that are approved or ongoing (for calendar)
+// Get activities (filter by user's barangay for non-admins, show all for admins)
 export const getActivities = async (req, res) => {
   try {
-    const activities = await Message.find({
-      startDate: { $exists: true, $ne: null }, // Ensure startDate exists and is not null
-    })
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    let query;
+
+    if (user?.role === "Admin") {
+      // Admins see all events with a startDate
+      query = {
+        startDate: { $exists: true, $ne: null },
+      };
+    } else {
+      // Non-admins see:
+      // 1. Events for their specific barangay (if they have one), OR
+      // 2. Admin-created events for all barangays (broadcast events)
+      const orConditions = [
+        // Admin-created events for all barangays (always show these)
+        { attachedToBarangay: null, isAdminScheduled: true },
+      ];
+
+      // If user has a barangay assigned, include events for their barangay
+      if (user?.barangay) {
+        orConditions.push({ attachedToBarangay: user.barangay });
+      }
+
+      query = {
+        startDate: { $exists: true, $ne: null },
+        $or: orConditions,
+      };
+    }
+
+    const activities = await Message.find(query)
       .populate("sender", "username email role")
       .sort({ startDate: 1 });
 
