@@ -17,6 +17,7 @@ import {
   Tag,
   AlignLeft,
   Save,
+  Trash2,
 } from "lucide-react";
 
 const EventCalendar = () => {
@@ -94,6 +95,12 @@ const EventCalendar = () => {
       title: "Cancel Events",
       message: `Cancel ${ids.length} selected event${ids.length !== 1 ? "s" : ""}?`,
     });
+  };
+
+  const handleDeleteEvent = (eventId) => {
+    const evt = events.find((e) => e._id === eventId);
+    if (!evt || !user || String(evt.sender?._id) !== String(user._id)) return;
+    openConfirmationModal([eventId]);
   };
 
   const closeConfirmationModal = () => {
@@ -284,6 +291,13 @@ const EventCalendar = () => {
       .filter((e) => new Date(e.startDate) >= new Date())
       .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
   }, [events, userBarangay, user, user]);
+
+  const deletableEvents = useMemo(() => {
+    if (!user) return [];
+    return upcomingEvents.filter(
+      (e) => String(e.sender?._id) === String(user._id),
+    );
+  }, [upcomingEvents, user]);
 
   /* ===================== CALENDAR RENDER ===================== */
   const renderCalendar = () => {
@@ -543,13 +557,14 @@ const EventCalendar = () => {
                         type="checkbox"
                         className="mr-2"
                         checked={
-                          upcomingEvents.length > 0 &&
-                          selectedEventIds.size === upcomingEvents.length
+                          user &&
+                          selectedEventIds.size === deletableEvents.length
                         }
                         onChange={(e) => {
+                          if (!user) return;
                           if (e.target.checked) {
                             setSelectedEventIds(
-                              new Set(upcomingEvents.map((ev) => ev._id)),
+                              new Set(deletableEvents.map((ev) => ev._id)),
                             );
                           } else {
                             setSelectedEventIds(new Set());
@@ -602,17 +617,20 @@ const EventCalendar = () => {
                             key={evt._id}
                             className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
                           >
-                            <input
-                              type="checkbox"
-                              className="mr-2 mb-2"
-                              checked={selectedEventIds.has(evt._id)}
-                              onChange={() => {
-                                const copy = new Set(selectedEventIds);
-                                if (copy.has(evt._id)) copy.delete(evt._id);
-                                else copy.add(evt._id);
-                                setSelectedEventIds(copy);
-                              }}
-                            />
+                            {user &&
+                              String(evt.sender?._id) === String(user._id) && (
+                                <input
+                                  type="checkbox"
+                                  className="mr-2 mb-2"
+                                  checked={selectedEventIds.has(evt._id)}
+                                  onChange={() => {
+                                    const copy = new Set(selectedEventIds);
+                                    if (copy.has(evt._id)) copy.delete(evt._id);
+                                    else copy.add(evt._id);
+                                    setSelectedEventIds(copy);
+                                  }}
+                                />
+                              )}
                             <div className="flex items-start gap-2.5 mb-2.5">
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
                                 <CalendarIcon className="w-5 h-5 text-white" />
@@ -626,6 +644,17 @@ const EventCalendar = () => {
                                     {evt.body}
                                   </p>
                                 )}
+                                {user &&
+                                  String(evt.sender?._id) ===
+                                    String(user._id) && (
+                                    <button
+                                      onClick={() => handleDeleteEvent(evt._id)}
+                                      className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
+                                    >
+                                      <Trash2 size={14} />
+                                      Cancel
+                                    </button>
+                                  )}
                               </div>
                             </div>
 
@@ -760,6 +789,16 @@ const EventCalendar = () => {
                         <p className="text-xs text-slate-700 mb-2.5 p-2.5 bg-white rounded-lg border border-blue-200">
                           {evt.body}
                         </p>
+                      )}
+
+                      {user && String(evt.sender?._id) === String(user._id) && (
+                        <button
+                          onClick={() => handleDeleteEvent(evt._id)}
+                          className="mb-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
+                        >
+                          <Trash2 size={14} />
+                          Cancel
+                        </button>
                       )}
 
                       <div className="space-y-1.5">

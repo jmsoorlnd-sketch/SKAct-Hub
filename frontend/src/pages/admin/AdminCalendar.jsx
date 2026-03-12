@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
 import axios from "axios";
 import {
   Calendar as CalendarIcon,
@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import ConfirmationModal from "../../components/popforms/eventComponents/ConfirmationModals";
+import { AuthContext } from "../../context/AuthContext";
 import StatCard from "../../components/popforms/eventComponents/StatCard";
 import DateModal from "../../components/popforms/eventComponents/DateModal";
 
@@ -67,6 +68,8 @@ const AdminCalendar = () => {
     }
   };
 
+  const { user } = useContext(AuthContext);
+
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -82,6 +85,9 @@ const AdminCalendar = () => {
 
       // show every activity received from the server (admins can view all barangay events)
       setEvents(res.data.activities || []);
+
+      // clear selection if events were updated (owner may differ)
+      setSelectedEventIds(new Set());
     } catch (error) {
       console.error("Failed to fetch events:", error);
     } finally {
@@ -120,6 +126,12 @@ const AdminCalendar = () => {
 
   /* ===================== EVENT HANDLERS ===================== */
   const handleDeleteEvent = (eventId) => {
+    // only allow delete if current user is sender
+    const evt = events.find((e) => e._id === eventId);
+    if (!evt || !user || String(evt.sender?._id) !== String(user._id)) {
+      // silently ignore or could show warning
+      return;
+    }
     // open confirmation modal with single id
     setConfirmationModal({
       isOpen: true,
@@ -689,14 +701,23 @@ const AdminCalendar = () => {
                         type="checkbox"
                         className="mr-2"
                         checked={
-                          sortedEvents.length > 0 &&
-                          selectedEventIds.size === sortedEvents.length
+                          user &&
+                          selectedEventIds.size ===
+                            sortedEvents.filter(
+                              (ev) =>
+                                String(ev.sender?._id) === String(user._id),
+                            ).length
                         }
                         onChange={(e) => {
+                          if (!user) return;
                           if (e.target.checked) {
-                            setSelectedEventIds(
-                              new Set(sortedEvents.map((ev) => ev._id)),
-                            );
+                            const ownedIds = sortedEvents
+                              .filter(
+                                (ev) =>
+                                  String(ev.sender?._id) === String(user._id),
+                              )
+                              .map((ev) => ev._id);
+                            setSelectedEventIds(new Set(ownedIds));
                           } else {
                             setSelectedEventIds(new Set());
                           }
@@ -753,11 +774,20 @@ const AdminCalendar = () => {
                                 className="mt-2"
                                 checked={selectedEventIds.has(evt._id)}
                                 onChange={() => {
+                                  if (
+                                    !user ||
+                                    String(evt.sender?._id) !== String(user._id)
+                                  )
+                                    return;
                                   const copy = new Set(selectedEventIds);
                                   if (copy.has(evt._id)) copy.delete(evt._id);
                                   else copy.add(evt._id);
                                   setSelectedEventIds(copy);
                                 }}
+                                disabled={
+                                  !user ||
+                                  String(evt.sender?._id) !== String(user._id)
+                                }
                               />
                               <div className="flex-1">
                                 <div className="flex items-start gap-3 mb-3">
@@ -826,13 +856,17 @@ const AdminCalendar = () => {
                                     </div>
                                   )}
                               </div>
-                              <button
-                                onClick={() => handleDeleteEvent(evt._id)}
-                                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
-                              >
-                                <Trash2 size={16} />
-                                <span>Cancel</span>
-                              </button>
+                              {user &&
+                                evt.sender &&
+                                String(user._id) === String(evt.sender._id) && (
+                                  <button
+                                    onClick={() => handleDeleteEvent(evt._id)}
+                                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
+                                  >
+                                    <Trash2 size={16} />
+                                    <span>Cancel</span>
+                                  </button>
+                                )}
                             </div>
                           </div>
                         );
@@ -852,6 +886,7 @@ const AdminCalendar = () => {
           barangays={barangays}
           onClose={() => setShowDateModal(false)}
           onDelete={handleDeleteEvent}
+          user={user}
         />
       )}
       {/* Confirmation modal for bulk actions */}

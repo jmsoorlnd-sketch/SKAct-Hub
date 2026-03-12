@@ -1,7 +1,7 @@
 import React from "react";
 import { CalendarIcon, Clock, MapPin, Trash2 } from "lucide-react";
 
-const DateModal = ({ date, events, barangays, onClose, onDelete }) => {
+const DateModal = ({ date, events, barangays, onClose, onDelete, user }) => {
   return (
     <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -118,13 +118,17 @@ const DateModal = ({ date, events, barangays, onClose, onDelete }) => {
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => onDelete(evt._id)}
-                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
-                  >
-                    <Trash2 size={16} />
-                    <span>Cancel</span>
-                  </button>
+                  {user &&
+                    evt.sender &&
+                    String(user._id) === String(evt.sender._id) && (
+                      <button
+                        onClick={() => onDelete(evt._id)}
+                        className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
+                      >
+                        <Trash2 size={16} />
+                        <span>Cancel</span>
+                      </button>
+                    )}
                 </div>
               </div>
             );

@@ -314,6 +314,18 @@ export const deleteMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
 
+    // ensure the message exists and the requester is the original sender
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (String(msg.sender) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: "Only the message sender can delete this item" });
+    }
+
     await Message.findByIdAndDelete(messageId);
 
     res.status(200).json({ message: "Message deleted successfully" });
