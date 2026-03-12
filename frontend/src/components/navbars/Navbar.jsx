@@ -32,11 +32,14 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
       console.log("Fetching search for:", q);
       console.log("Token:", token ? "exists" : "missing");
 
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
+      const res = await fetch(
+        `http://localhost:5000/api/search?q=${encodeURIComponent(q)}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
         },
-      });
+      );
 
       console.log("Search response status:", res.status);
 

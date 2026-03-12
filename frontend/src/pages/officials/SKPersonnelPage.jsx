@@ -144,9 +144,12 @@ const SKPersonnelPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/sk-personnel/${normalizedId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/sk-personnel/${normalizedId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -200,7 +203,7 @@ const SKPersonnelPage = () => {
       else if (position === "secretary") endpoint = "treasurer";
 
       const response = await fetch(
-        `/api/sk-personnel/${barangayId}/${endpoint}`,
+        `http://localhost:5000/api/sk-personnel/${barangayId}/${endpoint}`,
         {
           method: "PUT",
           headers: {
@@ -248,20 +251,23 @@ const SKPersonnelPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/sk-personnel/${barangayId}/kagawad`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `http://localhost:5000/api/sk-personnel/${barangayId}/kagawad`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            surname: kagawadForm.surname,
+            firstName: kagawadForm.firstName,
+            middleName: kagawadForm.middleName,
+            age: parseInt(kagawadForm.age),
+            status: kagawadForm.status,
+          }),
         },
-        body: JSON.stringify({
-          surname: kagawadForm.surname,
-          firstName: kagawadForm.firstName,
-          middleName: kagawadForm.middleName,
-          age: parseInt(kagawadForm.age),
-          status: kagawadForm.status,
-        }),
-      });
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -297,7 +303,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `/api/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
+        `http://localhost:5000/api/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
         {
           method: "PUT",
           headers: {
@@ -333,7 +339,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `/api/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
+        `http://localhost:5000/api/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
