@@ -262,16 +262,6 @@ const Signin = () => {
                 </div>
               </div>
 
-              {/* Forgot Password */}
-              <div className="flex items-center justify-end">
-                <a
-                  href="#"
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
-
               {/* Submit Button */}
               <button
                 type="submit"

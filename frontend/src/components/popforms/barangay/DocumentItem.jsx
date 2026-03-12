@@ -176,6 +176,57 @@ const DocumentItem = ({
             </button>
             {showMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white border-2 border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                {/* Status controls - only if user can modify */}
+                {(user?.role === "Official" || user?.role === "Admin") && (
+                  <>
+                    <button
+                      onClick={() => {
+                        openConfirmationModal(
+                          "pending",
+                          item._id,
+                          null,
+                          "Set Pending",
+                          "Change document status to pending?",
+                        );
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm text-slate-700 font-semibold transition-colors"
+                    >
+                      Pending
+                    </button>
+                    <button
+                      onClick={() => {
+                        openConfirmationModal(
+                          "ongoing",
+                          item._id,
+                          null,
+                          "Set Ongoing",
+                          "Change document status to ongoing?",
+                        );
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm text-slate-700 font-semibold transition-colors"
+                    >
+                      Ongoing
+                    </button>
+                    <button
+                      onClick={() => {
+                        openConfirmationModal(
+                          "completed",
+                          item._id,
+                          null,
+                          "Set Completed",
+                          "Change document status to completed?",
+                        );
+                        setShowMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-3 hover:bg-slate-50 text-sm text-slate-700 font-semibold transition-colors"
+                    >
+                      Completed
+                    </button>
+                    <div className="border-t border-slate-200" />
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setShowCalendarModal(true);
@@ -195,6 +246,20 @@ const DocumentItem = ({
       <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
         {String(item.document?.sender?._id) === String(user?._id) && (
           <>
+            <button
+              onClick={() =>
+                openConfirmationModal(
+                  "pending",
+                  item.document?._id,
+                  null,
+                  "Mark as Pending",
+                  "Are you sure you want to mark this document as pending?",
+                )
+              }
+              className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 hover:from-slate-200 hover:to-slate-100 text-slate-700 rounded-lg text-sm font-semibold border-2 border-slate-200 transition-all"
+            >
+              Mark Pending
+            </button>
             <button
               onClick={() =>
                 openConfirmationModal(

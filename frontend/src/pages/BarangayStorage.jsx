@@ -657,8 +657,23 @@ const BarangayStorage = () => {
   const handleConfirmAction = async () => {
     const { action, messageId, docId } = confirmationModal;
 
-    if (action === "ongoing" || action === "completed") {
+    if (
+      action === "ongoing" ||
+      action === "completed" ||
+      action === "pending"
+    ) {
       await handleUpdateStatus(messageId, action);
+      // Update the modal's displayed document with new status
+      if (folderModalSelectedDoc) {
+        setFolderModalSelectedDoc((prev) => ({
+          ...prev,
+          document: {
+            ...prev.document,
+            status: action,
+          },
+          status: action,
+        }));
+      }
     } else if (action === "remove") {
       // validate references before calling backend
       if (!selectedBarangay || !docId) {
@@ -2526,21 +2541,69 @@ const BarangayStorage = () => {
                       )}
 
                       {user?.role === "Official" && (
-                        <button
-                          onClick={() => {
-                            setFolderModalShowUploadForm(
-                              !folderModalShowUploadForm,
-                            );
-                          }}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                            folderModalShowUploadForm
-                              ? "bg-indigo-600 text-white shadow-md"
-                              : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
-                          }`}
-                        >
-                          <Plus size={16} />
-                          <span>Post Update</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => {
+                              setFolderModalShowUploadForm(
+                                !folderModalShowUploadForm,
+                              );
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                              folderModalShowUploadForm
+                                ? "bg-indigo-600 text-white shadow-md"
+                                : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                            }`}
+                          >
+                            <Plus size={16} />
+                            <span>Post Update</span>
+                          </button>
+
+                          {/* status change buttons inline */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() =>
+                                openConfirmationModal(
+                                  "pending",
+                                  folderModalSelectedDoc.document._id,
+                                  null,
+                                  "Mark as Pending",
+                                  "Change document status to pending?",
+                                )
+                              }
+                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
+                            >
+                              Pending
+                            </button>
+                            <button
+                              onClick={() =>
+                                openConfirmationModal(
+                                  "ongoing",
+                                  folderModalSelectedDoc.document._id,
+                                  null,
+                                  "Mark as Ongoing",
+                                  "Change document status to ongoing?",
+                                )
+                              }
+                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 hover:bg-amber-200 transition-all"
+                            >
+                              Ongoing
+                            </button>
+                            <button
+                              onClick={() =>
+                                openConfirmationModal(
+                                  "completed",
+                                  folderModalSelectedDoc.document._id,
+                                  null,
+                                  "Mark as Completed",
+                                  "Change document status to completed?",
+                                )
+                              }
+                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all"
+                            >
+                              Completed
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
 
@@ -2834,6 +2897,35 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
+
+      {/* Document/Message Status Confirmation Modal */}
+      {confirmationModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4 text-slate-900">
+              {confirmationModal.title}
+            </h2>
+            <p className="mb-6 text-slate-700 text-sm">
+              {confirmationModal.message}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeConfirmationModal}
+                className="px-6 py-2 bg-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-slate-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Folder Status Confirmation Modal */}
       {statusConfirm.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
