@@ -4,7 +4,7 @@ import BarangayStorage from "../models/BarangayStorageModel.js";
 import Barangay from "../models/BarangayModel.js";
 import Folder from "../models/FolderModel.js";
 import ActivityUpdate from "../models/ActivityUpdateModel.js";
-
+import Notification from "../models/NotificationModel.js";
 // Send a message
 export const sendMessage = async (req, res) => {
   try {
@@ -70,6 +70,45 @@ export const sendMessage = async (req, res) => {
 
     await message.populate("sender", "username email role");
     await message.populate("recipient", "username email role");
+
+    // Send notifications to users if this is an admin-scheduled event
+    if (isAdminEvent && message.startDate) {
+      try {
+        let targetUsers;
+
+        if (barangayId) {
+          // Only notify users in the specific barangay
+          targetUsers = await User.find({
+            barangay: barangayId,
+            role: { $in: ["Youth", "Official"] }, // Only notify non-admin users
+          });
+        } else {
+          // Notify all users
+          targetUsers = await User.find({
+            role: { $in: ["Youth", "Official"] }, // Only notify non-admin users
+          });
+        }
+
+        // Create notification records for each user
+        const notificationPromises = targetUsers.map((user) =>
+          Notification.updateOne(
+            { user: user._id, notificationId: message._id.toString() },
+            {
+              user: user._id,
+              notificationId: message._id.toString(),
+              type: "activity",
+              seen: false,
+            },
+            { upsert: true },
+          ),
+        );
+
+        await Promise.all(notificationPromises);
+      } catch (notificationError) {
+        console.error("Error creating notifications:", notificationError);
+        // Don't fail the entire operation if notifications fail
+      }
+    }
 
     res.status(201).json({
       message: "Message sent successfully",

@@ -11,6 +11,8 @@ import {
   Trash2,
   CalendarDays,
   TrendingUp,
+  Plus,
+  AlertCircle,
 } from "lucide-react";
 import ConfirmationModal from "../../components/popforms/eventComponents/ConfirmationModals";
 import StatCard from "../../components/popforms/eventComponents/StatCard";
@@ -34,6 +36,19 @@ const AdminCalendar = () => {
   // Modals
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
+  const [showCreateEventForm, setShowCreateEventForm] = useState(false);
+  const [creatingEvent, setCreatingEvent] = useState(false);
+  const [createEventMessage, setCreateEventMessage] = useState("");
+
+  // Event creation form state
+  const [eventFormData, setEventFormData] = useState({
+    subject: "",
+    body: "",
+    startDate: "",
+    endDate: "",
+    visibility: "all", // "all" or "specific"
+    barangayId: "",
+  });
 
   /* ===================== DATA FETCHING ===================== */
   useEffect(() => {
@@ -148,6 +163,68 @@ const AdminCalendar = () => {
     setShowDateModal(false);
     fetchEvents();
     closeConfirmationModal();
+  };
+
+  /* ===================== EVENT CREATION ===================== */
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+
+    if (!eventFormData.subject || !eventFormData.startDate) {
+      setCreateEventMessage("Please fill in required fields");
+      return;
+    }
+
+    setCreatingEvent(true);
+    setCreateEventMessage("");
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const payload = {
+        subject: eventFormData.subject,
+        body: eventFormData.body,
+        startDate: eventFormData.startDate,
+        endDate: eventFormData.endDate,
+        recipient: "admin",
+        barangayId:
+          eventFormData.visibility === "specific"
+            ? eventFormData.barangayId
+            : null,
+      };
+
+      const response = await axios.post(
+        "http://localhost:5000/api/messages/send",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (response.status === 201) {
+        setCreateEventMessage("Event created successfully!");
+        setEventFormData({
+          subject: "",
+          body: "",
+          startDate: "",
+          endDate: "",
+          visibility: "all",
+          barangayId: "",
+        });
+        setShowCreateEventForm(false);
+        fetchEvents();
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setCreateEventMessage(""), 3000);
+      }
+    } catch (error) {
+      console.error("Failed to create event:", error);
+      setCreateEventMessage(
+        error.response?.data?.message ||
+          "Failed to create event. Please try again.",
+      );
+    } finally {
+      setCreatingEvent(false);
+    }
   };
 
   /* ===================== STATISTICS ===================== */
@@ -273,9 +350,235 @@ const AdminCalendar = () => {
           <div className="mb-4">
             <h1 className="text-2xl font-bold">Event Calendar</h1>
             <p className="text-slate-600 mt-1 text-sm">
-              View barangay events created by officials
+              View and create events for all barangays or specific barangays
             </p>
           </div>
+
+          {/* Create Event Button */}
+          <button
+            onClick={() => setShowCreateEventForm(!showCreateEventForm)}
+            className="mb-6 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-2 transition-colors"
+          >
+            <Plus size={20} />
+            Create Event
+          </button>
+
+          {/* Create Event Form */}
+          {showCreateEventForm && (
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-slate-900">
+                  Create New Event
+                </h3>
+                <button
+                  onClick={() => setShowCreateEventForm(false)}
+                  className="text-slate-500 hover:text-slate-700"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {createEventMessage && (
+                <div
+                  className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
+                    createEventMessage.includes("successfully")
+                      ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                      : "bg-red-100 text-red-700 border-2 border-red-200"
+                  }`}
+                >
+                  <AlertCircle size={18} />
+                  {createEventMessage}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateEvent} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Event Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={eventFormData.subject}
+                    onChange={(e) =>
+                      setEventFormData({
+                        ...eventFormData,
+                        subject: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="e.g., Youth Leadership Summit"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={eventFormData.body}
+                    onChange={(e) =>
+                      setEventFormData({
+                        ...eventFormData,
+                        body: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    placeholder="Event details and description..."
+                    rows="3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Start Date & Time *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={eventFormData.startDate}
+                      onChange={(e) =>
+                        setEventFormData({
+                          ...eventFormData,
+                          startDate: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      End Date & Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={eventFormData.endDate}
+                      onChange={(e) =>
+                        setEventFormData({
+                          ...eventFormData,
+                          endDate: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
+                    Event Visibility
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="all"
+                        checked={eventFormData.visibility === "all"}
+                        onChange={(e) =>
+                          setEventFormData({
+                            ...eventFormData,
+                            visibility: e.target.value,
+                            barangayId: "",
+                          })
+                        }
+                        className="w-4 h-4 bg-green-600 accent-green-600"
+                      />
+                      <span className="font-semibold text-slate-900">
+                        All Barangays
+                      </span>
+                      <span className="text-sm text-slate-600">
+                        Everyone can see this event
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="specific"
+                        checked={eventFormData.visibility === "specific"}
+                        onChange={(e) =>
+                          setEventFormData({
+                            ...eventFormData,
+                            visibility: e.target.value,
+                          })
+                        }
+                        className="w-4 h-4 bg-green-600 accent-green-600"
+                      />
+                      <span className="font-semibold text-slate-900">
+                        Specific Barangay
+                      </span>
+                      <span className="text-sm text-slate-600">
+                        Only selected barangay can see this event
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {eventFormData.visibility === "specific" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-900 mb-2">
+                      Select Barangay *
+                    </label>
+                    <select
+                      value={eventFormData.barangayId}
+                      onChange={(e) =>
+                        setEventFormData({
+                          ...eventFormData,
+                          barangayId: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    >
+                      <option value="">Choose a barangay...</option>
+                      {barangays.map((barangay) => (
+                        <option key={barangay._id} value={barangay._id}>
+                          {barangay.barangayName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={creatingEvent}
+                    className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
+                  >
+                    {creatingEvent ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={18} />
+                        Create Event
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateEventForm(false);
+                      setCreateEventMessage("");
+                      setEventFormData({
+                        subject: "",
+                        body: "",
+                        startDate: "",
+                        endDate: "",
+                        visibility: "all",
+                        barangayId: "",
+                      });
+                    }}
+                    className="flex-1 px-4 py-3 bg-slate-300 hover:bg-slate-400 text-slate-900 rounded-lg font-bold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -464,9 +767,16 @@ const AdminCalendar = () => {
                                     <CalendarIcon className="w-6 h-6 text-white" />
                                   </div>
                                   <div>
-                                    <h4 className="font-bold text-slate-900 text-lg">
-                                      {evt.subject}
-                                    </h4>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-bold text-slate-900 text-lg">
+                                        {evt.subject}
+                                      </h4>
+                                      {evt.isAdminScheduled && (
+                                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+                                          Admin Event
+                                        </span>
+                                      )}
+                                    </div>
                                     {evt.body && (
                                       <p className="text-sm text-slate-600 mt-1">
                                         {evt.body}
