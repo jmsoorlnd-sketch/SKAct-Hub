@@ -1077,6 +1077,7 @@ const BarangayStorage = () => {
                 )}
                 {user &&
                   user.role !== "Admin" &&
+                  user.role !== "Official" &&
                   selectedBarangay &&
                   String(user?.barangay?._id || user?.barangay) ===
                     String(selectedBarangay) && (
