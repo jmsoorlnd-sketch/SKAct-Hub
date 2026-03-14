@@ -15,7 +15,7 @@ import {
   CheckCircle,
   RefreshCw as RefreshIcon,
 } from "lucide-react";
-import { useToast } from "../../Toast";
+import { useToast } from "../Toast";
 
 /* ===================== CONSTANTS ===================== */
 const API_BASE = "http://localhost:5000/api";

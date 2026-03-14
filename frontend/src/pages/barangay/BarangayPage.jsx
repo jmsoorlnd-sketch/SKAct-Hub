@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../../layout/Layout";
-import AddBarangay from "../../components/popforms/barangay/AddBarangay";
+// import AddBarangay from "../../components/barangayStorageComponents/AddBarangay";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -19,7 +19,7 @@ const BarangayPage = () => {
           "http://localhost:5000/api/barangays/all-barangays",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setBarangays(res.data.barangays || []);
       } catch (error) {
@@ -38,7 +38,7 @@ const BarangayPage = () => {
           "http://localhost:5000/api/admins/getofficials",
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         setOfficials(res.data);
       } catch (error) {
@@ -51,7 +51,7 @@ const BarangayPage = () => {
   // Get officials for a specific barangay
   const getBarangayOfficials = (barangayId) => {
     return officials.filter(
-      (official) => official.barangay?._id === barangayId
+      (official) => official.barangay?._id === barangayId,
     );
   };
 
@@ -61,7 +61,7 @@ const BarangayPage = () => {
       (official) =>
         official.barangay?._id === barangayId &&
         official.position === "Chairman" &&
-        official.status === "Active"
+        official.status === "Active",
     );
     return chairman
       ? `${chairman.firstname} ${chairman.lastname}`
@@ -71,7 +71,7 @@ const BarangayPage = () => {
   // Count SK Officials (excluding Chairman)
   const countSkOfficials = (barangayId) => {
     return officials.filter(
-      (official) => official.barangay?._id === barangayId && official.position
+      (official) => official.barangay?._id === barangayId && official.position,
     ).length;
   };
 

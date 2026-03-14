@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,7 +15,6 @@ import {
 
 /* ===================== CONSTANTS ===================== */
 const API_BASE = "http://localhost:5000/api";
-
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -23,73 +22,20 @@ const getAuthHeaders = () => {
 
 /* ===================== MAIN COMPONENT ===================== */
 const AdminNotification = () => {
-  /* ==================== STATE ==================== */
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const tokenRef = useRef(localStorage.getItem("token"));
 
-  /* ==================== DATA FETCHING ==================== */
-  useEffect(() => {
-    fetchAllNotifications();
-  }, []);
-
-  const fetchAllNotifications = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("No authorization token found. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      const allNotifications = [];
-
-      // 1) Pending messages
-      await fetchPendingMessages(allNotifications, token);
-
-      // 2) Barangay updates
-      await fetchBarangayUpdates(allNotifications, token);
-
-      // 3) Activities
-      await fetchActivities(allNotifications, token);
-
-      // Sort by time
-      allNotifications.sort((a, b) => new Date(b.time) - new Date(a.time));
-
-      // Load seen status from backend
-      const seenStatusResponse = await axios.get(
-        `${API_BASE}/notifications/status`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      const seenMap = seenStatusResponse.data.seenStatuses || {};
-
-      const withSeenStatus = allNotifications.map((n) => ({
-        ...n,
-        seen: seenMap[n.id] || false,
-      }));
-
-      setNotifications(withSeenStatus);
-    } catch (err) {
-      console.error("Failed to load notifications:", err);
-      setError("Failed to load notifications. Please try again.");
-      setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPendingMessages = async (allNotifications, token) => {
+  /* ===================== FETCH FUNCTIONS ===================== */
+  const fetchPendingMessages = async () => {
     try {
       const res = await axios.get(`${API_BASE}/messages/inbox`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       const inbox = res.data.messages || [];
-
-      const pendingNotifs = inbox
+      return inbox
         .filter((m) => m.status === "pending")
         .map((m) => ({
           type: "message_pending",
@@ -100,85 +46,83 @@ const AdminNotification = () => {
           meta: { messageId: m._id },
           icon: "message",
         }));
-
-      allNotifications.push(...pendingNotifs);
     } catch (err) {
       console.error("Failed to fetch pending messages:", err);
+      return [];
     }
   };
 
-  const fetchBarangayUpdates = async (allNotifications, token) => {
+  const fetchBarangayUpdates = async () => {
     try {
       const res = await axios.get(`${API_BASE}/barangays/all-barangays`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       const barangays = res.data.barangays || [];
 
-      await Promise.all(
+      const allBarangayNotifs = await Promise.all(
         barangays.map(async (b) => {
           try {
             const storageRes = await axios.get(
               `${API_BASE}/barangays/${b._id}/storage`,
-              { headers: { Authorization: `Bearer ${token}` } },
+              { headers: getAuthHeaders() },
             );
             const storage = storageRes.data.storage || [];
+
+            const formatNotif = (s, type) => ({
+              type,
+              id: s._id,
+              title: `${type === "barangay_ongoing" ? "Ongoing" : "Completed"}: ${b.barangayName || b.barangay}`,
+              subtitle: s.documentName || s.document?.subject || "Project",
+              time: s.createdAt || s.updatedAt,
+              meta: { barangayId: b._id },
+              icon: type === "barangay_ongoing" ? "ongoing" : "completed",
+            });
 
             const ongoing = storage
               .filter((s) => (s.document?.status || s.status) === "ongoing")
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
               .slice(0, 2)
-              .map((s) => ({
-                type: "barangay_ongoing",
-                id: s._id,
-                title: `Ongoing: ${b.barangayName || b.barangay}`,
-                subtitle: s.documentName || s.document?.subject || "Project",
-                time: s.createdAt || s.updatedAt,
-                meta: { barangayId: b._id },
-                icon: "ongoing",
-              }));
+              .map((s) => formatNotif(s, "barangay_ongoing"));
 
             const completed = storage
               .filter((s) => (s.document?.status || s.status) === "completed")
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
               .slice(0, 2)
-              .map((s) => ({
-                type: "barangay_completed",
-                id: s._id,
-                title: `Completed: ${b.barangayName || b.barangay}`,
-                subtitle: s.documentName || s.document?.subject || "Project",
-                time: s.createdAt || s.updatedAt,
-                meta: { barangayId: b._id },
-                icon: "completed",
-              }));
+              .map((s) => formatNotif(s, "barangay_completed"));
 
-            allNotifications.push(...ongoing, ...completed);
+            return [...ongoing, ...completed];
           } catch (err) {
             console.error(`Failed to fetch storage for ${b._id}:`, err);
+            return [];
           }
         }),
       );
+
+      return allBarangayNotifs.flat();
     } catch (err) {
       console.error("Failed to fetch barangays:", err);
+      return [];
     }
   };
 
-  const fetchActivities = async (allNotifications, token) => {
+  const fetchActivities = async () => {
     try {
       const res = await axios.get(`${API_BASE}/messages/activities`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: getAuthHeaders(),
       });
       const activities = res.data.activities || [];
       const now = Date.now();
 
+      // Upcoming activities
       const upcoming = activities
         .filter((a) => a.startDate)
         .map((a) => {
           const start = new Date(a.startDate).getTime();
           const timeLeft = start - now;
-          return { a, start, timeLeft };
+          return { a, timeLeft };
         })
         .filter(({ timeLeft }) => timeLeft > 0)
-        .sort((x, y) => x.start - y.start)
+        .sort((x, y) => new Date(x.a.startDate) - new Date(y.a.startDate))
         .slice(0, 10)
         .map(({ a, timeLeft }) => ({
           type: "activity",
@@ -191,111 +135,114 @@ const AdminNotification = () => {
           icon: "activity",
         }));
 
-      allNotifications.push(...upcoming);
+      // Activity updates
+      const updatesPromises = activities.map(async (a) => {
+        try {
+          const updatesRes = await axios.get(
+            `${API_BASE}/messages/${a._id}/activity-updates`,
+            { headers: getAuthHeaders() },
+          );
+          const updates = updatesRes.data.updates || [];
+          if (updates.length === 0) return [];
+          const latest = updates[0];
+          return {
+            type: "activity_update",
+            id: latest._id,
+            title: `New update: ${a.subject}`,
+            subtitle: `${latest.uploadedBy?.firstname || ""} ${latest.uploadedBy?.lastname || ""}`,
+            time: latest.createdAt,
+            meta: { documentId: a._id },
+            note: latest.caption || "",
+            icon: "activity_update",
+          };
+        } catch (err) {
+          console.error(`Failed to fetch updates for ${a._id}:`, err);
+          return [];
+        }
+      });
 
-      await Promise.all(
-        activities.map(async (a) => {
-          try {
-            const updatesRes = await axios.get(
-              `${API_BASE}/messages/${a._id}/activity-updates`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            );
-            const updates = updatesRes.data.updates || [];
-
-            if (updates.length > 0) {
-              const latest = updates[0];
-              allNotifications.push({
-                type: "activity_update",
-                id: latest._id,
-                title: `New update: ${a.subject}`,
-                subtitle: `${latest.uploadedBy?.firstname || ""} ${latest.uploadedBy?.lastname || ""}`,
-                time: latest.createdAt,
-                meta: { documentId: a._id },
-                note: latest.caption || "",
-                icon: "activity_update",
-              });
-            }
-          } catch (err) {
-            console.error(`Failed to fetch updates for ${a._id}:`, err);
-          }
-        }),
-      );
+      const updatesNotifications = (await Promise.all(updatesPromises)).flat();
+      return [...upcoming, ...updatesNotifications];
     } catch (err) {
       console.error("Failed to fetch activities:", err);
+      return [];
     }
   };
 
-  /* ==================== SEEN/UNSEEN TRACKING ==================== */
+  /* ===================== MAIN FETCH ===================== */
+  useEffect(() => {
+    const fetchAll = async () => {
+      if (!tokenRef.current) return setError("No auth token");
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [messages, barangays, activities] = await Promise.all([
+          fetchPendingMessages(),
+          fetchBarangayUpdates(),
+          fetchActivities(),
+        ]);
+
+        // Load seen statuses
+        const res = await axios.get(`${API_BASE}/notifications/status`, {
+          headers: getAuthHeaders(),
+        });
+        const seenMap = res.data.seenStatuses || {};
+
+        setNotifications(
+          [...messages, ...barangays, ...activities].map((n) => ({
+            ...n,
+            seen: seenMap[n.id] || false,
+          })),
+        );
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load notifications");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, []);
+
+  /* ==================== SEEN/UNSEEN ==================== */
   const markAsSeen = async (notificationId) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found");
-        return;
-      }
-
-      console.log("Marking notification as seen:", notificationId);
-
-      // Call API to mark as seen in database
+      if (!tokenRef.current) return;
       await axios.put(
         `${API_BASE}/notifications/${notificationId}/seen`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: getAuthHeaders() },
       );
-
-      // Update local state immediately
       setNotifications((prev) =>
         prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n)),
       );
-
-      // Dispatch custom event to notify Sidebar
       window.dispatchEvent(new Event("notificationMarkedAsSeen"));
-      console.log("Dispatched notificationMarkedAsSeen event");
     } catch (err) {
-      console.error(
-        "Failed to mark notification as seen:",
-        err.response?.data || err.message,
-      );
+      console.error(err);
     }
   };
 
   const markAllAsSeen = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found");
-        return;
-      }
-
-      console.log("Marking all notifications as seen");
-
-      // Call API to mark all as seen in database
+      if (!tokenRef.current) return;
       await axios.put(
         `${API_BASE}/notifications/all/seen`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: getAuthHeaders() },
       );
-
-      // Update local state immediately
       setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
-
-      // Dispatch custom event to notify Sidebar
       window.dispatchEvent(new Event("allNotificationsMarkedAsSeen"));
-      console.log("Dispatched allNotificationsMarkedAsSeen event");
     } catch (err) {
-      console.error(
-        "Failed to mark all notifications as seen:",
-        err.response?.data || err.message,
-      );
+      console.error(err);
     }
   };
 
   /* ==================== NAVIGATION ==================== */
   const handleClick = async (notification) => {
-    // Mark as seen first
     await markAsSeen(notification.id);
 
-    // Then navigate
     switch (notification.type) {
       case "message_pending":
         navigate("/admin/dashboard", {
@@ -319,9 +266,7 @@ const AdminNotification = () => {
     }
   };
 
-  /* ==================== RENDER HELPERS ==================== */
   const unseenCount = notifications.filter((n) => !n.seen).length;
-
   const getNotificationIcon = (iconType) => {
     const configs = {
       activity: { icon: Clock, color: "from-purple-500 to-purple-600" },
@@ -337,7 +282,6 @@ const AdminNotification = () => {
       configs[iconType] || { icon: Bell, color: "from-slate-500 to-slate-600" }
     );
   };
-
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

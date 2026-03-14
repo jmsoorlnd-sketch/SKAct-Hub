@@ -25,11 +25,11 @@ import {
   Activity,
   Edit,
 } from "lucide-react";
-import DocumentItem from "../components/popforms/barangay/DocumentItem";
+import DocumentItem from "../components/barangayStorageComponents/DocumentItem";
 import { useToast } from "../components/Toast";
 
 const AddBarangay = lazy(
-  () => import("../components/popforms/barangay/AddBarangay"),
+  () => import("../components/barangayStorageComponents/AddBarangay"),
 );
 // Wrap modal in Suspense
 

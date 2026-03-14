@@ -1,5 +1,5 @@
 import React from "react";
-import RowActions from "../popforms/official/RowActions";
+import RowActions from "../official/RowActions";
 import { Users, UserCheck, UserX, Briefcase, Mail, MapPin } from "lucide-react";
 
 const OfficialsTable = ({

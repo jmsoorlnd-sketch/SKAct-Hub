@@ -7,16 +7,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks
-          "react-vendor": ["react", "react-dom", "react-router-dom"],
-          "axios-vendor": ["axios"],
-          "lucide-vendor": ["lucide-react"],
-
-          // Feature chunks
-          modals: ["./src/components/popforms/barangay/AddBarangay"],
+          reactVendor: ["react", "react-dom"],
+          router: ["react-router-dom"],
+          icons: ["lucide-react"],
+          axios: ["axios"],
         },
       },
     },
-    chunkSizeWarningLimit: 600,
   },
 });

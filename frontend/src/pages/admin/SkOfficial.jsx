@@ -1,35 +1,34 @@
 import { useEffect, useMemo, useState, useContext, useCallback } from "react";
 import axios from "axios";
 import { createPortal } from "react-dom";
-import {
-  UserPlus,
-  Users,
-  X,
-  Calendar,
-  Mail,
-  MessageSquare,
-  Trash2,
-  AlertTriangle,
-} from "lucide-react";
+import { UserPlus, Trash2, AlertTriangle } from "lucide-react";
 
 import { AuthContext } from "../../context/AuthContext";
 import { useToast } from "../../components/Toast";
 
 import { lazy, Suspense } from "react";
 
-import OfficialsStats from "../../components/skOfficialComponents/OfficialsStats";
-import OfficialsTable from "../../components/skOfficialComponents/OfficialsTable";
-import OfficialsFilters from "../../components/skOfficialComponents/OfficialsFilter";
-
 import SkProfileModal from "../../components/skOfficialComponents/SkProfileModal";
 import ConfirmModal from "../../components/ConfirmModal";
 
+const OfficialsFilters = lazy(
+  () => import("../../components/skOfficialComponents/OfficialsFilter"),
+);
+
+const OfficialsStats = lazy(
+  () => import("../../components/skOfficialComponents/OfficialsStats"),
+);
+
+const OfficialsTable = lazy(
+  () => import("../../components/skOfficialComponents/OfficialsTable"),
+);
+
 const CreateOfficialModal = lazy(
-  () => import("../../components/popforms/official/AddOfficial"),
+  () => import("../../components/official/AddOfficial"),
 );
 
 const EditOfficialModal = lazy(
-  () => import("../../components/popforms/official/EditOfficial"),
+  () => import("../../components/official/EditOfficial"),
 );
 
 const API_BASE = "http://localhost:5000/api";
@@ -108,13 +107,17 @@ const SkOfficial = () => {
   };
 
   /* ===================== FILTERED DATA ===================== */
-  const filteredOfficials = useMemo(() => {
-    return officials.filter((o) => {
+  const officialsData = useMemo(() => {
+    let active = 0,
+      inactive = 0;
+    const positionCounts = {};
+    const barangayMap = {};
+
+    const filtered = officials.filter((o) => {
       if (filters.status && o.status !== filters.status) return false;
       if (filters.position && o.position !== filters.position) return false;
       if (filters.barangay && o.barangay?._id !== filters.barangay)
         return false;
-
       if (filters.search) {
         const q = filters.search.toLowerCase();
         return (
@@ -124,11 +127,49 @@ const SkOfficial = () => {
           (o.email || "").toLowerCase().includes(q)
         );
       }
-
       return true;
     });
-  }, [officials, filters]);
 
+    officials.forEach((o) => {
+      // Stats
+      if (o.status === "Active") active++;
+      else inactive++;
+
+      // Position counts
+      positionCounts[o.position] = (positionCounts[o.position] || 0) + 1;
+
+      // Barangays
+      if (o.barangay) {
+        const key = o.barangay._id;
+        if (!barangayMap[key]) {
+          barangayMap[key] = {
+            name: o.barangay.barangayName,
+            count: 0,
+            active: 0,
+          };
+        }
+        barangayMap[key].count++;
+        if (o.status === "Active") barangayMap[key].active++;
+      }
+    });
+
+    return {
+      filteredOfficials: filtered,
+      stats: {
+        total: officials.length,
+        active,
+        inactive,
+        activeRate:
+          officials.length > 0
+            ? ((active / officials.length) * 100).toFixed(1)
+            : 0,
+      },
+      positionCounts,
+      topBarangays: Object.values(barangayMap)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 4),
+    };
+  }, [officials, filters]);
   /* ===================== STATISTICS ===================== */
   const stats = useMemo(() => {
     const total = officials.length;
@@ -230,6 +271,10 @@ const SkOfficial = () => {
       setProfileLoading(false);
     }
   };
+  const PositionBar = ({ position, count, total }) => {
+    const percentage = ((count / total) * 100).toFixed(0);
+    return <div>...</div>;
+  };
 
   /* ===================== RENDER ===================== */
   return (
@@ -267,25 +312,35 @@ const SkOfficial = () => {
           ) : (
             <>
               {/* Key Performance Indicators */}
-              <OfficialsStats stats={stats} barangays={barangays} />{" "}
-              {/* Filters Section */}
-              <OfficialsFilters
-                filters={filters}
-                setFilters={setFilters}
-                barangays={barangays}
-              />
+              <Suspense fallback={<div>Loading...</div>}>
+                <OfficialsStats
+                  stats={officialsData.stats}
+                  barangays={barangays}
+                />
+              </Suspense>
+              <Suspense fallback={<div>Loading...</div>}>
+                {/* Filters Section */}
+                <OfficialsFilters
+                  filters={filters}
+                  setFilters={setFilters}
+                  barangays={barangays}
+                />
+              </Suspense>
+
               {/* Main Content Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-                {/* Officials Table */}
-                <OfficialsTable
-                  officials={officials}
-                  filteredOfficials={filteredOfficials}
-                  setSelectedOfficial={setSelectedOfficial}
-                  toggleStatus={toggleStatus}
-                  setIsEditOpen={setIsEditOpen}
-                  handleDelete={handleDelete}
-                  openProfile={openProfile} // make sure this exists in parent
-                />
+                <Suspense fallback={<div>Loading...</div>}>
+                  {/* Officials Table */}
+                  <OfficialsTable
+                    officials={officials}
+                    filteredOfficials={officialsData.filteredOfficials}
+                    setSelectedOfficial={setSelectedOfficial}
+                    toggleStatus={toggleStatus}
+                    setIsEditOpen={setIsEditOpen}
+                    handleDelete={handleDelete}
+                    openProfile={openProfile} // make sure this exists in parent
+                  />
+                </Suspense>
 
                 {/* Side Panel - Statistics */}
                 <div className="lg:col-span-1 space-y-6">
