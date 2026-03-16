@@ -338,10 +338,13 @@ const BarangayStorage = () => {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      setFolders(res.data.folders || []);
+      const folders = res.data.folders || [];
+      setFolders(folders);
+      return folders;
     } catch (error) {
       console.error("Error fetching folders:", error);
       setFolders([]);
+      return [];
     }
   };
 
@@ -558,15 +561,34 @@ const BarangayStorage = () => {
     }
   };
 
+  const normalizeFolderName = (name) =>
+    name?.trim().replace(/\s+/g, " ").toLowerCase() || "";
+
   const handleCreateFolder = async (folderName) => {
     if (!selectedBarangay || !folderName.trim()) return;
 
-    // local guard: only secretaries/treasurers may create folders
+    // local guard: only secretaries/treasurers/chairmen may create folders
     if (
       !user ||
-      (user.position !== "Secretary" && user.position !== "Treasurer")
+      (user.position !== "Secretary" &&
+        user.position !== "Treasurer" &&
+        user.position !== "Chairman")
     ) {
       toast.error("You are not authorized to create folders");
+      return;
+    }
+
+    const normalized = normalizeFolderName(folderName);
+
+    // refresh folder list to avoid stale state
+    const currentFolders = await fetchFolders(selectedBarangay);
+
+    const alreadyExists = currentFolders.some(
+      (f) => normalizeFolderName(f.name) === normalized,
+    );
+
+    if (alreadyExists) {
+      toast.error("A folder with that name already exists.");
       return;
     }
 
@@ -577,8 +599,7 @@ const BarangayStorage = () => {
         { name: folderName },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      setCreatedFolderName(folderName);
-      setShowFolderSuccessModal(true);
+      toast.success("Folder created successfully!");
       fetchFolders(selectedBarangay);
     } catch (error) {
       console.error("Error creating folder:", error.response || error);
@@ -752,6 +773,33 @@ const BarangayStorage = () => {
       "Delete Folder",
       confirmMessage,
     );
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!messageId) return;
+    if (!window.confirm("Delete this document?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5000/api/messages/${messageId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success("Document deleted successfully!");
+      fetchStorageDocuments(selectedBarangay);
+      fetchFolders(selectedBarangay);
+
+      if (
+        folderModalSelectedDoc &&
+        (folderModalSelectedDoc._id === messageId ||
+          folderModalSelectedDoc.document?._id === messageId)
+      ) {
+        setFolderModalSelectedDoc(null);
+      }
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      toast.error("Failed to delete document.");
+    }
   };
 
   const handleUploadToFolderCompose = async (folderId) => {
@@ -1341,7 +1389,8 @@ const BarangayStorage = () => {
                                     {/* Controls */}
                                     {user?.role === "Official" &&
                                       (user.position === "Secretary" ||
-                                        user.position === "Treasurer") && (
+                                        user.position === "Treasurer" ||
+                                        user.position === "Chairman") && (
                                         <div className="absolute -top-1 -right-4 flex gap-1.5 z-50">
                                           <button
                                             onClick={(e) => {
@@ -2390,54 +2439,77 @@ const BarangayStorage = () => {
                               folderSearchQuery.toLowerCase(),
                             );
                           })
-                          .map((item) => (
-                            <div
-                              key={item._id}
-                              onClick={() => {
-                                setFolderModalSelectedDoc(item);
-                                setFolderModalViewType("details"); // Auto-show details
-                              }}
-                              className="border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 hover:shadow-lg bg-slate-50 hover:bg-blue-50"
-                            >
-                              <div className="flex items-start gap-3">
-                                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <FileText className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
-                                    {item.documentName ||
-                                      item.document?.subject ||
-                                      "Document"}
-                                  </h3>
-                                  <p className="text-xs text-slate-600 mb-2">
-                                    From:{" "}
-                                    <span className="font-semibold">
-                                      {item.document?.sender?.username ||
-                                        item.uploadedBy?.username}
-                                    </span>
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
-                                        item.document?.status === "completed"
-                                          ? "bg-emerald-100 text-emerald-700"
-                                          : item.document?.status === "ongoing"
-                                            ? "bg-amber-100 text-amber-700"
-                                            : "bg-slate-100 text-slate-700"
-                                      }`}
-                                    >
-                                      {item.document?.status || item.status}
-                                    </span>
-                                    <span className="text-xs text-slate-500">
-                                      {new Date(
-                                        item.createdAt,
-                                      ).toLocaleDateString()}
-                                    </span>
+                          .map((item) => {
+                            const messageId = item.document?._id || item._id;
+                            const canDeleteMessage =
+                              user?.role === "Official" &&
+                              (user.position === "Secretary" ||
+                                user.position === "Treasurer" ||
+                                user.position === "Chairman");
+
+                            return (
+                              <div
+                                key={item._id}
+                                onClick={() => {
+                                  setFolderModalSelectedDoc(item);
+                                  setFolderModalViewType("details"); // Auto-show details
+                                }}
+                                className="relative border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 hover:shadow-lg bg-slate-50 hover:bg-blue-50"
+                              >
+                                {canDeleteMessage && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteMessage(messageId);
+                                    }}
+                                    className="absolute top-3 right-3 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all"
+                                    title="Delete document"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+
+                                <div className="flex items-start gap-3">
+                                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-6 h-6 text-blue-600" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                                      {item.documentName ||
+                                        item.document?.subject ||
+                                        "Document"}
+                                    </h3>
+                                    <p className="text-xs text-slate-600 mb-2">
+                                      From:{" "}
+                                      <span className="font-semibold">
+                                        {item.document?.sender?.username ||
+                                          item.uploadedBy?.username}
+                                      </span>
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
+                                          item.document?.status === "completed"
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : item.document?.status ===
+                                                "ongoing"
+                                              ? "bg-amber-100 text-amber-700"
+                                              : "bg-slate-100 text-slate-700"
+                                        }`}
+                                      >
+                                        {item.document?.status || item.status}
+                                      </span>
+                                      <span className="text-xs text-slate-500">
+                                        {new Date(
+                                          item.createdAt,
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                       </div>
                     )}
 

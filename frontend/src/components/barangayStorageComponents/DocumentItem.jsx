@@ -292,7 +292,9 @@ const DocumentItem = ({
         )}
 
         {user?.role === "Official" &&
-          (user.position === "Secretary" || user.position === "Treasurer") &&
+          (user.position === "Secretary" ||
+            user.position === "Treasurer" ||
+            user.position === "Chairman") &&
           selectedBarangay && (
             <>
               <button
