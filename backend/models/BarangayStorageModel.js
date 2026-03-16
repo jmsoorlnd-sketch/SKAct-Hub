@@ -24,11 +24,24 @@ const barangayStorageSchema = new mongoose.Schema({
   documentName: String,
   documentUrl: String,
   description: String,
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
+  deletedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
   createdAt: { type: Date, default: Date.now },
 });
 
 const BarangayStorage = mongoose.model(
   "BarangayStorage",
-  barangayStorageSchema
+  barangayStorageSchema,
 );
 export default BarangayStorage;

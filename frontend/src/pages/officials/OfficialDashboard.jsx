@@ -7,6 +7,7 @@ const OfficialDashboard = () => {
   const { success, error } = useToast();
   const token = localStorage.getItem("token");
 
+  const [user, setUser] = useState(null);
   const [showCompose, setShowCompose] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attachedFile, setAttachedFile] = useState(null);
@@ -33,6 +34,18 @@ const OfficialDashboard = () => {
     };
 
     fetchUserBarangay();
+  }, []);
+
+  /* LOAD LOGGED-IN USER */
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData && userData !== "undefined" && userData !== "null") {
+        setUser(JSON.parse(userData));
+      }
+    } catch (err) {
+      console.error("Failed to parse user:", err);
+    }
   }, []);
 
   /* HELPERS  */
@@ -109,16 +122,18 @@ const OfficialDashboard = () => {
         )}
       </div>
 
-      {/* FLOATING COMPOSE BUTTON */}
-      <button
-        onClick={() => setShowCompose(true)}
-        className="fixed bottom-6 right-6
-          bg-blue-300 hover:bg-[#bfe3ff]
-          px-6 py-3 rounded-full shadow-lg
-          font-medium transition"
-      >
-        Compose
-      </button>
+      {/* FLOATING COMPOSE BUTTON (hidden for official positions) */}
+      {user?.role === "Admin" && (
+        <button
+          onClick={() => setShowCompose(true)}
+          className="fixed bottom-6 right-6
+            bg-blue-300 hover:bg-[#bfe3ff]
+            px-6 py-3 rounded-full shadow-lg
+            font-medium transition"
+        >
+          Compose
+        </button>
+      )}
 
       {/* COMPOSE POPUP  */}
       {showCompose && (

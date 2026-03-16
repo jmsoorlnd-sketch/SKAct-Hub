@@ -8,6 +8,8 @@ import {
   getInbox,
   markAsRead,
   deleteMessage,
+  restoreMessage,
+  hardDeleteMessage,
   getAdmins,
   updateStatus,
   getSentMessages,
@@ -51,6 +53,12 @@ router.put("/:messageId/read", requireAuth, markAsRead);
 
 // Delete message
 router.delete("/:messageId", requireAuth, deleteMessage);
+
+// Restore (undelete) message
+router.post("/:messageId/restore", requireAuth, restoreMessage);
+
+// Hard delete message
+router.delete("/:messageId/hard", requireAuth, hardDeleteMessage);
 
 // Get all admins
 router.get("/admins/list", requireAuth, getAdmins);

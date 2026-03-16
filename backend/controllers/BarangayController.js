@@ -226,7 +226,10 @@ export const getBarangayStorage = async (req, res) => {
       return res.status(400).json({ message: "Invalid barangay id" });
     }
 
-    const storage = await BarangayStorage.find({ barangay: barangayId })
+    const storage = await BarangayStorage.find({
+      barangay: barangayId,
+      isDeleted: false,
+    })
       .populate("uploadedBy", "username firstname lastname")
       .populate("folder", "name")
       .populate({
@@ -235,7 +238,12 @@ export const getBarangayStorage = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ storage });
+    // Filter-out any attached documents that were deleted after being stored
+    const filteredStorage = storage.filter(
+      (item) => item.document && !item.document.isDeleted,
+    );
+
+    res.status(200).json({ storage: filteredStorage });
   } catch (error) {
     console.error("Error fetching storage:", error);
     console.error(error.stack);
@@ -299,7 +307,10 @@ export const getMyBarangayStorage = async (req, res) => {
       query.uploadedBy = userId;
     }
 
-    const storage = await BarangayStorage.find(query)
+    const storage = await BarangayStorage.find({
+      ...query,
+      isDeleted: false,
+    })
       .populate("uploadedBy", "username firstname lastname")
       .populate("folder", "name")
       .populate({
@@ -308,7 +319,11 @@ export const getMyBarangayStorage = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ storage });
+    const filteredStorage = storage.filter(
+      (item) => item.document && !item.document.isDeleted,
+    );
+
+    res.status(200).json({ storage: filteredStorage });
   } catch (error) {
     console.error("Error fetching storage:", error);
     console.error(error.stack);
@@ -560,7 +575,7 @@ export const getFolders = async (req, res) => {
     const userId = req.user && req.user._id;
 
     // build query
-    const q = { barangay: barangayId };
+    const q = { barangay: barangayId, isDeleted: false };
 
     // if secretary or treasurer, only return folders they created
     if (
@@ -578,6 +593,42 @@ export const getFolders = async (req, res) => {
     res.status(200).json({ folders });
   } catch (error) {
     console.error("Error fetching folders:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Get archived (deleted) folders and messages for a barangay
+export const getArchive = async (req, res) => {
+  try {
+    const { barangayId } = req.params;
+    const userId = req.user && req.user._id;
+
+    // Archived folders (deleted)
+    const folderQuery = { barangay: barangayId, isDeleted: true };
+    if (
+      req.user &&
+      (req.user.position === "Secretary" || req.user.position === "Treasurer")
+    ) {
+      folderQuery.createdBy = userId;
+    }
+
+    const folders = await Folder.find(folderQuery).populate(
+      "createdBy",
+      "firstname lastname username",
+    );
+
+    // Archived messages (deleted) for this barangay
+    const messages = await Message.find({
+      attachedToBarangay: barangayId,
+      isDeleted: true,
+    })
+      .populate("sender", "username email role")
+      .populate("recipient", "username email role")
+      .sort({ deletedAt: -1 });
+
+    res.status(200).json({ folders, messages });
+  } catch (error) {
+    console.error("Error fetching archive:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -632,8 +683,11 @@ export const deleteFolder = async (req, res) => {
       );
     }
 
-    // Delete the folder
-    await Folder.findByIdAndDelete(folderId);
+    // Soft-delete the folder instead of permanently deleting
+    folder.isDeleted = true;
+    folder.deletedAt = new Date();
+    folder.deletedBy = req.user._id;
+    await folder.save();
 
     res.status(200).json({
       message: "Folder deleted successfully",
@@ -642,6 +696,65 @@ export const deleteFolder = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting folder:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Restore a soft-deleted folder
+export const restoreFolder = async (req, res) => {
+  try {
+    const { barangayId, folderId } = req.params;
+
+    const folder = await Folder.findById(folderId);
+    if (!folder) return res.status(404).json({ message: "Folder not found" });
+
+    if (String(folder.barangay) !== String(barangayId)) {
+      return res
+        .status(403)
+        .json({ message: "Folder does not belong to this barangay" });
+    }
+
+    if (!folder.isDeleted) {
+      return res.status(400).json({ message: "Folder is not deleted" });
+    }
+
+    folder.isDeleted = false;
+    folder.deletedAt = null;
+    folder.deletedBy = null;
+    await folder.save();
+
+    res.status(200).json({ message: "Folder restored successfully", folder });
+  } catch (error) {
+    console.error("Error restoring folder:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Permanently delete a folder (hard delete)
+export const hardDeleteFolder = async (req, res) => {
+  try {
+    const { barangayId, folderId } = req.params;
+
+    const folder = await Folder.findById(folderId);
+    if (!folder) return res.status(404).json({ message: "Folder not found" });
+
+    if (String(folder.barangay) !== String(barangayId)) {
+      return res
+        .status(403)
+        .json({ message: "Folder does not belong to this barangay" });
+    }
+
+    // Remove folder assignment from all documents
+    await BarangayStorage.updateMany(
+      { folder: folderId },
+      { $set: { folder: null } },
+    );
+
+    await Folder.findByIdAndDelete(folderId);
+
+    res.status(200).json({ message: "Folder permanently deleted" });
+  } catch (error) {
+    console.error("Error hard deleting folder:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -133,6 +133,7 @@ export const getInbox = async (req, res) => {
         recipient: userId,
         isAttached: { $ne: true },
         isAdminScheduled: { $ne: true },
+        isDeleted: false,
       };
     } else {
       // Non-admins (Youth/Official): include admin-scheduled events relevant to them
@@ -142,11 +143,13 @@ export const getInbox = async (req, res) => {
         {
           recipient: userId,
           isAdminScheduled: { $ne: true },
+          isDeleted: false,
         },
         // Admin-created events for all barangays - broadcast to all
         {
           isAdminScheduled: true,
           attachedToBarangay: null,
+          isDeleted: false,
         },
       ];
 
@@ -155,6 +158,7 @@ export const getInbox = async (req, res) => {
         orConditions.push({
           isAdminScheduled: true,
           attachedToBarangay: user.barangay,
+          isDeleted: false,
         });
       }
 
@@ -242,6 +246,7 @@ export const getActivities = async (req, res) => {
 
       query = {
         startDate: { $exists: true, $ne: null },
+        isDeleted: false,
         $or: orConditions,
       };
     }
@@ -263,7 +268,7 @@ export const getSentMessages = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const messages = await Message.find({ sender: userId })
+    const messages = await Message.find({ sender: userId, isDeleted: false })
       .populate("recipient", "username email role")
       .populate("attachedToBarangay", "barangayName city province")
       .sort({ createdAt: -1 });
@@ -279,7 +284,7 @@ export const getMessagesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const messages = await Message.find({ sender: userId })
+    const messages = await Message.find({ sender: userId, isDeleted: false })
       .populate("recipient", "username email role")
       .populate("sender", "username email role")
       .sort({ createdAt: -1 });
@@ -327,9 +332,88 @@ export const deleteMessage = async (req, res) => {
         .json({ message: "Only the message sender can delete this item" });
     }
 
-    await Message.findByIdAndDelete(messageId);
+    // Soft delete message
+    msg.isDeleted = true;
+    msg.deletedAt = new Date();
+    msg.deletedBy = req.user._id;
+    await msg.save();
+
+    // Also mark stored copies (if any) as deleted
+    await BarangayStorage.updateMany(
+      { document: messageId },
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+        deletedBy: req.user._id,
+      },
+    );
 
     res.status(200).json({ message: "Message deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Restore a soft-deleted message
+export const restoreMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (String(msg.sender) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: "Only the message sender can restore this item" });
+    }
+
+    if (!msg.isDeleted) {
+      return res.status(400).json({ message: "Message is not deleted" });
+    }
+
+    msg.isDeleted = false;
+    msg.deletedAt = null;
+    msg.deletedBy = null;
+    await msg.save();
+
+    await BarangayStorage.updateMany(
+      { document: messageId },
+      {
+        isDeleted: false,
+        deletedAt: null,
+        deletedBy: null,
+      },
+    );
+
+    res.status(200).json({ message: "Message restored successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Hard delete a message
+export const hardDeleteMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (String(msg.sender) !== String(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: "Only the message sender can hard delete this item" });
+    }
+
+    await Message.findByIdAndDelete(messageId);
+    await BarangayStorage.deleteMany({ document: messageId });
+
+    res.status(200).json({ message: "Message permanently deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -19,6 +19,9 @@ import {
   detachMessageFromBarangay,
   createFolder,
   getFolders,
+  getArchive,
+  restoreFolder,
+  hardDeleteFolder,
   updateFolderStatus,
   moveDocumentToFolder,
   deleteFolder,
@@ -94,6 +97,19 @@ router.get("/officials/:id", getOfficialsByBarangay);
 // Folder routes
 router.post("/:barangayId/folders", requireAuth, officialOnly, createFolder);
 router.get("/:barangayId/folders", requireAuth, getFolders);
+router.get("/:barangayId/archive", requireAuth, officialOnly, getArchive);
+router.post(
+  "/:barangayId/archive/folders/:folderId/restore",
+  requireAuth,
+  officialOnly,
+  restoreFolder,
+);
+router.delete(
+  "/:barangayId/archive/folders/:folderId/hard",
+  requireAuth,
+  officialOnly,
+  hardDeleteFolder,
+);
 router.put(
   "/:barangayId/folders/:folderId/status",
   requireAuth,

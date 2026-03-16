@@ -37,6 +37,7 @@ import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
 import BarangayStorage from "./pages/BarangayStorage";
 import BarangayPage from "./pages/barangay/BarangayPage";
 import BarangayViewPage from "./pages/barangay/BarangayViewPage";
+import Archive from "./pages/Archive";
 
 /* ===================== ROLES ===================== */
 const roles = {
@@ -189,6 +190,14 @@ const AppRoutes = () => {
             element={
               <RequireRole allowedRoles={[roles.OFFICIAL]}>
                 <SKPersonnelPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/archive"
+            element={
+              <RequireRole allowedRoles={[roles.OFFICIAL]}>
+                <Archive />
               </RequireRole>
             }
           />

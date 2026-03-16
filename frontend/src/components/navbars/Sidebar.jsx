@@ -3,6 +3,7 @@ import { useLocation, Link } from "react-router-dom";
 import axios from "axios";
 import SideProfile from "./SideProfile";
 import {
+  Archive,
   CalendarDays,
   Home,
   Bell,
@@ -208,8 +209,9 @@ const Sidebar = ({ onClose = () => {} }) => {
           icon: CalendarClock,
           path: "/event-calendar",
         },
-        { name: "Barangays", icon: Home, path: "/barangay-storage" },
-        { name: "SK Personnel", icon: Users, path: "/sk-personnel" },
+        { name: "Your Barangay", icon: Home, path: "/barangay-storage" },
+        { name: "Archive", icon: Archive, path: "/archive" },
+        { name: "SK Personnel Status", icon: Users, path: "/sk-personnel" },
       ],
       Guest: [{ name: "Home", icon: Home, path: "/" }],
     };
