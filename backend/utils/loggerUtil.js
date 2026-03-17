@@ -7,8 +7,6 @@ export const logUserActionAsync = async (
   req,
 ) => {
   try {
-    const user = await (await import("./userController.js")).default;
-
     await UserLog.create({
       userId,
       actionType,

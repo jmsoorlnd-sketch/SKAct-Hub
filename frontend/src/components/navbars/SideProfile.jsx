@@ -34,10 +34,10 @@ const SideProfile = ({ user }) => {
     setShowLogoutModal(true);
   };
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutModal(false);
-    logout();
-    navigate("/");
+    await logout();
+    navigate("/", { replace: true });
   };
 
   const handleCancelLogout = () => {

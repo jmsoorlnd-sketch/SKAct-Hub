@@ -148,7 +148,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         const res = await axios.get(`${API_BASE}/messages/activities`, {
           headers: getAuthHeaders(),
         });
-        const activities = res.data.activities || [];
+        const activities = res.data?.activities || [];
 
         activities
           .filter((a) => a.startDate)
@@ -162,14 +162,20 @@ const Sidebar = ({ onClose = () => {} }) => {
                 `${API_BASE}/messages/${a._id}/activity-updates`,
                 { headers: getAuthHeaders() },
               );
-              const updates = updatesRes.data.updates || [];
+              const updates = updatesRes.data?.updates || [];
               if (updates.length > 0) {
                 allNotifs.push({ id: updates[0]._id });
               }
-            } catch {}
+            } catch (err) {
+              // Silently skip if activity updates fail
+              console.debug("Activity updates fetch failed:", err.status);
+            }
           }),
         );
-      } catch {}
+      } catch (err) {
+        // Silently skip if activities fetch fails (401, 500, etc.)
+        console.debug("Activities fetch failed:", err.status);
+      }
 
       // Count unseen (those not in seenMap or marked as false)
       const unseen = allNotifs.filter((n) => !seenMap[n.id]).length;
