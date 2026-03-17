@@ -786,9 +786,19 @@ const BarangayStorage = () => {
       });
 
       toast.success("Document deleted successfully!");
-      fetchStorageDocuments(selectedBarangay);
-      fetchFolders(selectedBarangay);
 
+      // Remove the deleted document from folderViewData immediately (instant UI update)
+      if (folderViewData) {
+        setFolderViewData({
+          ...folderViewData,
+          documents: folderViewData.documents.filter((item) => {
+            const itemId = item.document?._id || item._id;
+            return itemId !== messageId;
+          }),
+        });
+      }
+
+      // Close the selected doc detail modal if it was the deleted one
       if (
         folderModalSelectedDoc &&
         (folderModalSelectedDoc._id === messageId ||
@@ -796,6 +806,14 @@ const BarangayStorage = () => {
       ) {
         setFolderModalSelectedDoc(null);
       }
+
+      // Also update storage documents list for the main view
+      setStorage((prevStorage) =>
+        prevStorage.filter((item) => {
+          const itemId = item.document?._id || item._id;
+          return itemId !== messageId;
+        }),
+      );
     } catch (error) {
       console.error("Error deleting document:", error);
       toast.error("Failed to delete document.");
