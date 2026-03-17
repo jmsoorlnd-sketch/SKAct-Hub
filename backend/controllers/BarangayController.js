@@ -129,14 +129,106 @@ export const deleteBarangay = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deleted = await Barangay.findByIdAndDelete(id);
-    if (!deleted) {
+    const barangay = await Barangay.findById(id);
+    if (!barangay) {
       return res.status(404).json({ message: "Barangay not found" });
     }
+
+    // Soft delete - mark as deleted
+    barangay.isDeleted = true;
+    barangay.deletedAt = new Date();
+    await barangay.save();
 
     res.status(200).json({ message: "Barangay deleted successfully" });
   } catch (error) {
     console.error("Error deleting barangay:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Get all deleted barangays
+ */
+export const getDeletedBarangays = async (req, res) => {
+  try {
+    const deletedBarangays = await Barangay.find({ isDeleted: true })
+      .populate("chairmanId", "firstname lastname username")
+      .sort({ deletedAt: -1 });
+
+    res.status(200).json({ barangays: deletedBarangays });
+  } catch (error) {
+    console.error("Error fetching deleted barangays:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Restore a deleted barangay with all its deleted documents
+ */
+export const restoreDeletedBarangay = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const barangay = await Barangay.findById(id);
+    if (!barangay) {
+      return res.status(404).json({ message: "Barangay not found" });
+    }
+
+    if (!barangay.isDeleted) {
+      return res.status(400).json({ message: "Barangay is not deleted" });
+    }
+
+    // Restore barangay
+    barangay.isDeleted = false;
+    barangay.deletedAt = null;
+    await barangay.save();
+
+    // Restore all deleted storage documents and folders in this barangay
+    await BarangayStorage.updateMany(
+      { barangay: id, isDeleted: true },
+      { $set: { isDeleted: false, deletedAt: null } },
+    );
+
+    await Folder.updateMany(
+      { barangay: id, isDeleted: true },
+      { $set: { isDeleted: false, deletedAt: null } },
+    );
+
+    res.status(200).json({
+      message: "Barangay and its documents restored successfully",
+      barangay,
+    });
+  } catch (error) {
+    console.error("Error restoring barangay:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+/**
+ * Permanently delete a barangay
+ */
+export const permanentlyDeleteBarangay = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const barangay = await Barangay.findById(id);
+    if (!barangay) {
+      return res.status(404).json({ message: "Barangay not found" });
+    }
+
+    // Delete all related documents, folders, and messages
+    await BarangayStorage.deleteMany({ barangay: id });
+    await Folder.deleteMany({ barangay: id });
+    await Message.deleteMany({ attachedToBarangay: id });
+
+    // Delete the barangay
+    await Barangay.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "Barangay and all its data permanently deleted",
+    });
+  } catch (error) {
+    console.error("Error permanently deleting barangay:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

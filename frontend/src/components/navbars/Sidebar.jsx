@@ -201,6 +201,7 @@ const Sidebar = ({ onClose = () => {} }) => {
           icon: BarChart2,
           path: "/admin/monitoring",
         },
+        { name: "Archive", icon: Archive, path: "/admin/archive" },
       ],
       Official: [
         { name: "Inbox", icon: Inbox, path: "/official/inbox" },

@@ -27,6 +27,7 @@ import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminNotification from "./pages/admin/AdminNotification";
+import AdminArchive from "./pages/admin/AdminArchive";
 
 // Official Pages
 import OfficialDashboard from "./pages/officials/OfficialDashboard";
@@ -156,6 +157,14 @@ const AppRoutes = () => {
             element={
               <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminNotification />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/archive"
+            element={
+              <RequireRole allowedRoles={[roles.ADMIN]}>
+                <AdminArchive />
               </RequireRole>
             }
           />

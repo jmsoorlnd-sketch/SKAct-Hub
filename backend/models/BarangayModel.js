@@ -21,6 +21,12 @@ const barangaySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: { type: Date, default: null },
+  createdAt: { type: Date, default: Date.now },
 });
 
 const Barangay = mongoose.model("Barangay", barangaySchema);

@@ -209,7 +209,7 @@ const updateOfficialStatus = async (req, res) => {
 };
 
 /**
- * @desc Delete an official
+ * @desc Delete an official (soft delete)
  */
 const deleteOfficial = async (req, res) => {
   try {
@@ -220,13 +220,87 @@ const deleteOfficial = async (req, res) => {
       return res.status(404).json({ message: "Official not found" });
     }
 
-    await User.findByIdAndDelete(id);
+    // Soft delete - mark as deleted
+    official.isDeleted = true;
+    official.deletedAt = new Date();
+    await official.save();
 
     res.status(200).json({
       message: "Official deleted successfully",
     });
   } catch (error) {
     console.error("Delete Official error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * @desc Get all deleted users
+ */
+const getDeletedUsers = async (req, res) => {
+  try {
+    const deletedUsers = await User.find({ isDeleted: true }).sort({
+      deletedAt: -1,
+    });
+
+    res.status(200).json({
+      users: deletedUsers,
+    });
+  } catch (error) {
+    console.error("Get Deleted Users error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * @desc Restore a deleted user
+ */
+const restoreDeletedUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.isDeleted) {
+      return res.status(400).json({ message: "User is not deleted" });
+    }
+
+    user.isDeleted = false;
+    user.deletedAt = null;
+    await user.save();
+
+    res.status(200).json({
+      message: "User restored successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Restore Deleted User error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * @desc Permanently delete a user
+ */
+const permanentlyDeleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({
+      message: "User permanently deleted",
+    });
+  } catch (error) {
+    console.error("Permanently Delete User error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -314,4 +388,7 @@ export {
   updateOfficialStatus,
   updateOfficial,
   deleteOfficial,
+  getDeletedUsers,
+  restoreDeletedUser,
+  permanentlyDeleteUser,
 };

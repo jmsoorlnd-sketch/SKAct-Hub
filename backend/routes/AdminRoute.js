@@ -7,6 +7,9 @@ import {
   updateOfficialStatus,
   updateOfficial,
   deleteOfficial,
+  getDeletedUsers,
+  restoreDeletedUser,
+  permanentlyDeleteUser,
 } from "../controllers/AdminController.js";
 
 const router = express.Router();
@@ -28,5 +31,20 @@ router.put("/update-official/:id", requireAuth, updateOfficial);
 
 // ✅ Delete official
 router.delete("/delete-official/:id", requireAuth, adminOnly, deleteOfficial);
+
+// ✅ Archive - Deleted Users
+router.get("/archive/deleted-users", requireAuth, adminOnly, getDeletedUsers);
+router.put(
+  "/archive/restore-user/:id",
+  requireAuth,
+  adminOnly,
+  restoreDeletedUser,
+);
+router.delete(
+  "/archive/permanently-delete-user/:id",
+  requireAuth,
+  adminOnly,
+  permanentlyDeleteUser,
+);
 
 export default router;

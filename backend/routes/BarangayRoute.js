@@ -25,6 +25,9 @@ import {
   updateFolderStatus,
   moveDocumentToFolder,
   deleteFolder,
+  getDeletedBarangays,
+  restoreDeletedBarangay,
+  permanentlyDeleteBarangay,
 } from "../controllers/BarangayController.js";
 
 const router = express.Router();
@@ -126,6 +129,26 @@ router.delete(
   requireAuth,
   officialOnly,
   deleteFolder,
+);
+
+// Admin Archive Routes - Deleted Barangays
+router.get(
+  "/admin/archive/deleted-barangays",
+  requireAuth,
+  adminOnly,
+  getDeletedBarangays,
+);
+router.put(
+  "/admin/archive/restore-barangay/:id",
+  requireAuth,
+  adminOnly,
+  restoreDeletedBarangay,
+);
+router.delete(
+  "/admin/archive/permanently-delete-barangay/:id",
+  requireAuth,
+  adminOnly,
+  permanentlyDeleteBarangay,
 );
 
 export default router;

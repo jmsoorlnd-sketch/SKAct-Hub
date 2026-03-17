@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema({
     enum: ["Active", "Inactive"],
     default: "Active",
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },
 });
 
