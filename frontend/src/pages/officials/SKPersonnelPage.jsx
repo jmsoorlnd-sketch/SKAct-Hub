@@ -172,10 +172,11 @@ const SKPersonnelPage = () => {
         });
 
         // Populate forms using unified object
+        // Map backend positions to form state: secretary (backend) → vicePresident (form), treasurer (backend) → secretary (form)
         setForms({
           chairman: populateFormData(data.skPersonnel.chairman),
-          vicePresident: populateFormData(data.skPersonnel.vicePresident),
-          secretary: populateFormData(data.skPersonnel.secretary),
+          vicePresident: populateFormData(data.skPersonnel.secretary),
+          secretary: populateFormData(data.skPersonnel.treasurer),
         });
       }
     } catch (error) {
