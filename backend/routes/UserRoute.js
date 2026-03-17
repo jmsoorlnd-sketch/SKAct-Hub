@@ -5,6 +5,7 @@ import {
   getUserProfile,
   getAllProfile,
   deleteUser,
+  logoutUser,
 } from "../controllers/UserController.js";
 import express from "express";
 import { requireAuth, adminOnly } from "../middleware/auth.js";
@@ -48,6 +49,8 @@ const uploadProfile = multer({
 router.post("/signup", signupUser);
 //route for user login
 router.post("/signin", signinUser);
+//route for user logout
+router.post("/logout", requireAuth, logoutUser);
 //route for profile update
 router.post("/create", requireAuth, createProfile);
 //route for get user Profile
@@ -76,7 +79,7 @@ router.post(
       const updatedUser = await User.findByIdAndUpdate(
         req.user._id,
         { profileImage: profileImageUrl },
-        { new: true }
+        { new: true },
       );
 
       res.status(200).json({
@@ -90,7 +93,7 @@ router.post(
         .status(500)
         .json({ message: "Error uploading image", error: error.message });
     }
-  }
+  },
 );
 
 export default router;

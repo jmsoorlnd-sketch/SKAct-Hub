@@ -12,6 +12,7 @@ import {
   Settings,
   BarChart2,
   Inbox,
+  Clock,
 } from "lucide-react";
 
 /* ===================== CONSTANTS ===================== */
@@ -201,6 +202,7 @@ const Sidebar = ({ onClose = () => {} }) => {
           icon: BarChart2,
           path: "/admin/monitoring",
         },
+        { name: "User Logs", icon: Clock, path: "/admin/user-logs" },
         { name: "Archive", icon: Archive, path: "/admin/archive" },
       ],
       Official: [

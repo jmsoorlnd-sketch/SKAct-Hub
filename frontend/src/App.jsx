@@ -28,6 +28,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminMonitoring from "./pages/admin/AdminMonitoring";
 import AdminNotification from "./pages/admin/AdminNotification";
 import AdminArchive from "./pages/admin/AdminArchive";
+import AdminUserLogs from "./pages/admin/AdminUserLogs";
 
 // Official Pages
 import OfficialDashboard from "./pages/officials/OfficialDashboard";
@@ -165,6 +166,14 @@ const AppRoutes = () => {
             element={
               <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminArchive />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin/user-logs"
+            element={
+              <RequireRole allowedRoles={[roles.ADMIN]}>
+                <AdminUserLogs />
               </RequireRole>
             }
           />

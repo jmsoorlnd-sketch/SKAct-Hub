@@ -1,6 +1,8 @@
 import { createContext, useEffect, useState, useRef, useCallback } from "react";
+import axios from "axios";
 
 const AuthContext = createContext();
+const API_BASE = "http://localhost:5000/api";
 
 // 20 minutes in milliseconds
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000;
@@ -10,12 +12,27 @@ const AuthProvider = ({ children }) => {
   const inactivityTimerRef = useRef(null);
 
   // Logout function
-  const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
+  const logout = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        // Call backend logout endpoint to log the action
+        await axios.post(
+          `${API_BASE}/users/logout`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+      }
+    } catch (error) {
+      console.error("Error logging logout:", error);
+      // Continue with logout even if logging fails
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setUser(null);
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
     }
   }, []);
 

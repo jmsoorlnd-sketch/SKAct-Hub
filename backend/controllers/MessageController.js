@@ -1,5 +1,6 @@
 import Message from "../models/MessageModel.js";
 import User from "../models/UserModel.js";
+import UserLog from "../models/UserLogModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 import Barangay from "../models/BarangayModel.js";
 import Folder from "../models/FolderModel.js";
@@ -347,6 +348,24 @@ export const deleteMessage = async (req, res) => {
         deletedBy: req.user._id,
       },
     );
+
+    // Log the action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "delete_message",
+        description: `Deleted message with subject: ${msg.subject}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete message action:", logError);
+    }
 
     res.status(200).json({ message: "Message deleted successfully" });
   } catch (error) {

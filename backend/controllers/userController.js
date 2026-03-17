@@ -1,4 +1,5 @@
 import User from "../models/UserModel.js";
+import UserLog from "../models/UserLogModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -119,6 +120,25 @@ const signinUser = async (req, res) => {
       { expiresIn: "1d" },
     );
 
+    // Log the login action
+    try {
+      await UserLog.create({
+        userId: user._id,
+        username: user.username,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        barangayId: user.barangay,
+        role: user.role,
+        actionType: "login",
+        description: `${user.firstname} ${user.lastname} logged in`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging login action:", logError);
+      // Don't fail the login if logging fails
+    }
+
     res.status(200).json({
       token,
       user: {
@@ -214,6 +234,27 @@ const createProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // Log the account change
+    try {
+      const changedFields = Object.keys(update)
+        .filter((k) => update[k] !== undefined)
+        .join(", ");
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "account_change",
+        description: `Updated profile fields: ${changedFields}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging account change:", logError);
+    }
+
     // success response
     res.status(200).json({
       message: "Profile updated successfully",
@@ -299,6 +340,41 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Logout user - logs the logout action
+const logoutUser = async (req, res) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Log the logout action
+    try {
+      await UserLog.create({
+        userId: user._id,
+        username: user.username,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        barangayId: user.barangay,
+        role: user.role,
+        actionType: "logout",
+        description: `${user.firstname} ${user.lastname} logged out`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging logout action:", logError);
+      // Don't fail the logout if logging fails
+    }
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export {
   signupUser,
   signinUser,
@@ -307,4 +383,5 @@ export {
   getProfileById,
   getAllProfile,
   deleteUser,
+  logoutUser,
 };

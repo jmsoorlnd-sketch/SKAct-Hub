@@ -1,5 +1,6 @@
 import Barangay from "../models/BarangayModel.js";
 import User from "../models/UserModel.js";
+import UserLog from "../models/UserLogModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 import Message from "../models/MessageModel.js";
 import Folder from "../models/FolderModel.js";
@@ -653,6 +654,24 @@ export const createFolder = async (req, res) => {
 
     await folder.save();
 
+    // Log the action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: barangayId,
+        role: req.user.role,
+        actionType: "create_folder",
+        description: `Created folder: ${name}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging create folder action:", logError);
+    }
+
     res.status(201).json({ folder });
   } catch (error) {
     console.error("Error creating folder:", error);
@@ -780,6 +799,24 @@ export const deleteFolder = async (req, res) => {
     folder.deletedAt = new Date();
     folder.deletedBy = req.user._id;
     await folder.save();
+
+    // Log the action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: barangayId,
+        role: req.user.role,
+        actionType: "delete_folder",
+        description: `Deleted folder: ${folder.name}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete folder action:", logError);
+    }
 
     res.status(200).json({
       message: "Folder deleted successfully",
