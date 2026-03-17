@@ -1,4 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import axios from "axios";
 import {
   Search,
@@ -11,142 +18,203 @@ import {
   Settings,
   Filter,
   ChevronDown,
-  Users,
   Plus,
   Edit,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
+import LogRow from "../../components/UserLogs/LogRow";
 const API_BASE = "http://localhost:5000/api";
 
-const AdminUserLogs = () => {
+const ACTION_META = {
+  login: { label: "Login", icon: LogIn, color: "green" },
+  logout: { label: "Logout", icon: LogOut, color: "red" },
+  delete_message: { label: "Delete Message", icon: Trash2, color: "red" },
+  send_document: { label: "Send Document", icon: FileText, color: "blue" },
+  account_change: { label: "Account Change", icon: Settings, color: "purple" },
+  delete_document: { label: "Delete Document", icon: Trash2, color: "red" },
+  create_folder: { label: "Create Folder", icon: FileText, color: "blue" },
+  delete_folder: { label: "Delete Folder", icon: Trash2, color: "red" },
+  restore_document: {
+    label: "Restore Document",
+    icon: FileText,
+    color: "green",
+  },
+  set_sk_personnel: { label: "Set SK Personnel", icon: Plus, color: "blue" },
+  edit_sk_personnel: {
+    label: "Edit SK Personnel",
+    icon: Edit,
+    color: "orange",
+  },
+  delete_sk_personnel: { label: "Delete SK", icon: Trash2, color: "red" },
+};
+
+const COLOR_CLASSES = {
+  green: "bg-green-50 text-green-700 ring-1 ring-green-200",
+  red: "bg-red-50 text-red-700 ring-1 ring-red-200",
+  blue: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+  purple: "bg-purple-50 text-purple-700 ring-1 ring-purple-200",
+  orange: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
+};
+
+const ICON_COLOR_CLASSES = {
+  green: "text-green-600",
+  red: "text-red-500",
+  blue: "text-blue-500",
+  purple: "text-purple-500",
+  orange: "text-orange-500",
+};
+
+const ActionBadge = React.memo(function ActionBadge({ actionType }) {
+  const meta = ACTION_META[actionType] ?? {
+    label: actionType,
+    icon: Filter,
+    color: "blue",
+  };
+  const Icon = meta.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${COLOR_CLASSES[meta.color]}`}
+    >
+      <Icon size={11} className={ICON_COLOR_CLASSES[meta.color]} />
+      {meta.label}
+    </span>
+  );
+});
+
+const StatCard = React.memo(function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconClass,
+}) {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div>
+        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+          {label}
+        </p>
+        <p className="text-2xl font-semibold text-gray-900 mt-0.5">{value}</p>
+      </div>
+      <Icon size={22} className={iconClass} />
+    </div>
+  );
+});
+
+const ExpandedDetails = React.memo(function ExpandedDetails({ log }) {
+  return (
+    <tr className="bg-gray-50 border-b border-gray-100">
+      <td colSpan={6} className="px-6 py-3">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <Detail label="Barangay" value={log.barangayName || "—"} />
+          <Detail label="Role" value={log.role} />
+          <div className="col-span-2">
+            <Detail
+              label="Description"
+              value={log.description || "No description"}
+            />
+          </div>
+          <div className="col-span-2">
+            <Detail
+              label="User agent"
+              value={<span className="font-mono text-xs">{log.userAgent}</span>}
+            />
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
+const Detail = React.memo(function Detail({ label, value }) {
+  return (
+    <div>
+      <span className="text-xs text-gray-400 uppercase tracking-wide">
+        {label}
+      </span>
+      <p className="text-gray-800 mt-0.5">{value}</p>
+    </div>
+  );
+});
+
+export default function AdminUserLogs() {
   const toast = useToast();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterActionType, setFilterActionType] = useState("");
-  const [filterBarangay, setFilterBarangay] = useState("");
+  const [filterAction, setFilterAction] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLogs, setTotalLogs] = useState(0);
   const [statistics, setStatistics] = useState(null);
-  const [expandedLog, setExpandedLog] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+  const authHeaders = useMemo(() => {
     return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  }, [token]);
 
-  const actionTypeIcons = {
-    login: <LogIn size={16} className="text-green-600" />,
-    logout: <LogOut size={16} className="text-red-600" />,
-    delete_message: <Trash2 size={16} className="text-red-600" />,
-    send_document: <FileText size={16} className="text-blue-600" />,
-    account_change: <Settings size={16} className="text-purple-600" />,
-    delete_document: <Trash2 size={16} className="text-red-600" />,
-    create_folder: <FileText size={16} className="text-blue-600" />,
-    delete_folder: <Trash2 size={16} className="text-red-600" />,
-    restore_document: <FileText size={16} className="text-green-600" />,
-    set_sk_personnel: <Plus size={16} className="text-blue-600" />,
-    edit_sk_personnel: <Edit size={16} className="text-orange-600" />,
-    delete_sk_personnel: <Trash2 size={16} className="text-red-600" />,
-  };
-
-  const actionTypeLabels = {
-    login: "Login",
-    logout: "Logout",
-    delete_message: "Delete Message",
-    send_document: "Send Document",
-    account_change: "Account Change",
-    delete_document: "Delete Document",
-    create_folder: "Create Folder",
-    delete_folder: "Delete Folder",
-    restore_document: "Restore Document",
-    set_sk_personnel: "Set SK Personnel",
-    edit_sk_personnel: "Edit SK Personnel",
-    delete_sk_personnel: "Delete SK Personnel",
-  };
-
-  const actionTypeColors = {
-    login: "bg-green-100 text-green-800",
-    logout: "bg-red-100 text-red-800",
-    delete_message: "bg-red-100 text-red-800",
-    send_document: "bg-blue-100 text-blue-800",
-    account_change: "bg-purple-100 text-purple-800",
-    delete_document: "bg-red-100 text-red-800",
-    create_folder: "bg-blue-100 text-blue-800",
-    delete_folder: "bg-red-100 text-red-800",
-    restore_document: "bg-green-100 text-green-800",
-    set_sk_personnel: "bg-blue-100 text-blue-800",
-    edit_sk_personnel: "bg-orange-100 text-orange-800",
-    delete_sk_personnel: "bg-red-100 text-red-800",
-  };
-
-  // Fetch logs
-  const fetchLogs = async (pageNum = 1) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.append("page", pageNum);
-      params.append("limit", 50);
-
-      if (filterActionType) params.append("actionType", filterActionType);
-      if (filterBarangay) params.append("barangayId", filterBarangay);
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-
-      const response = await axios.get(`${API_BASE}/user-logs/all?${params}`, {
-        headers: getAuthHeaders(),
-      });
-
-      setLogs(response.data.logs || []);
-      setTotalPages(response.data.totalPages || 1);
-      setTotalLogs(response.data.totalLogs || 0);
-      setPage(pageNum);
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-      toast.error("Failed to load user logs");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch statistics
-  const fetchStatistics = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
-
-      const response = await axios.get(
-        `${API_BASE}/user-logs/statistics?${params}`,
-        { headers: getAuthHeaders() },
-      );
-      setStatistics(response.data);
-    } catch (error) {
-      console.error("Error fetching statistics:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchLogs(1);
-    fetchStatistics();
-  }, [filterActionType, filterBarangay, startDate, endDate]);
-
-  // Filter logs by search term
-  const filteredLogs = logs.filter(
-    (log) =>
-      log.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.firstname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.description?.toLowerCase().includes(searchTerm.toLowerCase()),
+  const buildParams = useCallback(
+    (extras = {}) => {
+      const p = new URLSearchParams(extras);
+      if (filterAction) p.append("actionType", filterAction);
+      if (startDate) p.append("startDate", startDate);
+      if (endDate) p.append("endDate", endDate);
+      return p;
+    },
+    [filterAction, startDate, endDate],
   );
 
-  // Export logs to CSV
-  const exportToCSV = () => {
-    const csv = [
+  const fetchData = useCallback(
+    async (pageNum = 1) => {
+      setLoading(true);
+      try {
+        const params = buildParams({ page: pageNum, limit: 30 });
+        const statsParams = buildParams(); // only once
+
+        const [logsRes, statsRes] = await Promise.all([
+          axios.get(`${API_BASE}/user-logs/all?${params}`, {
+            headers: authHeaders,
+          }),
+          axios.get(`${API_BASE}/user-logs/statistics?${statsParams}`, {
+            headers: authHeaders,
+          }),
+        ]);
+
+        setLogs(logsRes.data.logs ?? []);
+        setTotalPages(logsRes.data.totalPages ?? 1);
+        setTotalLogs(logsRes.data.totalLogs ?? 0);
+        setStatistics(statsRes.data);
+        setPage(pageNum);
+      } catch {
+        toast.error("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildParams, authHeaders, toast],
+  );
+  useEffect(() => {
+    fetchData(1);
+  }, [fetchData]);
+  const filteredLogs = useMemo(() => {
+    if (!searchTerm) return logs;
+
+    const q = searchTerm.toLowerCase();
+
+    return logs.filter((log) => {
+      return (
+        log.username?.toLowerCase().includes(q) ||
+        log.firstname?.toLowerCase().includes(q) ||
+        log.lastname?.toLowerCase().includes(q) ||
+        log.description?.toLowerCase().includes(q)
+      );
+    });
+  }, [logs, searchTerm]);
+  const exportCSV = useCallback(() => {
+    const rows = [
       [
         "Timestamp",
         "User",
@@ -160,127 +228,115 @@ const AdminUserLogs = () => {
         new Date(log.createdAt).toLocaleString(),
         `${log.firstname} ${log.lastname}`,
         log.username,
-        log.barangayName || "N/A",
-        actionTypeLabels[log.actionType] || log.actionType,
-        log.description || "",
+        log.barangayName ?? "N/A",
+        ACTION_META[log.actionType]?.label ?? log.actionType,
+        log.description ?? "",
         log.ipAddress,
       ]),
-    ]
-      .map((row) => row.map((cell) => `"${cell}"`).join(","))
-      .join("\n");
+    ];
+
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = `user-logs-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
-  };
+
+    URL.revokeObjectURL(url); // 🔥 important cleanup
+  }, [logs]);
+  const topUser = statistics?.topUsers?.[0];
+
+  const visiblePages = useMemo(() => {
+    const range = 2; // 2 pages before and after
+    const start = Math.max(1, page - range);
+    const end = Math.min(totalPages, page + range);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [page, totalPages]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto space-y-5">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">User Logs</h1>
-          <p className="text-gray-600">
-            Track user login/logout activities and system actions across all
-            barangays
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">User Logs</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Track login, logout, and system actions across all barangays
           </p>
         </div>
 
-        {/* Statistics cards */}
+        {/* Stats */}
         {statistics && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-semibold">
-                    Total Logs
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {statistics.totalLogs}
-                  </p>
-                </div>
-                <Clock className="text-blue-600" size={32} />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-semibold">
-                    Action Types
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {statistics.actionTypeCounts?.length || 0}
-                  </p>
-                </div>
-                <Filter className="text-purple-600" size={32} />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm font-semibold">
-                    Top User Actions
-                  </p>
-                  <p className="text-sm text-gray-900 mt-2">
-                    {statistics.topUsers?.[0]?.username || "No data"} (
-                    {statistics.topUsers?.[0]?.count || 0})
-                  </p>
-                </div>
-                <div className="text-right">
-                  {statistics.actionTypeCounts?.slice(0, 3).map((action) => (
-                    <div key={action._id} className="text-xs text-gray-600">
-                      {actionTypeLabels[action._id] || action._id}:{" "}
-                      {action.count}
-                    </div>
-                  ))}
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <StatCard
+              label="Total Logs"
+              value={statistics.totalLogs?.toLocaleString()}
+              icon={Clock}
+              iconClass="text-blue-400"
+            />
+            <StatCard
+              label="Action Types"
+              value={statistics.actionTypeCounts?.length ?? 0}
+              icon={Filter}
+              iconClass="text-purple-400"
+            />
+            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                Top user
+              </p>
+              <p className="text-sm font-semibold text-gray-900 mt-1 truncate">
+                {topUser ? `@${topUser.username}` : "—"}
+              </p>
+              <div className="flex flex-wrap gap-x-3 mt-1.5">
+                {statistics.actionTypeCounts?.slice(0, 3).map((a) => (
+                  <span key={a._id} className="text-xs text-gray-500">
+                    {ACTION_META[a._id]?.label ?? a._id}:
+                    <strong className="text-gray-700">{a.count}</strong>
+                  </span>
+                ))}
               </div>
             </div>
           </div>
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+          <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
-            <div className="relative">
+            <div className="relative flex-1 min-w-48">
               <Search
-                className="absolute left-3 top-3 text-gray-400"
-                size={18}
+                size={14}
+                className="absolute left-2.5 top-2.5 text-gray-400"
               />
               <input
                 type="text"
-                placeholder="Search user, username..."
+                placeholder="Search user or description…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            {/* Action Type */}
+            {/* Action type */}
             <select
-              value={filterActionType}
+              value={filterAction}
               onChange={(e) => {
-                setFilterActionType(e.target.value);
+                setFilterAction(e.target.value);
                 setPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Actions</option>
-              {Object.entries(actionTypeLabels).map(([key, value]) => (
+              <option value="">All actions</option>
+              {Object.entries(ACTION_META).map(([key, { label }]) => (
                 <option key={key} value={key}>
-                  {value}
+                  {label}
                 </option>
               ))}
             </select>
 
-            {/* Start Date */}
+            {/* Date range */}
             <input
               type="date"
               value={startDate}
@@ -288,10 +344,9 @@ const AdminUserLogs = () => {
                 setStartDate(e.target.value);
                 setPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-
-            {/* End Date */}
+            <span className="text-xs text-gray-400">to</span>
             <input
               type="date"
               value={endDate}
@@ -299,200 +354,96 @@ const AdminUserLogs = () => {
                 setEndDate(e.target.value);
                 setPage(1);
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
 
-          {/* Export Button */}
-          <div className="mt-4 flex justify-end">
             <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+              onClick={exportCSV}
+              className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition"
             >
-              <Download size={18} />
-              Export to CSV
+              <Download size={14} />
+              Export CSV
             </button>
           </div>
         </div>
 
-        {/* Logs Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Table */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">
-              Loading logs...
+            <div className="text-center py-16 text-sm text-gray-400">
+              Loading…
             </div>
           ) : filteredLogs.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No logs found</div>
+            <div className="text-center py-16 text-sm text-gray-400">
+              No logs found
+            </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-100 border-b">
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                    <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
+                      <th className="px-4 py-2.5 text-left font-medium">
                         Timestamp
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      <th className="px-4 py-2.5 text-left font-medium">
                         User
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      <th className="px-4 py-2.5 text-left font-medium">
                         Action
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                      <th className="px-4 py-2.5 text-left font-medium">
                         Description
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        IP Address
-                      </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-                        Details
-                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium">IP</th>
+                      <th className="px-4 py-2.5 w-8" />
                     </tr>
                   </thead>
                   <tbody>
                     {filteredLogs.map((log) => (
-                      <React.Fragment key={log._id}>
-                        <tr className="border-b hover:bg-gray-50 transition">
-                          <td className="px-6 py-3 text-sm text-gray-900">
-                            {new Date(log.createdAt).toLocaleString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-6 py-3 text-sm">
-                            <div className="font-semibold text-gray-900">
-                              {log.firstname} {log.lastname}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              @{log.username}
-                            </div>
-                          </td>
-                          <td className="px-6 py-3 text-sm">
-                            <span
-                              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                                actionTypeColors[log.actionType] ||
-                                "bg-gray-100 text-gray-800"
-                              }`}
-                            >
-                              {actionTypeIcons[log.actionType]}
-                              {actionTypeLabels[log.actionType] ||
-                                log.actionType}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-sm text-gray-600">
-                            {log.description
-                              ? log.description.substring(0, 40) + "..."
-                              : "No description"}
-                          </td>
-                          <td className="px-6 py-3 text-sm text-gray-600 font-mono">
-                            {log.ipAddress}
-                          </td>
-                          <td className="px-6 py-3 text-sm">
-                            <button
-                              onClick={() =>
-                                setExpandedLog(
-                                  expandedLog === log._id ? null : log._id,
-                                )
-                              }
-                              className="text-blue-600 hover:text-blue-800 transition"
-                            >
-                              <ChevronDown
-                                size={18}
-                                className={`transform transition ${
-                                  expandedLog === log._id ? "rotate-180" : ""
-                                }`}
-                              />
-                            </button>
-                          </td>
-                        </tr>
-
-                        {/* Expanded Details */}
-                        {expandedLog === log._id && (
-                          <tr className="bg-blue-50 border-b">
-                            <td colSpan="6" className="px-6 py-4">
-                              <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <p className="text-xs font-semibold text-gray-600">
-                                      Barangay
-                                    </p>
-                                    <p className="text-sm text-gray-900">
-                                      {log.barangayName || "N/A"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold text-gray-600">
-                                      Role
-                                    </p>
-                                    <p className="text-sm text-gray-900">
-                                      {log.role}
-                                    </p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <p className="text-xs font-semibold text-gray-600">
-                                      Description
-                                    </p>
-                                    <p className="text-sm text-gray-900">
-                                      {log.description || "No description"}
-                                    </p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <p className="text-xs font-semibold text-gray-600">
-                                      User Agent
-                                    </p>
-                                    <p className="text-xs text-gray-600 break-words">
-                                      {log.userAgent}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                      <LogRow
+                        key={log._id}
+                        log={log}
+                        expandedId={expandedId}
+                        setExpandedId={setExpandedId}
+                        ActionBadge={ActionBadge}
+                        ExpandedDetails={ExpandedDetails}
+                      />
                     ))}
                   </tbody>
                 </table>
               </div>
 
               {/* Pagination */}
-              <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
-                <p className="text-sm text-gray-600">
-                  Showing {filteredLogs.length} of {totalLogs} logs
+              <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                <p className="text-xs text-gray-400">
+                  {filteredLogs.length} of {totalLogs.toLocaleString()} logs
                 </p>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-1">
                   <button
-                    onClick={() => fetchLogs(page - 1)}
+                    onClick={() => fetchData(page - 1)}
                     disabled={page === 1}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
+                    className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 transition"
                   >
-                    Previous
+                    Prev
                   </button>
-                  <div className="px-4 py-2 flex items-center gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (p) => (
-                        <button
-                          key={p}
-                          onClick={() => fetchLogs(p)}
-                          className={`px-3 py-1 rounded ${
-                            page === p
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          } transition`}
-                        >
-                          {p}
-                        </button>
-                      ),
-                    )}
-                  </div>
+                  {visiblePages.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => fetchData(p)}
+                      className={`px-3 py-1.5 text-xs rounded-md transition ${
+                        p === page
+                          ? "bg-gray-900 text-white"
+                          : "text-gray-600 border border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
                   <button
-                    onClick={() => fetchLogs(page + 1)}
+                    onClick={() => fetchData(page + 1)}
                     disabled={page === totalPages}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition"
+                    className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 transition"
                   >
                     Next
                   </button>
@@ -504,6 +455,4 @@ const AdminUserLogs = () => {
       </div>
     </div>
   );
-};
-
-export default AdminUserLogs;
+}
