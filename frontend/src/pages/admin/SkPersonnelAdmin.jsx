@@ -7,6 +7,7 @@ import {
   MapPin,
   Shield,
   FileText,
+  X,
 } from "lucide-react";
 
 import { useToast } from "../../components/Toast";
@@ -20,6 +21,8 @@ const SkPersonnelAdmin = () => {
   const [skPersonnel, setSkPersonnel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPersonnel, setSelectedPersonnel] = useState(null);
 
   /* ===================== DATA FETCH ===================== */
   useEffect(() => {
@@ -97,7 +100,7 @@ const SkPersonnelAdmin = () => {
   }, [skPersonnel]);
 
   /* ===================== COMPONENTS ===================== */
-  const DirectoryItem = ({ role, data, isKeyOfficial = false }) => {
+  const DirectoryItem = ({ role, data, isKeyOfficial = false, onView }) => {
     const fullName =
       data?.firstName && data?.surname
         ? `${data.surname}, ${data.firstName} ${data.middleName || ""}`.trim()
@@ -134,7 +137,10 @@ const SkPersonnelAdmin = () => {
     if (isKeyOfficial) {
       return (
         <div
-          className={`p-5 bg-gradient-to-r ${colors.bg} rounded-xl border-2 ${colors.border} hover:shadow-md transition-all`}
+          onClick={() => onView && data?.firstName && onView({ ...data, role })}
+          className={`p-5 bg-gradient-to-r ${colors.bg} rounded-xl border-2 ${colors.border} hover:shadow-md transition-all ${
+            data?.firstName && data?.surname ? "cursor-pointer hover:scale-105" : ""
+          }`}
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -182,8 +188,12 @@ const SkPersonnelAdmin = () => {
 
     // Regular kagawad item
     return (
-      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:shadow-md hover:border-blue-300 transition-all">
-        <div className="flex items-center gap-4">
+      <div
+        onClick={() => onView && data?.firstName && onView({ ...data, role })}
+        className={`flex items-center justify-between p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:shadow-md hover:border-blue-300 transition-all ${
+          data?.firstName && data?.surname ? "cursor-pointer hover:scale-105" : ""
+        }`}
+      >  <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-md">
             <span className="text-white font-bold text-sm">
               {isAssigned
@@ -453,16 +463,28 @@ const SkPersonnelAdmin = () => {
                             role="SK Chairman"
                             data={skPersonnel.chairman}
                             isKeyOfficial={true}
+                            onView={(personnel) => {
+                              setSelectedPersonnel(personnel);
+                              setShowModal(true);
+                            }}
                           />
                           <DirectoryItem
                             role="SK Secretary"
                             data={skPersonnel.secretary}
                             isKeyOfficial={true}
+                            onView={(personnel) => {
+                              setSelectedPersonnel(personnel);
+                              setShowModal(true);
+                            }}
                           />
                           <DirectoryItem
                             role="SK Treasurer"
                             data={skPersonnel.treasurer}
                             isKeyOfficial={true}
+                            onView={(personnel) => {
+                              setSelectedPersonnel(personnel);
+                              setShowModal(true);
+                            }}
                           />
                         </div>
                       </div>
@@ -499,6 +521,10 @@ const SkPersonnelAdmin = () => {
                                   role="SK Kagawad"
                                   data={k}
                                   isKeyOfficial={false}
+                                  onView={(personnel) => {
+                                    setSelectedPersonnel(personnel);
+                                    setShowModal(true);
+                                  }}
                                 />
                               ))}
                             </div>
@@ -536,6 +562,99 @@ const SkPersonnelAdmin = () => {
           )}
         </div>
       </div>
+
+      {/* Personnel Details Modal */}
+      {showModal && selectedPersonnel && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in fade-in scale-in">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-xl font-bold text-white">Details</h2>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedPersonnel(null);
+                }}
+                className="bg-white/20 hover:bg-white/30 p-1.5 rounded-lg transition-all"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4">
+              {/* Position Badge */}
+              <div className="flex justify-center mb-4">
+                <span className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold">
+                  {selectedPersonnel.role}
+                </span>
+              </div>
+
+              {/* Full Name */}
+              <div className="border-b-2 border-slate-200 pb-4">
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
+                  Full Name
+                </p>
+                <p className="text-lg font-bold text-slate-900">
+                  {selectedPersonnel.surname}, {selectedPersonnel.firstName}
+                </p>
+                {selectedPersonnel.middleName && (
+                  <p className="text-sm text-slate-600 mt-1">
+                    Middle Name: {selectedPersonnel.middleName}
+                  </p>
+                )}
+              </div>
+
+              {/* Age */}
+              <div className="border-b-2 border-slate-200 pb-4">
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-1">
+                  Age
+                </p>
+                <p className="text-lg font-bold text-slate-900">
+                  {selectedPersonnel.age} years old
+                </p>
+              </div>
+
+              {/* Status */}
+              <div className="pb-4">
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">
+                  Status
+                </p>
+                <div className="flex items-center gap-2">
+                  {selectedPersonnel.status === "Active" ? (
+                    <>
+                      <UserCheck size={18} className="text-emerald-600" />
+                      <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-bold border-2 border-emerald-200">
+                        Active
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <UserX size={18} className="text-red-600" />
+                      <span className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold border-2 border-red-200">
+                        Inactive
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 px-6 py-4 rounded-b-2xl border-t-2 border-slate-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedPersonnel(null);
+                }}
+                className="flex-1 px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold rounded-lg transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
