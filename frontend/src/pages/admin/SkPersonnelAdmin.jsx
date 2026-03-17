@@ -139,7 +139,9 @@ const SkPersonnelAdmin = () => {
         <div
           onClick={() => onView && data?.firstName && onView({ ...data, role })}
           className={`p-5 bg-gradient-to-r ${colors.bg} rounded-xl border-2 ${colors.border} hover:shadow-md transition-all ${
-            data?.firstName && data?.surname ? "cursor-pointer hover:scale-105" : ""
+            data?.firstName && data?.surname
+              ? "cursor-pointer hover:scale-105"
+              : ""
           }`}
         >
           <div className="flex items-center justify-between mb-3">
@@ -191,9 +193,13 @@ const SkPersonnelAdmin = () => {
       <div
         onClick={() => onView && data?.firstName && onView({ ...data, role })}
         className={`flex items-center justify-between p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:shadow-md hover:border-blue-300 transition-all ${
-          data?.firstName && data?.surname ? "cursor-pointer hover:scale-105" : ""
+          data?.firstName && data?.surname
+            ? "cursor-pointer hover:scale-105"
+            : ""
         }`}
-      >  <div className="flex items-center gap-4">
+      >
+        {" "}
+        <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-md">
             <span className="text-white font-bold text-sm">
               {isAssigned
@@ -210,7 +216,6 @@ const SkPersonnelAdmin = () => {
             </p>
           </div>
         </div>
-
         <div>
           {isAssigned ? (
             <span

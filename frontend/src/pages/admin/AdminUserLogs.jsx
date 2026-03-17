@@ -11,6 +11,9 @@ import {
   Settings,
   Filter,
   ChevronDown,
+  Users,
+  Plus,
+  Edit,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
@@ -46,6 +49,9 @@ const AdminUserLogs = () => {
     create_folder: <FileText size={16} className="text-blue-600" />,
     delete_folder: <Trash2 size={16} className="text-red-600" />,
     restore_document: <FileText size={16} className="text-green-600" />,
+    set_sk_personnel: <Plus size={16} className="text-blue-600" />,
+    edit_sk_personnel: <Edit size={16} className="text-orange-600" />,
+    delete_sk_personnel: <Trash2 size={16} className="text-red-600" />,
   };
 
   const actionTypeLabels = {
@@ -58,6 +64,9 @@ const AdminUserLogs = () => {
     create_folder: "Create Folder",
     delete_folder: "Delete Folder",
     restore_document: "Restore Document",
+    set_sk_personnel: "Set SK Personnel",
+    edit_sk_personnel: "Edit SK Personnel",
+    delete_sk_personnel: "Delete SK Personnel",
   };
 
   const actionTypeColors = {
@@ -70,6 +79,9 @@ const AdminUserLogs = () => {
     create_folder: "bg-blue-100 text-blue-800",
     delete_folder: "bg-red-100 text-red-800",
     restore_document: "bg-green-100 text-green-800",
+    set_sk_personnel: "bg-blue-100 text-blue-800",
+    edit_sk_personnel: "bg-orange-100 text-orange-800",
+    delete_sk_personnel: "bg-red-100 text-red-800",
   };
 
   // Fetch logs

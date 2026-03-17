@@ -1,5 +1,6 @@
 import SKPersonnel from "../models/SKPersonnelModel.js";
 import Barangay from "../models/BarangayModel.js";
+import UserLog from "../models/UserLogModel.js";
 import mongoose from "mongoose";
 
 // Get SK Personnel for a barangay
@@ -61,12 +62,18 @@ export const updateChairman = async (req, res) => {
   try {
     const { barangayId } = req.params;
     const { surname, firstName, middleName, age, status } = req.body;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
 
     if (!mongoose.Types.ObjectId.isValid(barangayId)) {
       return res.status(400).json({ message: "Invalid barangay ID" });
     }
 
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
+    const isNewAssignment = !skPersonnel?.chairman?.firstName;
 
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
@@ -107,6 +114,29 @@ export const updateChairman = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    // Log the action
+    if (userId) {
+      const actionType = isNewAssignment
+        ? "set_sk_personnel"
+        : "edit_sk_personnel";
+      const description = isNewAssignment
+        ? `Set SK Chairman: ${firstName} ${surname}`
+        : `Edited SK Chairman: ${firstName} ${surname}`;
+
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType,
+        description,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
     res.status(200).json({ message: "Chairman updated", skPersonnel });
   } catch (error) {
     console.error("Error updating Chairman:", error);
@@ -119,12 +149,18 @@ export const updateSecretary = async (req, res) => {
   try {
     const { barangayId } = req.params;
     const { surname, firstName, middleName, age, status } = req.body;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
 
     if (!mongoose.Types.ObjectId.isValid(barangayId)) {
       return res.status(400).json({ message: "Invalid barangay ID" });
     }
 
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
+    const isNewAssignment = !skPersonnel?.secretary?.firstName;
 
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
@@ -165,6 +201,29 @@ export const updateSecretary = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    // Log the action
+    if (userId) {
+      const actionType = isNewAssignment
+        ? "set_sk_personnel"
+        : "edit_sk_personnel";
+      const description = isNewAssignment
+        ? `Set SK Secretary: ${firstName} ${surname}`
+        : `Edited SK Secretary: ${firstName} ${surname}`;
+
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType,
+        description,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
     res.status(200).json({ message: "Secretary updated", skPersonnel });
   } catch (error) {
     console.error("Error updating Secretary:", error);
@@ -177,12 +236,18 @@ export const updateTreasurer = async (req, res) => {
   try {
     const { barangayId } = req.params;
     const { surname, firstName, middleName, age, status } = req.body;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
 
     if (!mongoose.Types.ObjectId.isValid(barangayId)) {
       return res.status(400).json({ message: "Invalid barangay ID" });
     }
 
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
+    const isNewAssignment = !skPersonnel?.treasurer?.firstName;
 
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
@@ -223,6 +288,29 @@ export const updateTreasurer = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    // Log the action
+    if (userId) {
+      const actionType = isNewAssignment
+        ? "set_sk_personnel"
+        : "edit_sk_personnel";
+      const description = isNewAssignment
+        ? `Set SK Treasurer: ${firstName} ${surname}`
+        : `Edited SK Treasurer: ${firstName} ${surname}`;
+
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType,
+        description,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
     res.status(200).json({ message: "Treasurer updated", skPersonnel });
   } catch (error) {
     console.error("Error updating Treasurer:", error);
@@ -235,6 +323,11 @@ export const addKagawad = async (req, res) => {
   try {
     const { barangayId } = req.params;
     const { surname, firstName, middleName, age, status } = req.body;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
 
     if (!mongoose.Types.ObjectId.isValid(barangayId)) {
       return res.status(400).json({ message: "Invalid barangay ID" });
@@ -297,6 +390,22 @@ export const addKagawad = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    // Log the action
+    if (userId) {
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType: "set_sk_personnel",
+        description: `Added SK Kagawad: ${firstName} ${surname}`,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
     res
       .status(201)
       .json({ message: "Kagawad added successfully", skPersonnel });
@@ -311,6 +420,11 @@ export const updateKagawad = async (req, res) => {
   try {
     const { barangayId, kagawadId } = req.params;
     const { surname, firstName, middleName, age, status } = req.body;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
 
     if (
       !mongoose.Types.ObjectId.isValid(barangayId) ||
@@ -342,6 +456,22 @@ export const updateKagawad = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    // Log the action
+    if (userId) {
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType: "edit_sk_personnel",
+        description: `Edited SK Kagawad: ${firstName || kagawad.firstName} ${surname || kagawad.surname}`,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
     res
       .status(200)
       .json({ message: "Kagawad updated successfully", skPersonnel });
@@ -355,6 +485,11 @@ export const updateKagawad = async (req, res) => {
 export const deleteKagawad = async (req, res) => {
   try {
     const { barangayId, kagawadId } = req.params;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
 
     if (
       !mongoose.Types.ObjectId.isValid(barangayId) ||
@@ -369,12 +504,38 @@ export const deleteKagawad = async (req, res) => {
       return res.status(404).json({ message: "SK Personnel record not found" });
     }
 
+    const kagawadToDelete = skPersonnel.kagawad.find(
+      (k) => k._id.toString() === kagawadId,
+    );
+
+    if (!kagawadToDelete) {
+      return res.status(404).json({ message: "Kagawad not found" });
+    }
+
+    const deletedName = `${kagawadToDelete.firstName} ${kagawadToDelete.surname}`;
+
     skPersonnel.kagawad = skPersonnel.kagawad.filter(
       (k) => k._id.toString() !== kagawadId,
     );
 
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
+
+    // Log the action
+    if (userId) {
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType: "delete_sk_personnel",
+        description: `Deleted SK Kagawad: ${deletedName}`,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
 
     res
       .status(200)
