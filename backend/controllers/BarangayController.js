@@ -140,6 +140,25 @@ export const deleteBarangay = async (req, res) => {
     barangay.deletedAt = new Date();
     await barangay.save();
 
+    // Log the delete_barangay action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "delete_barangay",
+        description: `Admin deleted barangay: ${barangay.barangayName} (${barangay.city}, ${barangay.province})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete_barangay action:", logError);
+      // Don't fail the deletion if logging fails
+    }
+
     res.status(200).json({ message: "Barangay deleted successfully" });
   } catch (error) {
     console.error("Error deleting barangay:", error);
@@ -195,6 +214,25 @@ export const restoreDeletedBarangay = async (req, res) => {
       { $set: { isDeleted: false, deletedAt: null } },
     );
 
+    // Log the restore_barangay action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "restore_barangay",
+        description: `Admin restored barangay: ${barangay.barangayName} (${barangay.city}, ${barangay.province})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging restore_barangay action:", logError);
+      // Don't fail the restore if logging fails
+    }
+
     res.status(200).json({
       message: "Barangay and its documents restored successfully",
       barangay,
@@ -224,6 +262,25 @@ export const permanentlyDeleteBarangay = async (req, res) => {
 
     // Delete the barangay
     await Barangay.findByIdAndDelete(id);
+
+    // Log the delete_barangay action (permanent deletion)
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "delete_barangay",
+        description: `Admin permanently deleted barangay: ${barangay.barangayName} (${barangay.city}, ${barangay.province})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete_barangay action:", logError);
+      // Don't fail the deletion if logging fails
+    }
 
     res.status(200).json({
       message: "Barangay and all its data permanently deleted",

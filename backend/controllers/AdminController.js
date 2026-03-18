@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/UserModel.js";
+import UserLog from "../models/UserLogModel.js";
 import bcrypt from "bcryptjs";
 
 // helper for random strings used when credentials are auto-generated
@@ -108,6 +109,25 @@ const createOfficial = async (req, res) => {
 
     // Populate barangay name for frontend
     await newOfficial.populate("barangay");
+
+    // Log the create_user action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "create_user",
+        description: `Admin created new user: ${newOfficial.firstname} ${newOfficial.lastname} (${newOfficial.username}) with role ${newOfficial.role}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging create_user action:", logError);
+      // Don't fail the creation if logging fails
+    }
 
     res.status(201).json({
       message: "Official created successfully",
@@ -225,6 +245,25 @@ const deleteOfficial = async (req, res) => {
     official.deletedAt = new Date();
     await official.save();
 
+    // Log the delete_user action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "delete_user",
+        description: `Admin deleted user: ${official.firstname} ${official.lastname} (${official.username})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete_user action:", logError);
+      // Don't fail the deletion if logging fails
+    }
+
     res.status(200).json({
       message: "Official deleted successfully",
     });
@@ -296,6 +335,25 @@ const permanentlyDeleteUser = async (req, res) => {
 
     await User.findByIdAndDelete(id);
 
+    // Log the delete_user action for permanent deletion
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "delete_user",
+        description: `Admin permanently deleted user: ${user.firstname} ${user.lastname} (${user.username})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete_user action:", logError);
+      // Don't fail the deletion if logging fails
+    }
+
     res.status(200).json({
       message: "User permanently deleted",
     });
@@ -358,6 +416,33 @@ const updateOfficial = async (req, res) => {
 
     const updatedOfficial = await official.save();
     await updatedOfficial.populate("barangay");
+
+    // Log the edit_user action
+    try {
+      const changedFields = [];
+      if (firstname) changedFields.push("firstname");
+      if (lastname) changedFields.push("lastname");
+      if (position) changedFields.push("position");
+      if (email !== undefined) changedFields.push("email");
+      if (username) changedFields.push("username");
+      if (password) changedFields.push("password");
+
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "edit_user",
+        description: `Admin edited user: ${updatedOfficial.firstname} ${updatedOfficial.lastname} (${updatedOfficial.username}). Changed fields: ${changedFields.join(", ")}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging edit_user action:", logError);
+      // Don't fail the update if logging fails
+    }
 
     // Send response without password
     return res.status(200).json({

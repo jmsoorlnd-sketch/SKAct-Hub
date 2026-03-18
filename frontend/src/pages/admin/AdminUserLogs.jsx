@@ -20,6 +20,10 @@ import {
   ChevronDown,
   Plus,
   Edit,
+  UserPlus,
+  UserX,
+  Building2,
+  RotateCcw,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
@@ -47,6 +51,15 @@ const ACTION_META = {
     color: "orange",
   },
   delete_sk_personnel: { label: "Delete SK", icon: Trash2, color: "red" },
+  create_user: { label: "Create User", icon: UserPlus, color: "green" },
+  edit_user: { label: "Edit User", icon: Edit, color: "orange" },
+  delete_user: { label: "Delete User", icon: UserX, color: "red" },
+  delete_barangay: { label: "Delete Barangay", icon: Trash2, color: "red" },
+  restore_barangay: {
+    label: "Restore Barangay",
+    icon: RotateCcw,
+    color: "green",
+  },
 };
 
 const COLOR_CLASSES = {
@@ -267,35 +280,37 @@ export default function AdminUserLogs() {
           </p>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Sticky */}
         {statistics && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <StatCard
-              label="Total Logs"
-              value={statistics.totalLogs?.toLocaleString()}
-              icon={Clock}
-              iconClass="text-blue-400"
-            />
-            <StatCard
-              label="Action Types"
-              value={statistics.actionTypeCounts?.length ?? 0}
-              icon={Filter}
-              iconClass="text-purple-400"
-            />
-            <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                Top user
-              </p>
-              <p className="text-sm font-semibold text-gray-900 mt-1 truncate">
-                {topUser ? `@${topUser.username}` : "—"}
-              </p>
-              <div className="flex flex-wrap gap-x-3 mt-1.5">
-                {statistics.actionTypeCounts?.slice(0, 3).map((a) => (
-                  <span key={a._id} className="text-xs text-gray-500">
-                    {ACTION_META[a._id]?.label ?? a._id}:
-                    <strong className="text-gray-700">{a.count}</strong>
-                  </span>
-                ))}
+          <div className="sticky top-0 z-10 bg-gray-50 pb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <StatCard
+                label="Total Logs"
+                value={statistics.totalLogs?.toLocaleString()}
+                icon={Clock}
+                iconClass="text-blue-400"
+              />
+              <StatCard
+                label="Action Types"
+                value={statistics.actionTypeCounts?.length ?? 0}
+                icon={Filter}
+                iconClass="text-purple-400"
+              />
+              <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                  Top user
+                </p>
+                <p className="text-sm font-semibold text-gray-900 mt-1 truncate">
+                  {topUser ? `@${topUser.username}` : "—"}
+                </p>
+                <div className="flex flex-wrap gap-x-3 mt-1.5">
+                  {statistics.actionTypeCounts?.slice(0, 3).map((a) => (
+                    <span key={a._id} className="text-xs text-gray-500">
+                      {ACTION_META[a._id]?.label ?? a._id}:
+                      <strong className="text-gray-700">{a.count}</strong>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

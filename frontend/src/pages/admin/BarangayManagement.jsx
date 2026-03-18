@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { AlertCircle, Trash2, X } from "lucide-react";
 
 const BarangayManagement = () => {
   const [barangays, setBarangays] = useState([]);
@@ -17,6 +18,8 @@ const BarangayManagement = () => {
   const [approvalMessages, setApprovalMessages] = useState([]);
   const [loadingApprovals, setLoadingApprovals] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState(null);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [barangayToDelete, setBarangayToDelete] = useState(null);
   const ADMIN_LIMIT = 5;
   const [formData, setFormData] = useState({
     barangayName: "",
@@ -182,18 +185,31 @@ const BarangayManagement = () => {
     }
   };
 
-  const handleDeleteBarangay = async (barangayId) => {
-    if (!window.confirm("Delete this barangay?")) return;
+  const handleDeleteBarangay = (barangayId) => {
+    const barangay = barangays.find((b) => b._id === barangayId);
+    if (barangay) {
+      setBarangayToDelete(barangay);
+      setShowDeleteConfirmModal(true);
+    }
+  };
+
+  const handleConfirmDeleteBarangay = async () => {
+    if (!barangayToDelete) return;
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/barangays/${barangayId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(
+        `http://localhost:5000/api/barangays/${barangayToDelete._id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       alert("Barangay deleted successfully!");
       fetchBarangays();
       setSelectedBarangay(null);
       setUsers([]);
+      setShowDeleteConfirmModal(false);
+      setBarangayToDelete(null);
     } catch (error) {
       console.error("Error deleting barangay:", error);
       alert("Failed to delete barangay.");
@@ -265,6 +281,121 @@ const BarangayManagement = () => {
       console.error("Reject failed:", error);
       alert("Failed to reject message");
     }
+  };
+
+  /* -------- Delete Confirmation Modal -------- */
+  const DeleteConfirmationModal = () => {
+    if (!showDeleteConfirmModal || !barangayToDelete) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
+          {/* Header */}
+          <div className="bg-red-50 px-6 py-4 border-b border-red-100 flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <div className="bg-red-100 p-2.5 rounded-lg">
+                <AlertCircle className="text-red-600" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Delete Barangay
+                </h3>
+                <p className="text-xs text-red-600 font-medium mt-0.5">
+                  Permanent action
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowDeleteConfirmModal(false);
+                setBarangayToDelete(null);
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="px-6 py-4 space-y-4">
+            <div className="p-4 bg-red-50 rounded-lg border border-red-100">
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Are you sure?</span> You are
+                about to permanently delete:
+              </p>
+              <div className="mt-3 space-y-1.5 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-700">Barangay:</span>
+                  <span className="text-gray-600">
+                    {barangayToDelete.barangayName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-700">City:</span>
+                  <span className="text-gray-600">{barangayToDelete.city}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-700">Province:</span>
+                  <span className="text-gray-600">
+                    {barangayToDelete.province}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800">
+                <span className="font-semibold">⚠️ Warning:</span> This action
+                cannot be undone. All associated data will be permanently
+                deleted.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type "{barangayToDelete.barangayName}" to confirm deletion:
+              </label>
+              <input
+                type="text"
+                id="confirmText"
+                placeholder={barangayToDelete.barangayName}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 px-6 py-3 border-t border-gray-100 flex gap-3">
+            <button
+              onClick={() => {
+                setShowDeleteConfirmModal(false);
+                setBarangayToDelete(null);
+              }}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                const confirmText =
+                  document.getElementById("confirmText").value;
+                if (confirmText === barangayToDelete.barangayName) {
+                  handleConfirmDeleteBarangay();
+                } else {
+                  alert(
+                    `Please type "${barangayToDelete.barangayName}" exactly to confirm deletion.`,
+                  );
+                }
+              }}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors text-sm"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -684,6 +815,9 @@ const BarangayManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal />
     </div>
   );
 };
