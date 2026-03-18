@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useContext,
+  useCallback,
+} from "react";
 import { AuthContext } from "../../context/AuthContext";
 import axios from "axios";
 import {
@@ -8,7 +14,6 @@ import {
   Plus,
   X,
   Clock,
-  MapPin,
   FileText,
   AlertCircle,
   TrendingUp,
@@ -20,10 +25,117 @@ import {
   Trash2,
 } from "lucide-react";
 
+const API_BASE = "http://localhost:5000/api";
+
+const DEFAULT_FORM = { subject: "", body: "", startDate: "", endDate: "" };
+const WEEKDAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+const getToken = () => localStorage.getItem("token");
+const authHeaders = () => ({ Authorization: `Bearer ${getToken()}` });
+
+/* ==================== STAT CARD ==================== */
+const STAT_COLORS = {
+  blue: { bg: "from-blue-500 to-blue-600", badge: "bg-blue-100 text-blue-700" },
+  emerald: {
+    bg: "from-emerald-500 to-emerald-600",
+    badge: "bg-emerald-100 text-emerald-700",
+  },
+  purple: {
+    bg: "from-purple-500 to-purple-600",
+    badge: "bg-purple-100 text-purple-700",
+  },
+  slate: {
+    bg: "from-slate-500 to-slate-600",
+    badge: "bg-slate-100 text-slate-700",
+  },
+};
+
+const StatCard = ({ icon: Icon, title, value, color, subtitle }) => {
+  const c = STAT_COLORS[color];
+  return (
+    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div
+          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
+        >
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <span
+          className={`px-2 py-0.5 ${c.badge} rounded-md text-[11px] font-bold`}
+        >
+          {subtitle}
+        </span>
+      </div>
+      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">{title}</h3>
+      <p className="text-2xl font-bold text-slate-900">{value}</p>
+    </div>
+  );
+};
+
+/* ==================== EVENT CARD ==================== */
+const EventCard = ({ evt, user, onDelete, onToggleSelect, isSelected }) => {
+  const isOwner = user && String(evt.sender?._id) === String(user._id);
+  return (
+    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all">
+      {isOwner && (
+        <input
+          type="checkbox"
+          className="mr-2 mb-2"
+          checked={isSelected}
+          onChange={() => onToggleSelect(evt._id)}
+        />
+      )}
+      <div className="flex items-start gap-2.5 mb-2.5">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+          <CalendarIcon className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <h4 className="font-bold text-slate-900 text-base">{evt.subject}</h4>
+          {evt.body && (
+            <p className="text-xs text-slate-700 mt-0.5">{evt.body}</p>
+          )}
+          {isOwner && (
+            <button
+              onClick={() => onDelete(evt._id)}
+              className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
+            >
+              <Trash2 size={14} /> Cancel
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="flex items-center gap-1.5 text-xs">
+          <Clock className="w-3.5 h-3.5 text-blue-600" />
+          <span className="font-semibold text-slate-700">
+            Start: {new Date(evt.startDate).toLocaleString()}
+          </span>
+        </div>
+        {evt.endDate && (
+          <div className="flex items-center gap-1.5 text-xs">
+            <Clock className="w-3.5 h-3.5 text-purple-600" />
+            <span className="font-semibold text-slate-700">
+              End: {new Date(evt.endDate).toLocaleString()}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ==================== MAIN COMPONENT ==================== */
 const EventCalendar = () => {
-  /* ===================== STATE ===================== */
-  const [userBarangay, setUserBarangay] = useState(null);
   const { user } = useContext(AuthContext);
+  const [userBarangay, setUserBarangay] = useState(null);
   const [events, setEvents] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -36,261 +148,71 @@ const EventCalendar = () => {
     message: "",
     title: "",
   });
-
-  // Create Event Modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const defaultForm = {
-    subject: "",
-    body: "",
-    startDate: "",
-    endDate: "",
-  };
-  const [formData, setFormData] = useState(defaultForm);
+  const [formData, setFormData] = useState(DEFAULT_FORM);
   const [formErrors, setFormErrors] = useState({});
 
-  /* ===================== DATA FETCHING ===================== */
-  useEffect(() => {
-    fetchUserBarangay();
-    fetchEvents();
-  }, []);
-
-  const fetchUserBarangay = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "http://localhost:5000/api/barangays/me/barangay",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      setUserBarangay(res.data.barangay);
-    } catch (err) {
-      console.error("Failed to fetch user barangay:", err);
-    }
-  };
-
-  const fetchEvents = async () => {
+  /* ---- Data Fetching ---- */
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "http://localhost:5000/api/messages/activities",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      setEvents(res.data.activities || []);
+      const { data } = await axios.get(`${API_BASE}/messages/activities`, {
+        headers: authHeaders(),
+      });
+      setEvents(data.activities ?? []);
     } catch (err) {
       console.error("Failed to fetch events:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const openConfirmationModal = (ids) => {
-    setConfirmationModal({
-      isOpen: true,
-      eventIds: ids,
-      title: "Cancel Events",
-      message: `Cancel ${ids.length} selected event${ids.length !== 1 ? "s" : ""}?`,
-    });
-  };
-
-  const handleDeleteEvent = (eventId) => {
-    const evt = events.find((e) => e._id === eventId);
-    if (!evt || !user || String(evt.sender?._id) !== String(user._id)) return;
-    openConfirmationModal([eventId]);
-  };
-
-  const closeConfirmationModal = () => {
-    setConfirmationModal({
-      isOpen: false,
-      eventIds: [],
-      message: "",
-      title: "",
-    });
-  };
-
-  const handleConfirmAction = async () => {
-    const ids = confirmationModal.eventIds || [];
-    for (const id of ids) {
+  useEffect(() => {
+    const fetchUserBarangay = async () => {
       try {
-        const token = localStorage.getItem("token");
-        await axios.delete(`http://localhost:5000/api/messages/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const { data } = await axios.get(`${API_BASE}/barangays/me/barangay`, {
+          headers: authHeaders(),
         });
+        setUserBarangay(data.barangay);
       } catch (err) {
-        console.error("Failed to delete event", id, err);
+        console.error("Failed to fetch user barangay:", err);
       }
-    }
-    setSelectedEventIds(new Set());
+    };
+    fetchUserBarangay();
     fetchEvents();
-    closeConfirmationModal();
-  };
+  }, [fetchEvents]);
 
-  /* ===================== CALENDAR HELPERS ===================== */
-  const getDaysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
-  const handlePrevMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1),
-    );
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1),
-    );
-  };
-
-  const getEventsForDate = (date) => {
-    return events.filter((event) => {
-      // allow if the current user created the event
-      if (user && `${event.sender?._id}` === `${user._id}`) {
-        const eventDate = new Date(event.startDate);
-        return (
-          eventDate.getDate() === date.getDate() &&
-          eventDate.getMonth() === date.getMonth() &&
-          eventDate.getFullYear() === date.getFullYear()
-        );
-      }
-
-      if (!userBarangay) return false;
-
-      // Only show events if the official's barangay matches
-      // convert IDs to string in case one is ObjectId
-      if (`${event.attachedToBarangay}` !== `${userBarangay._id}`) {
-        return false;
-      }
-
-      const eventDate = new Date(event.startDate);
-      return (
-        eventDate.getDate() === date.getDate() &&
-        eventDate.getMonth() === date.getMonth() &&
-        eventDate.getFullYear() === date.getFullYear()
-      );
-    });
-  };
-
-  /* clear selections when events update */
   useEffect(() => {
     setSelectedEventIds(new Set());
   }, [events]);
 
-  /* ===================== EVENT CREATION ===================== */
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.subject.trim()) errors.subject = "Event title is required";
-    if (!formData.startDate) errors.startDate = "Start date is required";
-    if (formData.endDate && formData.endDate < formData.startDate)
-      errors.endDate = "End date cannot be before start date";
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleOpenCreateModal = () => {
-    setFormData(defaultForm);
-    setFormErrors({});
-    setShowCreateModal(true);
-  };
-
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-    setFormData(defaultForm);
-    setFormErrors({});
-  };
-
-  const handleCreateEvent = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    try {
-      setSubmitting(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Authentication token not found. Please log in again.");
-        return;
-      }
-
-      const fd = new FormData();
-      fd.append("subject", formData.subject);
-      fd.append("body", formData.body);
-      fd.append("startDate", formData.startDate);
-      if (formData.endDate) fd.append("endDate", formData.endDate);
-      if (userBarangay?._id) fd.append("barangayId", userBarangay._id);
-      fd.append("recipientId", user._id); // REQUIRED for backend
-      // If you have a file upload, add: fd.append('attachment', file);
-
-      await axios.post("http://localhost:5000/api/messages/send", fd, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      handleCloseCreateModal();
-      fetchEvents();
-    } catch (error) {
-      console.error("Failed to create event:", error);
-      alert(
-        error.response?.status === 401
-          ? "Authentication failed. Please log in again."
-          : "Failed to create event. Please try again.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  /* ===================== STATISTICS ===================== */
-  const statistics = useMemo(() => {
-    if (!userBarangay && !user)
-      return { total: 0, upcoming: 0, past: 0, thisMonth: 0 };
-
-    const barangayEvents = events.filter((e) => {
-      if (user && `${e.sender?._id}` === `${user._id}`) return true;
-      if (userBarangay && `${e.attachedToBarangay}` === `${userBarangay._id}`)
+  /* ---- Visibility helper (single source of truth) ---- */
+  const isVisibleEvent = useCallback(
+    (e) => {
+      if (user && String(e.sender?._id) === String(user._id)) return true;
+      if (
+        userBarangay &&
+        String(e.attachedToBarangay) === String(userBarangay._id)
+      )
         return true;
       return false;
-    });
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    },
+    [user, userBarangay],
+  );
 
-    const total = barangayEvents.length;
-    const upcoming = barangayEvents.filter(
-      (e) => new Date(e.startDate) >= today,
-    ).length;
-    const past = barangayEvents.filter(
-      (e) => new Date(e.startDate) < today,
-    ).length;
-    const thisMonth = barangayEvents.filter((e) => {
-      const eventDate = new Date(e.startDate);
-      return (
-        eventDate.getMonth() === currentDate.getMonth() &&
-        eventDate.getFullYear() === currentDate.getFullYear()
-      );
-    }).length;
+  /* ---- Derived lists ---- */
+  const visibleEvents = useMemo(
+    () => events.filter(isVisibleEvent),
+    [events, isVisibleEvent],
+  );
 
-    return { total, upcoming, past, thisMonth };
-  }, [events, userBarangay, user, currentDate]);
-
-  // precompute filtered upcoming events list for rendering and selection
   const upcomingEvents = useMemo(() => {
-    if (!userBarangay && !user) return [];
-    return events
-      .filter((e) => {
-        if (user && `${e.sender?._id}` === `${user._id}`) return true;
-        if (userBarangay && `${e.attachedToBarangay}` === `${userBarangay._id}`)
-          return true;
-        return false;
-      })
-      .filter((e) => new Date(e.startDate) >= new Date())
+    const now = new Date();
+    return visibleEvents
+      .filter((e) => new Date(e.startDate) >= now)
       .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-  }, [events, userBarangay, user, user]);
+  }, [visibleEvents]);
 
   const deletableEvents = useMemo(() => {
     if (!user) return [];
@@ -299,46 +221,77 @@ const EventCalendar = () => {
     );
   }, [upcomingEvents, user]);
 
-  /* ===================== CALENDAR RENDER ===================== */
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentDate);
-    const firstDay = getFirstDayOfMonth(currentDate);
-    const days = [];
-    const monthName = currentDate.toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
+  /* ---- Statistics ---- */
+  const statistics = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return {
+      total: visibleEvents.length,
+      upcoming: visibleEvents.filter((e) => new Date(e.startDate) >= today)
+        .length,
+      past: visibleEvents.filter((e) => new Date(e.startDate) < today).length,
+      thisMonth: visibleEvents.filter((e) => {
+        const d = new Date(e.startDate);
+        return (
+          d.getMonth() === currentDate.getMonth() &&
+          d.getFullYear() === currentDate.getFullYear()
+        );
+      }).length,
+    };
+  }, [visibleEvents, currentDate]);
 
-    // Empty cells for days before month starts
+  /* ---- Calendar helpers ---- */
+  const getEventsForDate = useCallback(
+    (date) => {
+      return visibleEvents.filter((e) => {
+        const d = new Date(e.startDate);
+        return (
+          d.getDate() === date.getDate() &&
+          d.getMonth() === date.getMonth() &&
+          d.getFullYear() === date.getFullYear()
+        );
+      });
+    },
+    [visibleEvents],
+  );
+
+  const handlePrevMonth = () =>
+    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1));
+  const handleNextMonth = () =>
+    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() + 1));
+
+  /* ---- Calendar grid (memoized to avoid rebuilding on every render) ---- */
+  const { calendarDays, monthName } = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const today = new Date();
+    const days = [];
+
     for (let i = 0; i < firstDay; i++) {
       days.push(
         <div
           key={`empty-${i}`}
           className="bg-slate-50 rounded-lg border-2 border-transparent"
-        ></div>,
+        />,
       );
     }
 
-    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day,
-      );
+      const date = new Date(year, month, day);
       const dayEvents = getEventsForDate(date);
-      const isToday = date.toDateString() === new Date().toDateString();
-      const isPast = date < new Date().setHours(0, 0, 0, 0);
-
-      const handleDateClick = () => {
-        setSelectedDate(date);
-        setShowDateModal(true);
-      };
+      const isToday = date.toDateString() === today.toDateString();
+      const isPast =
+        date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
       days.push(
         <div
           key={day}
-          onClick={handleDateClick}
+          onClick={() => {
+            setSelectedDate(date);
+            setShowDateModal(true);
+          }}
           className={`border-2 rounded-lg p-2.5 min-h-[100px] cursor-pointer transition-all duration-200 flex flex-col ${
             isToday
               ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-400 shadow-md"
@@ -349,13 +302,7 @@ const EventCalendar = () => {
         >
           <div className="flex items-center justify-between mb-1.5">
             <span
-              className={`text-xs font-bold ${
-                isToday
-                  ? "text-blue-600 text-base"
-                  : isPast
-                    ? "text-slate-400"
-                    : "text-slate-900"
-              }`}
+              className={`text-xs font-bold ${isToday ? "text-blue-600 text-base" : isPast ? "text-slate-400" : "text-slate-900"}`}
             >
               {day}
             </span>
@@ -385,10 +332,133 @@ const EventCalendar = () => {
       );
     }
 
-    return { days, monthName };
+    return {
+      calendarDays: days,
+      monthName: currentDate.toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      }),
+    };
+  }, [currentDate, getEventsForDate]);
+
+  /* ---- Selection helpers ---- */
+  const toggleSelectEvent = useCallback((id) => {
+    setSelectedEventIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(
+    (checked) => {
+      setSelectedEventIds(
+        checked ? new Set(deletableEvents.map((e) => e._id)) : new Set(),
+      );
+    },
+    [deletableEvents],
+  );
+
+  /* ---- Confirmation modal ---- */
+  const openConfirmationModal = (ids) =>
+    setConfirmationModal({
+      isOpen: true,
+      eventIds: ids,
+      title: "Cancel Events",
+      message: `Cancel ${ids.length} selected event${ids.length !== 1 ? "s" : ""}?`,
+    });
+
+  const closeConfirmationModal = () =>
+    setConfirmationModal({
+      isOpen: false,
+      eventIds: [],
+      message: "",
+      title: "",
+    });
+
+  const handleDeleteEvent = (eventId) => {
+    const evt = events.find((e) => e._id === eventId);
+    if (!evt || !user || String(evt.sender?._id) !== String(user._id)) return;
+    openConfirmationModal([eventId]);
   };
 
-  /* ===================== RENDER ===================== */
+  const handleConfirmAction = async () => {
+    await Promise.all(
+      confirmationModal.eventIds.map((id) =>
+        axios
+          .delete(`${API_BASE}/messages/${id}`, { headers: authHeaders() })
+          .catch((err) => console.error("Failed to delete event", id, err)),
+      ),
+    );
+    setSelectedEventIds(new Set());
+    fetchEvents();
+    closeConfirmationModal();
+  };
+
+  /* ---- Form ---- */
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.subject.trim()) errors.subject = "Event title is required";
+    if (!formData.startDate) errors.startDate = "Start date is required";
+    if (formData.endDate && formData.endDate < formData.startDate)
+      errors.endDate = "End date cannot be before start date";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleOpenCreateModal = () => {
+    setFormData(DEFAULT_FORM);
+    setFormErrors({});
+    setShowCreateModal(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setFormData(DEFAULT_FORM);
+    setFormErrors({});
+  };
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    try {
+      setSubmitting(true);
+      const fd = new FormData();
+      fd.append("subject", formData.subject);
+      fd.append("body", formData.body);
+      fd.append("startDate", formData.startDate);
+      if (formData.endDate) fd.append("endDate", formData.endDate);
+      if (userBarangay?._id) fd.append("barangayId", userBarangay._id);
+      fd.append("recipientId", user._id);
+      await axios.post(`${API_BASE}/messages/send`, fd, {
+        headers: authHeaders(),
+      });
+      handleCloseCreateModal();
+      fetchEvents();
+    } catch (error) {
+      console.error("Failed to create event:", error);
+      alert(
+        error.response?.status === 401
+          ? "Authentication failed. Please log in again."
+          : "Failed to create event. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const updateForm = (field) => (e) => {
+    setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    setFormErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  /* ---- Date modal events (memoized to avoid calling getEventsForDate in render) ---- */
+  const selectedDateEvents = useMemo(
+    () => (selectedDate ? getEventsForDate(selectedDate) : []),
+    [selectedDate, getEventsForDate],
+  );
+
+  /* ==================== RENDER ==================== */
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -405,15 +475,14 @@ const EventCalendar = () => {
               onClick={handleOpenCreateModal}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
             >
-              <Plus size={18} />
-              <span>Create Event</span>
+              <Plus size={18} /> <span>Create Event</span>
             </button>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-3"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-3" />
                 <p className="text-slate-600 font-medium">
                   Loading calendar...
                 </p>
@@ -431,14 +500,14 @@ const EventCalendar = () => {
                   </h3>
                   <p className="text-sm text-amber-700">
                     You are not assigned to any barangay yet. Please contact
-                    your administrator to get assigned to a barangay.
+                    your administrator.
                   </p>
                 </div>
               </div>
             </div>
           ) : (
             <>
-              {/* Barangay Info Banner */}
+              {/* Barangay Banner */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-md p-5 mb-6">
                 <div className="flex items-center justify-between text-white">
                   <div>
@@ -458,7 +527,7 @@ const EventCalendar = () => {
                 </div>
               </div>
 
-              {/* Statistics Cards */}
+              {/* Statistics */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
                   icon={CalendarIcon}
@@ -494,43 +563,28 @@ const EventCalendar = () => {
 
               {/* Calendar */}
               <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden mb-6">
-                {/* Calendar Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4">
                   <div className="flex justify-between items-center">
                     <button
                       onClick={handlePrevMonth}
                       className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
                     >
-                      <ChevronLeft size={18} />
-                      <span>Previous</span>
+                      <ChevronLeft size={18} /> <span>Previous</span>
                     </button>
-
                     <h2 className="text-xl font-bold text-white">
-                      {renderCalendar().monthName}
+                      {monthName}
                     </h2>
-
                     <button
                       onClick={handleNextMonth}
                       className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
                     >
-                      <span>Next</span>
-                      <ChevronRight size={18} />
+                      <span>Next</span> <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
-
                 <div className="p-5">
-                  {/* Weekday Headers */}
                   <div className="grid grid-cols-7 gap-2 mb-2">
-                    {[
-                      "Sunday",
-                      "Monday",
-                      "Tuesday",
-                      "Wednesday",
-                      "Thursday",
-                      "Friday",
-                      "Saturday",
-                    ].map((day) => (
+                    {WEEKDAYS.map((day) => (
                       <div
                         key={day}
                         className="font-bold text-center text-slate-700 text-xs bg-gradient-to-br from-slate-100 to-slate-50 py-2.5 rounded-lg border-2 border-slate-200"
@@ -540,15 +594,11 @@ const EventCalendar = () => {
                       </div>
                     ))}
                   </div>
-
-                  {/* Calendar Days Grid */}
-                  <div className="grid grid-cols-7 gap-2">
-                    {renderCalendar().days}
-                  </div>
+                  <div className="grid grid-cols-7 gap-2">{calendarDays}</div>
                 </div>
               </div>
 
-              {/* Upcoming Events List */}
+              {/* Upcoming Events */}
               {statistics.upcoming > 0 && (
                 <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
                   <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-5 py-3 border-b-2 border-slate-200 flex items-center justify-between">
@@ -558,18 +608,10 @@ const EventCalendar = () => {
                         className="mr-2"
                         checked={
                           user &&
-                          selectedEventIds.size === deletableEvents.length
+                          selectedEventIds.size === deletableEvents.length &&
+                          deletableEvents.length > 0
                         }
-                        onChange={(e) => {
-                          if (!user) return;
-                          if (e.target.checked) {
-                            setSelectedEventIds(
-                              new Set(deletableEvents.map((ev) => ev._id)),
-                            );
-                          } else {
-                            setSelectedEventIds(new Set());
-                          }
-                        }}
+                        onChange={(e) => toggleSelectAll(e.target.checked)}
                       />
                       <div>
                         <h3 className="text-base font-bold text-slate-900">
@@ -582,103 +624,27 @@ const EventCalendar = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => {
-                        if (selectedEventIds.size === 0) return;
-                        const ids = Array.from(selectedEventIds);
-                        setConfirmationModal({
-                          isOpen: true,
-                          eventIds: ids,
-                          title: "Cancel Events",
-                          message: `Cancel ${ids.length} selected event${
-                            ids.length !== 1 ? "s" : ""
-                          }?`,
-                        });
-                      }}
-                      className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors"
+                      onClick={() =>
+                        selectedEventIds.size > 0 &&
+                        openConfirmationModal(Array.from(selectedEventIds))
+                      }
                       disabled={selectedEventIds.size === 0}
+                      className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors disabled:opacity-50"
                     >
                       Cancel Selected
                     </button>
                   </div>
-
-                  <div className="p-5">
-                    <div className="space-y-3">
-                      {events
-                        .filter(
-                          (e) => e.attachedToBarangay === userBarangay._id,
-                        )
-                        .filter((e) => new Date(e.startDate) >= new Date())
-                        .sort(
-                          (a, b) =>
-                            new Date(a.startDate) - new Date(b.startDate),
-                        )
-                        .map((evt) => (
-                          <div
-                            key={evt._id}
-                            className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
-                          >
-                            {user &&
-                              String(evt.sender?._id) === String(user._id) && (
-                                <input
-                                  type="checkbox"
-                                  className="mr-2 mb-2"
-                                  checked={selectedEventIds.has(evt._id)}
-                                  onChange={() => {
-                                    const copy = new Set(selectedEventIds);
-                                    if (copy.has(evt._id)) copy.delete(evt._id);
-                                    else copy.add(evt._id);
-                                    setSelectedEventIds(copy);
-                                  }}
-                                />
-                              )}
-                            <div className="flex items-start gap-2.5 mb-2.5">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-                                <CalendarIcon className="w-5 h-5 text-white" />
-                              </div>
-                              <div className="flex-1">
-                                <h4 className="font-bold text-slate-900 text-base">
-                                  {evt.subject}
-                                </h4>
-                                {evt.body && (
-                                  <p className="text-xs text-slate-700 mt-0.5">
-                                    {evt.body}
-                                  </p>
-                                )}
-                                {user &&
-                                  String(evt.sender?._id) ===
-                                    String(user._id) && (
-                                    <button
-                                      onClick={() => handleDeleteEvent(evt._id)}
-                                      className="mt-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
-                                    >
-                                      <Trash2 size={14} />
-                                      Cancel
-                                    </button>
-                                  )}
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              <div className="flex items-center gap-1.5 text-xs">
-                                <Clock className="w-3.5 h-3.5 text-blue-600" />
-                                <span className="font-semibold text-slate-700">
-                                  Start:{" "}
-                                  {new Date(evt.startDate).toLocaleString()}
-                                </span>
-                              </div>
-                              {evt.endDate && (
-                                <div className="flex items-center gap-1.5 text-xs">
-                                  <Clock className="w-3.5 h-3.5 text-purple-600" />
-                                  <span className="font-semibold text-slate-700">
-                                    End:{" "}
-                                    {new Date(evt.endDate).toLocaleString()}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
+                  <div className="p-5 space-y-3">
+                    {upcomingEvents.map((evt) => (
+                      <EventCard
+                        key={evt._id}
+                        evt={evt}
+                        user={user}
+                        onDelete={handleDeleteEvent}
+                        onToggleSelect={toggleSelectEvent}
+                        isSelected={selectedEventIds.has(evt._id)}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -703,7 +669,7 @@ const EventCalendar = () => {
             </>
           )}
 
-          {/* Confirmation modal for bulk actions */}
+          {/* Confirmation Modal */}
           {confirmationModal.isOpen && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
@@ -737,7 +703,7 @@ const EventCalendar = () => {
         </div>
       </div>
 
-      {/* Date Modal - Show events for selected date */}
+      {/* Date Modal */}
       {showDateModal && selectedDate && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
@@ -749,11 +715,8 @@ const EventCalendar = () => {
                     Events on {selectedDate.toLocaleDateString()}
                   </h2>
                   <p className="text-blue-100 mt-0.5 text-xs">
-                    {getEventsForDate(selectedDate).length} event
-                    {getEventsForDate(selectedDate).length !== 1
-                      ? "s"
-                      : ""}{" "}
-                    scheduled
+                    {selectedDateEvents.length} event
+                    {selectedDateEvents.length !== 1 ? "s" : ""} scheduled
                   </p>
                 </div>
                 <button
@@ -764,14 +727,13 @@ const EventCalendar = () => {
                 </button>
               </div>
             </div>
-
             <div
               className="p-5 overflow-y-auto"
               style={{ maxHeight: "calc(90vh - 120px)" }}
             >
-              {getEventsForDate(selectedDate).length > 0 ? (
+              {selectedDateEvents.length > 0 ? (
                 <div className="space-y-3">
-                  {getEventsForDate(selectedDate).map((evt) => (
+                  {selectedDateEvents.map((evt) => (
                     <div
                       key={evt._id}
                       className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg"
@@ -784,23 +746,19 @@ const EventCalendar = () => {
                           {evt.subject}
                         </h3>
                       </div>
-
                       {evt.body && (
                         <p className="text-xs text-slate-700 mb-2.5 p-2.5 bg-white rounded-lg border border-blue-200">
                           {evt.body}
                         </p>
                       )}
-
                       {user && String(evt.sender?._id) === String(user._id) && (
                         <button
                           onClick={() => handleDeleteEvent(evt._id)}
                           className="mb-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
                         >
-                          <Trash2 size={14} />
-                          Cancel
+                          <Trash2 size={14} /> Cancel
                         </button>
                       )}
-
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5 text-xs">
                           <Clock className="w-3.5 h-3.5 text-blue-600" />
@@ -838,11 +796,10 @@ const EventCalendar = () => {
         </div>
       )}
 
-      {/* ==================== CREATE EVENT MODAL ==================== */}
+      {/* Create Event Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden">
-            {/* Modal Header */}
             <div className="bg-blue-600 px-6 py-5 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-white">
@@ -865,13 +822,12 @@ const EventCalendar = () => {
               </div>
             </div>
 
-            {/* Modal Body */}
             <form
               onSubmit={handleCreateEvent}
               className="flex flex-col flex-1 overflow-hidden"
             >
               <div className="p-6 overflow-y-auto flex-1 space-y-5">
-                {/* Event Title */}
+                {/* Title */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
                     <Tag size={15} className="text-blue-600" />
@@ -880,11 +836,7 @@ const EventCalendar = () => {
                   <input
                     type="text"
                     value={formData.subject}
-                    onChange={(e) => {
-                      setFormData({ ...formData, subject: e.target.value });
-                      if (formErrors.subject)
-                        setFormErrors({ ...formErrors, subject: "" });
-                    }}
+                    onChange={updateForm("subject")}
                     placeholder="e.g., Community General Assembly"
                     className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                       formErrors.subject
@@ -907,9 +859,7 @@ const EventCalendar = () => {
                   </label>
                   <textarea
                     value={formData.body}
-                    onChange={(e) =>
-                      setFormData({ ...formData, body: e.target.value })
-                    }
+                    onChange={updateForm("body")}
                     placeholder="Describe the event, agenda, or any additional details..."
                     rows={4}
                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
@@ -926,11 +876,7 @@ const EventCalendar = () => {
                     <input
                       type="datetime-local"
                       value={formData.startDate}
-                      onChange={(e) => {
-                        setFormData({ ...formData, startDate: e.target.value });
-                        if (formErrors.startDate)
-                          setFormErrors({ ...formErrors, startDate: "" });
-                      }}
+                      onChange={updateForm("startDate")}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                         formErrors.startDate
                           ? "border-red-400 bg-red-50"
@@ -951,11 +897,7 @@ const EventCalendar = () => {
                     <input
                       type="datetime-local"
                       value={formData.endDate}
-                      onChange={(e) => {
-                        setFormData({ ...formData, endDate: e.target.value });
-                        if (formErrors.endDate)
-                          setFormErrors({ ...formErrors, endDate: "" });
-                      }}
+                      onChange={updateForm("endDate")}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
                         formErrors.endDate
                           ? "border-red-400 bg-red-50"
@@ -989,26 +931,26 @@ const EventCalendar = () => {
                             {formData.body}
                           </p>
                         )}
-                        <div className="flex flex-wrap gap-3 mt-2">
-                          {formData.startDate && (
+                        {formData.startDate && (
+                          <div className="flex flex-wrap gap-3 mt-2">
                             <span className="inline-flex items-center gap-1 text-xs text-blue-700 font-semibold">
-                              <Clock size={11} />
+                              <Clock size={11} />{" "}
                               {new Date(formData.startDate).toLocaleString()}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Modal Footer */}
+              {/* Footer */}
               <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>
@@ -1035,49 +977,6 @@ const EventCalendar = () => {
         </div>
       )}
     </>
-  );
-};
-
-/* ==================== STAT CARD COMPONENT ==================== */
-const StatCard = ({ icon: Icon, title, value, color, subtitle }) => {
-  const colors = {
-    blue: {
-      bg: "from-blue-500 to-blue-600",
-      badge: "bg-blue-100 text-blue-700",
-    },
-    emerald: {
-      bg: "from-emerald-500 to-emerald-600",
-      badge: "bg-emerald-100 text-emerald-700",
-    },
-    purple: {
-      bg: "from-purple-500 to-purple-600",
-      badge: "bg-purple-100 text-purple-700",
-    },
-    slate: {
-      bg: "from-slate-500 to-slate-600",
-      badge: "bg-slate-100 text-slate-700",
-    },
-  };
-
-  const c = colors[color];
-
-  return (
-    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
-        >
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        <span
-          className={`px-2 py-0.5 ${c.badge} rounded-md text-[11px] font-bold`}
-        >
-          {subtitle}
-        </span>
-      </div>
-      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">{title}</h3>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-    </div>
   );
 };
 

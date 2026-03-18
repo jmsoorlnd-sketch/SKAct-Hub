@@ -90,30 +90,28 @@ const Sidebar = ({ onClose = () => {} }) => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      console.log("Fetching unseen notification count...");
-
-      // Get seen statuses from backend
+      // Get seen statuses
       const seenStatusResponse = await axios.get(
         `${API_BASE}/notifications/status`,
         { headers: getAuthHeaders() },
       );
       const seenMap = seenStatusResponse.data.seenStatuses || {};
 
-      // Fetch all notifications
       const allNotifs = [];
 
-      // 1) Pending messages
+      /* ================== 1. PENDING MESSAGES ================== */
       try {
         const res = await axios.get(`${API_BASE}/messages/inbox`, {
           headers: getAuthHeaders(),
         });
         const inbox = res.data.messages || [];
+
         inbox
           .filter((m) => m.status === "pending")
           .forEach((m) => allNotifs.push({ id: m._id }));
       } catch {}
 
-      // 2) Barangay storage updates
+      /* ================== 2. BARANGAY (MATCH UI LOGIC) ================== */
       try {
         const res = await axios.get(`${API_BASE}/barangays/all-barangays`, {
           headers: getAuthHeaders(),
@@ -129,32 +127,45 @@ const Sidebar = ({ onClose = () => {} }) => {
               );
               const storage = storageRes.data.storage || [];
 
-              storage
+              const ongoing = storage
                 .filter((s) => (s.document?.status || s.status) === "ongoing")
-                .slice(0, 2)
-                .forEach((s) => allNotifs.push({ id: s._id }));
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 2);
 
-              storage
+              const completed = storage
                 .filter((s) => (s.document?.status || s.status) === "completed")
-                .slice(0, 2)
-                .forEach((s) => allNotifs.push({ id: s._id }));
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 2);
+
+              [...ongoing, ...completed].forEach((s) =>
+                allNotifs.push({ id: s._id }),
+              );
             } catch {}
           }),
         );
       } catch {}
 
-      // 3) Activities
+      /* ================== 3. ACTIVITIES (MATCH UI LOGIC) ================== */
       try {
         const res = await axios.get(`${API_BASE}/messages/activities`, {
           headers: getAuthHeaders(),
         });
         const activities = res.data?.activities || [];
+        const now = Date.now();
 
+        // Upcoming (same as UI)
         activities
           .filter((a) => a.startDate)
+          .map((a) => {
+            const timeLeft = new Date(a.startDate).getTime() - now;
+            return { a, timeLeft };
+          })
+          .filter(({ timeLeft }) => timeLeft > 0)
+          .sort((x, y) => new Date(x.a.startDate) - new Date(y.a.startDate))
           .slice(0, 10)
-          .forEach((a) => allNotifs.push({ id: a._id }));
+          .forEach(({ a }) => allNotifs.push({ id: a._id }));
 
+        // Updates (same as UI)
         await Promise.all(
           activities.map(async (a) => {
             try {
@@ -163,30 +174,23 @@ const Sidebar = ({ onClose = () => {} }) => {
                 { headers: getAuthHeaders() },
               );
               const updates = updatesRes.data?.updates || [];
+
               if (updates.length > 0) {
                 allNotifs.push({ id: updates[0]._id });
               }
-            } catch (err) {
-              // Silently skip if activity updates fail
-              console.debug("Activity updates fetch failed:", err.status);
-            }
+            } catch {}
           }),
         );
-      } catch (err) {
-        // Silently skip if activities fetch fails (401, 500, etc.)
-        console.debug("Activities fetch failed:", err.status);
-      }
+      } catch {}
 
-      // Count unseen (those not in seenMap or marked as false)
+      /* ================== COUNT ================== */
       const unseen = allNotifs.filter((n) => !seenMap[n.id]).length;
 
-      console.log(`Unseen count: ${unseen} out of ${allNotifs.length} total`);
       setUnseenCount(unseen);
     } catch (err) {
       console.error("Failed to fetch unseen count:", err);
     }
   };
-
   /* ==================== MENU CONFIGURATION ==================== */
   const role = user?.role || "Guest";
 

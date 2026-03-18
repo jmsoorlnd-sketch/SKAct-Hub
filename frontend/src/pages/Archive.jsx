@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import { Folder, FileText, RefreshCw, Trash2, RotateCcw } from "lucide-react";
 import { useToast } from "../components/Toast";
@@ -11,138 +11,148 @@ const Archive = () => {
   const [folders, setFolders] = useState([]);
   const [messages, setMessages] = useState([]);
 
-  const user = React.useMemo(() => {
+  /* ===================== USER ===================== */
+  const user = useMemo(() => {
     try {
       const raw = localStorage.getItem("user");
-      return raw && raw !== "undefined" && raw !== "null"
-        ? JSON.parse(raw)
-        : null;
-    } catch (err) {
+      if (!raw || raw === "undefined" || raw === "null") return null;
+      return JSON.parse(raw);
+    } catch {
       return null;
     }
   }, []);
 
-  const barangayId =
-    user?.barangay?._id || user?.barangay || (user?.barangayId ?? null);
+  const barangayId = useMemo(() => {
+    return user?.barangay?._id || user?.barangay || user?.barangayId || null;
+  }, [user]);
 
-  const fetchArchive = async () => {
+  /* ===================== AUTH ===================== */
+  const token = useMemo(() => localStorage.getItem("token"), []);
+
+  const authHeaders = useMemo(() => {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, [token]);
+
+  /* ===================== API HELPER ===================== */
+  const apiCall = useCallback(
+    async (method, url) => {
+      try {
+        return await axios({
+          method,
+          url,
+          headers: authHeaders,
+        });
+      } catch (error) {
+        const message =
+          error?.response?.data?.message ||
+          error.message ||
+          "Something went wrong";
+        toast.error(message);
+        throw error;
+      }
+    },
+    [authHeaders, toast],
+  );
+
+  /* ===================== FETCH ===================== */
+  const fetchArchive = useCallback(async () => {
     if (!barangayId) return;
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
+      const res = await apiCall(
+        "get",
         `${API_BASE}/barangays/${barangayId}/archive`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
       );
+
       setFolders(res.data.folders || []);
       setMessages(res.data.messages || []);
-    } catch (error) {
-      console.error("Error fetching archive:", error);
-      const message =
-        error?.response?.data?.message ||
-        error.message ||
-        "Failed to load archive";
-      toast.error(message);
+    } catch {
+      // already handled in apiCall
     } finally {
       setLoading(false);
     }
-  };
+  }, [barangayId, apiCall]);
 
-  const handleRestoreFolder = async (folderId) => {
-    if (!folderId || !barangayId) return;
-    if (!window.confirm("Restore this folder?")) return;
+  /* ===================== ACTIONS ===================== */
+  const confirmAction = (message) => window.confirm(message);
 
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_BASE}/barangays/${barangayId}/archive/folders/${folderId}/restore`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      toast.success("Folder restored successfully");
-      fetchArchive();
-    } catch (error) {
-      console.error("Error restoring folder:", error);
-      toast.error(error?.response?.data?.message || "Failed to restore folder");
-    }
-  };
+  const handleRestoreFolder = useCallback(
+    async (folderId) => {
+      if (!folderId || !barangayId) return;
+      if (!confirmAction("Restore this folder?")) return;
 
-  const handleHardDeleteFolder = async (folderId) => {
-    if (!folderId || !barangayId) return;
-    if (
-      !window.confirm("Permanently delete this folder? This cannot be undone.")
-    )
-      return;
+      try {
+        await apiCall(
+          "post",
+          `${API_BASE}/barangays/${barangayId}/archive/folders/${folderId}/restore`,
+        );
+        toast.success("Folder restored successfully");
+        fetchArchive();
+      } catch {}
+    },
+    [barangayId, apiCall, fetchArchive, toast],
+  );
 
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(
-        `${API_BASE}/barangays/${barangayId}/archive/folders/${folderId}/hard`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      toast.success("Folder permanently deleted");
-      fetchArchive();
-    } catch (error) {
-      console.error("Error permanently deleting folder:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to permanently delete folder",
-      );
-    }
-  };
-
-  const handleRestoreMessage = async (messageId) => {
-    if (!messageId) return;
-    if (!window.confirm("Restore this document?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${API_BASE}/messages/${messageId}/restore`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      toast.success("Document restored successfully");
-      fetchArchive();
-    } catch (error) {
-      console.error("Error restoring document:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to restore document",
-      );
-    }
-  };
-
-  const handleHardDeleteMessage = async (messageId) => {
-    if (!messageId) return;
-    if (
-      !window.confirm(
-        "Permanently delete this document? This cannot be undone.",
+  const handleHardDeleteFolder = useCallback(
+    async (folderId) => {
+      if (!folderId || !barangayId) return;
+      if (
+        !confirmAction("Permanently delete this folder? This cannot be undone.")
       )
-    )
-      return;
+        return;
 
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_BASE}/messages/${messageId}/hard`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("Document permanently deleted");
-      fetchArchive();
-    } catch (error) {
-      console.error("Error permanently deleting document:", error);
-      toast.error(
-        error?.response?.data?.message ||
-          "Failed to permanently delete document",
-      );
-    }
-  };
+      try {
+        await apiCall(
+          "delete",
+          `${API_BASE}/barangays/${barangayId}/archive/folders/${folderId}/hard`,
+        );
+        toast.success("Folder permanently deleted");
+        fetchArchive();
+      } catch {}
+    },
+    [barangayId, apiCall, fetchArchive, toast],
+  );
 
+  const handleRestoreMessage = useCallback(
+    async (messageId) => {
+      if (!messageId) return;
+      if (!confirmAction("Restore this document?")) return;
+
+      try {
+        await apiCall("post", `${API_BASE}/messages/${messageId}/restore`);
+        toast.success("Document restored successfully");
+        fetchArchive();
+      } catch {}
+    },
+    [apiCall, fetchArchive, toast],
+  );
+
+  const handleHardDeleteMessage = useCallback(
+    async (messageId) => {
+      if (!messageId) return;
+      if (
+        !confirmAction(
+          "Permanently delete this document? This cannot be undone.",
+        )
+      )
+        return;
+
+      try {
+        await apiCall("delete", `${API_BASE}/messages/${messageId}/hard`);
+        toast.success("Document permanently deleted");
+        fetchArchive();
+      } catch {}
+    },
+    [apiCall, fetchArchive, toast],
+  );
+
+  /* ===================== EFFECT ===================== */
   useEffect(() => {
     if (barangayId) fetchArchive();
-  }, [barangayId]);
+  }, [barangayId, fetchArchive]);
 
+  /* ===================== UI ===================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -170,6 +180,7 @@ const Archive = () => {
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
+            {/* FOLDERS */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -235,6 +246,7 @@ const Archive = () => {
               )}
             </div>
 
+            {/* MESSAGES */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">

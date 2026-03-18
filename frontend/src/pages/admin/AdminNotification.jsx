@@ -190,10 +190,12 @@ const AdminNotification = () => {
         const seenMap = res.data.seenStatuses || {};
 
         setNotifications(
-          [...messages, ...barangays, ...activities].map((n) => ({
-            ...n,
-            seen: seenMap[n.id] || false,
-          })),
+          [...messages, ...barangays, ...activities]
+            .filter((n) => n.id) // ✅ prevent undefined IDs
+            .map((n) => ({
+              ...n,
+              seen: seenMap[n.id] || false,
+            })),
         );
       } catch (err) {
         console.error(err);
@@ -282,6 +284,7 @@ const AdminNotification = () => {
       configs[iconType] || { icon: Bell, color: "from-slate-500 to-slate-600" }
     );
   };
+
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
