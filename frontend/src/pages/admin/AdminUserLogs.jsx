@@ -23,6 +23,8 @@ import {
   UserPlus,
   UserX,
   UserEdit,
+  Building2,
+  RotateCcw,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
@@ -53,6 +55,12 @@ const ACTION_META = {
   create_user: { label: "Create User", icon: UserPlus, color: "green" },
   edit_user: { label: "Edit User", icon: UserEdit, color: "orange" },
   delete_user: { label: "Delete User", icon: UserX, color: "red" },
+  delete_barangay: { label: "Delete Barangay", icon: Trash2, color: "red" },
+  restore_barangay: {
+    label: "Restore Barangay",
+    icon: RotateCcw,
+    color: "green",
+  },
 };
 
 const COLOR_CLASSES = {

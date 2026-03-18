@@ -35,6 +35,8 @@ const userLogSchema = new mongoose.Schema({
       "create_user",
       "edit_user",
       "delete_user",
+      "delete_barangay",
+      "restore_barangay",
       "other",
     ],
     required: true,
