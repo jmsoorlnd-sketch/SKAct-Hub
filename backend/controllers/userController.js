@@ -333,6 +333,25 @@ const deleteUser = async (req, res) => {
     const deleted = await User.findByIdAndDelete(userId);
     if (!deleted) return res.status(404).json({ message: "User not found" });
 
+    // Log the delete_user action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "delete_user",
+        description: `Admin deleted user: ${deleted.firstname} ${deleted.lastname} (${deleted.username})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging delete_user action:", logError);
+      // Don't fail the deletion if logging fails
+    }
+
     res.status(200).json({ message: "User deleted" });
   } catch (error) {
     console.error("Error deleting user:", error);

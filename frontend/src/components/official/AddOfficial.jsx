@@ -195,7 +195,9 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
         msg += `\nUsername: ${response.data.credentials.username}\nPassword: ${response.data.credentials.password}`;
       }
       success(msg);
-      onSubmit(response.data.user);
+      if (typeof onSubmit === "function") {
+        onSubmit(response.data.user);
+      }
       handleClose();
     } catch (error) {
       console.error("Error creating official:", error.response?.data || error);

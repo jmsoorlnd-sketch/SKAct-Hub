@@ -106,6 +106,12 @@ const SkOfficial = () => {
     }
   };
 
+  // Callback when a new official is created
+  const handleOfficialCreated = useCallback((newOfficial) => {
+    setOfficials((prev) => [newOfficial, ...prev]);
+    setIsCreateOpen(false);
+  }, []);
+
   /* ===================== FILTERED DATA ===================== */
   const officialsData = useMemo(() => {
     let active = 0,
@@ -464,6 +470,7 @@ const SkOfficial = () => {
           <CreateOfficialModal
             isOpen={isCreateOpen}
             onClose={() => setIsCreateOpen(false)}
+            onSubmit={handleOfficialCreated}
           />
         )}
       </Suspense>

@@ -20,6 +20,9 @@ import {
   ChevronDown,
   Plus,
   Edit,
+  UserPlus,
+  UserX,
+  UserEdit,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
@@ -47,6 +50,9 @@ const ACTION_META = {
     color: "orange",
   },
   delete_sk_personnel: { label: "Delete SK", icon: Trash2, color: "red" },
+  create_user: { label: "Create User", icon: UserPlus, color: "green" },
+  edit_user: { label: "Edit User", icon: UserEdit, color: "orange" },
+  delete_user: { label: "Delete User", icon: UserX, color: "red" },
 };
 
 const COLOR_CLASSES = {
