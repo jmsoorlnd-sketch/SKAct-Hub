@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import {
   CheckCircle,
@@ -17,110 +17,124 @@ import {
 /* ===================== CONSTANTS ===================== */
 const API_BASE = "http://localhost:5000/api";
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+/* ===================== STATUS CONFIG (STATIC - NO RECREATION) ===================== */
+const STATUS_CONFIG = {
+  approved: {
+    color: "from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200",
+    icon: CheckCircle,
+    label: "Approved",
+  },
+  rejected: {
+    color: "from-red-100 to-red-50 text-red-700 border-red-200",
+    icon: XCircle,
+    label: "Rejected",
+  },
+  ongoing: {
+    color: "from-blue-100 to-blue-50 text-blue-700 border-blue-200",
+    icon: Clock,
+    label: "Ongoing",
+    animate: true,
+  },
+  pending: {
+    color: "from-amber-100 to-amber-50 text-amber-700 border-amber-200",
+    icon: AlertCircle,
+    label: "Pending",
+  },
+  completed: {
+    color: "from-purple-100 to-purple-50 text-purple-700 border-purple-200",
+    icon: CheckCircle,
+    label: "Completed",
+  },
+};
+
+const DEFAULT_STATUS = {
+  color: "from-slate-100 to-slate-50 text-slate-700 border-slate-200",
+  icon: AlertCircle,
+  label: "Unknown",
 };
 
 /* ===================== MAIN COMPONENT ===================== */
 const Inbox = () => {
-  /* ==================== STATE ==================== */
-  const [activeTab, setActiveTab] = useState("received"); // "sent" or "received"
+  const [activeTab, setActiveTab] = useState("received");
   const [sentMessages, setSentMessages] = useState([]);
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  /* ==================== DATA FETCHING ==================== */
-  useEffect(() => {
-    fetchMessages();
+  /* ===================== MEMO ===================== */
+  const authHeaders = useMemo(() => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
-  const fetchMessages = async () => {
+  /* ===================== FETCH ===================== */
+  const fetchMessages = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("No authentication token found. Please log in again.");
-        setLoading(false);
-        return;
+      if (!authHeaders.Authorization) {
+        throw new Error("No authentication token found. Please log in again.");
       }
 
-      // Fetch both sent and received messages in parallel
       const [sentRes, receivedRes] = await Promise.all([
-        axios.get(`${API_BASE}/messages/sent`, { headers: getAuthHeaders() }),
-        axios.get(`${API_BASE}/messages/inbox`, { headers: getAuthHeaders() }),
+        axios.get(`${API_BASE}/messages/sent`, { headers: authHeaders }),
+        axios.get(`${API_BASE}/messages/inbox`, { headers: authHeaders }),
       ]);
 
       setSentMessages(sentRes.data.messages || []);
       setReceivedMessages(receivedRes.data.messages || []);
     } catch (err) {
-      console.error("Failed to fetch messages:", err);
+      console.error(err);
       setError(
         err.response?.data?.message ||
-          "Failed to load messages. Please try again.",
+          err.message ||
+          "Failed to load messages.",
       );
     } finally {
       setLoading(false);
     }
-  };
+  }, [authHeaders]);
 
-  /* ==================== HELPER FUNCTIONS ==================== */
-  const getStatusConfig = (status) => {
-    const configs = {
-      approved: {
-        color:
-          "from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200",
-        icon: CheckCircle,
-        label: "Approved",
-      },
-      rejected: {
-        color: "from-red-100 to-red-50 text-red-700 border-red-200",
-        icon: XCircle,
-        label: "Rejected",
-      },
-      ongoing: {
-        color: "from-blue-100 to-blue-50 text-blue-700 border-blue-200",
-        icon: Clock,
-        label: "Ongoing",
-        animate: true,
-      },
-      pending: {
-        color: "from-amber-100 to-amber-50 text-amber-700 border-amber-200",
-        icon: AlertCircle,
-        label: "Pending",
-      },
-      completed: {
-        color: "from-purple-100 to-purple-50 text-purple-700 border-purple-200",
-        icon: CheckCircle,
-        label: "Completed",
-      },
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  /* ===================== DERIVED DATA ===================== */
+  const messages = useMemo(
+    () => (activeTab === "sent" ? sentMessages : receivedMessages),
+    [activeTab, sentMessages, receivedMessages],
+  );
+
+  const stats = useMemo(() => {
+    let pending = 0,
+      approved = 0,
+      rejected = 0;
+
+    messages.forEach((m) => {
+      if (m.status === "pending") pending++;
+      else if (m.status === "approved") approved++;
+      else if (m.status === "rejected") rejected++;
+    });
+
+    return {
+      total: messages.length,
+      pending,
+      approved,
+      rejected,
     };
+  }, [messages]);
 
-    return (
-      configs[status] || {
-        color: "from-slate-100 to-slate-50 text-slate-700 border-slate-200",
-        icon: AlertCircle,
-        label: "Unknown",
-      }
-    );
-  };
+  const adminEventCount = useMemo(
+    () => receivedMessages.filter((m) => m.isAdminScheduled).length,
+    [receivedMessages],
+  );
 
-  /* ==================== STATISTICS ==================== */
-  const messages = activeTab === "sent" ? sentMessages : receivedMessages;
-  const stats = {
-    total: messages.length,
-    pending: messages.filter((m) => m.status === "pending").length,
-    approved: messages.filter((m) => m.status === "approved").length,
-    rejected: messages.filter((m) => m.status === "rejected").length,
-  };
-
-  const adminEventCount = receivedMessages.filter(
-    (m) => m.isAdminScheduled,
-  ).length;
-
+  /* ===================== HELPERS ===================== */
+  const getStatusConfig = useCallback(
+    (status) => STATUS_CONFIG[status] || DEFAULT_STATUS,
+    [],
+  );
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

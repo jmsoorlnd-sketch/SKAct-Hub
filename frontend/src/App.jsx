@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import { lazy, Suspense } from "react";
 // Layout & Auth
 import Layout from "./layout/Layout";
 import PublicRoute from "./utils/PublicRoute";
@@ -25,18 +26,20 @@ import Profiles from "./pages/admin/Profiles";
 import BarangayManagement from "./pages/admin/BarangayManagement";
 import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
-import AdminMonitoring from "./pages/admin/AdminMonitoring";
+
+const AdminMonitoring = lazy(() => import("./pages/admin/AdminMonitoring"));
 import AdminNotification from "./pages/admin/AdminNotification";
-import AdminArchive from "./pages/admin/AdminArchive";
-import AdminUserLogs from "./pages/admin/AdminUserLogs";
+const AdminArchive = lazy(() => import("./pages/admin/AdminArchive"));
+const AdminUserLogs = lazy(() => import("./pages/admin/AdminUserLogs"));
 
 // Official Pages
 import OfficialDashboard from "./pages/officials/OfficialDashboard";
+
 import EventCalendar from "./pages/officials/EventCalendar";
 import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
 
 // Barangay Pages
-import BarangayStorage from "./pages/BarangayStorage";
+const BarangayStorage = lazy(() => import("./pages/BarangayStorage"));
 import BarangayPage from "./pages/barangay/BarangayPage";
 import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import Archive from "./pages/Archive";
@@ -81,7 +84,9 @@ const AppRoutes = () => {
           <Route path="/sent" element={<Sent />} />
 
           {/* BARANGAY */}
-          <Route path="/barangay-storage" element={<BarangayStorage />} />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Route path="/barangay-storage" element={<BarangayStorage />} />
+          </Suspense>
           <Route path="/barangay-page" element={<BarangayPage />} />
           <Route
             path="/barangay-view/:barangayId"
@@ -137,14 +142,16 @@ const AppRoutes = () => {
               </RequireRole>
             }
           />
-          <Route
-            path="/admin/monitoring"
-            element={
-              <RequireRole allowedRoles={[roles.ADMIN]}>
-                <AdminMonitoring />
-              </RequireRole>
-            }
-          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Route
+              path="/admin/monitoring"
+              element={
+                <RequireRole allowedRoles={[roles.ADMIN]}>
+                  <AdminMonitoring />
+                </RequireRole>
+              }
+            />
+          </Suspense>
           <Route
             path="/admin/settings"
             element={
@@ -161,22 +168,24 @@ const AppRoutes = () => {
               </RequireRole>
             }
           />
-          <Route
-            path="/admin/archive"
-            element={
-              <RequireRole allowedRoles={[roles.ADMIN]}>
-                <AdminArchive />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/user-logs"
-            element={
-              <RequireRole allowedRoles={[roles.ADMIN]}>
-                <AdminUserLogs />
-              </RequireRole>
-            }
-          />
+          <Suspense fallback={<div>Loading...</div>}>
+            <Route
+              path="/admin/archive"
+              element={
+                <RequireRole allowedRoles={[roles.ADMIN]}>
+                  <AdminArchive />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/user-logs"
+              element={
+                <RequireRole allowedRoles={[roles.ADMIN]}>
+                  <AdminUserLogs />
+                </RequireRole>
+              }
+            />
+          </Suspense>
 
           {/* OFFICIAL */}
           <Route
