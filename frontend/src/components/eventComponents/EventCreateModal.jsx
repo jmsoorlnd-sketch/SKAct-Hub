@@ -15,7 +15,7 @@ const EventCreationModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
           <div className="flex justify-between items-center">
@@ -39,8 +39,8 @@ const EventCreationModal = ({
 
         {/* Modal Body */}
         <div
-          className="p-6 overflow-y-auto"
-          style={{ maxHeight: "calc(90vh - 140px)" }}
+          className="p-6 overflow-y-auto flex-1"
+          style={{ maxHeight: "calc(90vh - 160px)" }}
         >
           {createEventMessage && (
             <div
