@@ -476,6 +476,27 @@ export const approveMessageForBarangay = async (req, res) => {
     message.attachedToBarangay = barangayId;
     await message.save();
 
+    // Log the approval action
+    const adminUser = await User.findById(req.user._id);
+    const barangay = await Barangay.findById(barangayId);
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: adminUser?.username,
+        firstname: adminUser?.firstname,
+        lastname: adminUser?.lastname,
+        barangayId: barangayId,
+        barangayName: barangay?.barangayName,
+        role: adminUser?.role,
+        actionType: "approve_message",
+        description: `Admin approved message: "${message.subject}" from ${adminUser?.username}`,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+    } catch (logError) {
+      console.warn("Failed to log message approval:", logError);
+    }
+
     // Store the message to BarangayStorage
     const storageData = {
       barangay: barangayId,
@@ -538,6 +559,26 @@ export const rejectMessage = async (req, res) => {
     message.status = "rejected";
     await message.save();
     await message.populate("sender", "username email role");
+
+    // Log the rejection action
+    const adminUser = await User.findById(req.user._id);
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: adminUser?.username,
+        firstname: adminUser?.firstname,
+        lastname: adminUser?.lastname,
+        barangayId: adminUser?.barangay,
+        barangayName: adminUser?.barangayName,
+        role: adminUser?.role,
+        actionType: "reject_message",
+        description: `Admin rejected message: "${message.subject}" from ${message.sender?.username}`,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+    } catch (logError) {
+      console.warn("Failed to log message rejection:", logError);
+    }
 
     res.status(200).json({
       message: "Message rejected",
