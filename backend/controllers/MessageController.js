@@ -544,7 +544,7 @@ export const approveMessageForBarangay = async (req, res) => {
 // Admin rejects a message from an official
 export const rejectMessage = async (req, res) => {
   try {
-    const { messageId } = req.body;
+    const { messageId, reason } = req.body;
 
     if (!messageId) {
       return res.status(400).json({ message: "messageId is required" });
@@ -555,8 +555,9 @@ export const rejectMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    // Update message status to rejected
+    // Update message status to rejected and store the reason
     message.status = "rejected";
+    message.rejectionReason = reason ? reason.trim() : "No reason provided";
     await message.save();
     await message.populate("sender", "username email role");
 
