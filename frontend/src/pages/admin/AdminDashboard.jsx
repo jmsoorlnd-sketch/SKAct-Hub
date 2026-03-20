@@ -44,6 +44,15 @@ const AdminDashboard = () => {
     fetchBarangays();
   }, []);
 
+  /* ---- Auto-refresh for pending messages (poll every 10 seconds) ---- */
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      fetchMessages();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, []);
+
   useEffect(() => {
     if (!loading && location?.state?.messageId && messages.length > 0) {
       const found = messages.find((m) => m._id === location.state.messageId);
