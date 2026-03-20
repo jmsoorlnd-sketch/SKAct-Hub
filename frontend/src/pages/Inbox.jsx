@@ -100,6 +100,16 @@ const Inbox = () => {
     fetchMessages();
   }, [fetchMessages]);
 
+  /* ===================== AUTO-REFRESH FOR ADMIN APPROVALS ===================== */
+  useEffect(() => {
+    // Poll for message updates every 10 seconds
+    const pollInterval = setInterval(() => {
+      fetchMessages();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [fetchMessages]);
+
   /* ===================== DERIVED DATA ===================== */
   const messages = useMemo(
     () => (activeTab === "sent" ? sentMessages : receivedMessages),

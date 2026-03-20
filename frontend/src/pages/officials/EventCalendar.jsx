@@ -183,6 +183,16 @@ const EventCalendar = () => {
     fetchEvents();
   }, [fetchEvents]);
 
+  /* ---- Auto-refresh for admin approvals ---- */
+  useEffect(() => {
+    // Poll for event updates every 10 seconds
+    const pollInterval = setInterval(() => {
+      fetchEvents();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [fetchEvents]);
+
   useEffect(() => {
     setSelectedEventIds(new Set());
   }, [events]);

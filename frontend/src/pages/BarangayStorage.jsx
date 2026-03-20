@@ -242,6 +242,27 @@ const BarangayStorage = () => {
     })();
   }, []);
 
+  /* ---- Fetch documents and folders when barangay is selected ---- */
+  useEffect(() => {
+    if (selectedBarangay) {
+      fetchStorageDocuments(selectedBarangay, user);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBarangay]);
+
+  /* ---- Auto-refresh for admin approvals (poll every 10 seconds) ---- */
+  useEffect(() => {
+    if (!selectedBarangay) return;
+
+    const pollInterval = setInterval(() => {
+      fetchStorageDocuments(selectedBarangay, user);
+      fetchFolders(selectedBarangay);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBarangay]);
+
   const fetchBarangays = async (currentUser = user) => {
     setLoading(true);
     const token = localStorage.getItem("token");
