@@ -84,9 +84,14 @@ const AppRoutes = () => {
           <Route path="/sent" element={<Sent />} />
 
           {/* BARANGAY */}
-          <Suspense fallback={<div>Loading...</div>}>
-            <Route path="/barangay-storage" element={<BarangayStorage />} />
-          </Suspense>
+          <Route
+            path="/barangay-storage"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <BarangayStorage />
+              </Suspense>
+            }
+          />
           <Route path="/barangay-page" element={<BarangayPage />} />
           <Route
             path="/barangay-view/:barangayId"
@@ -142,16 +147,16 @@ const AppRoutes = () => {
               </RequireRole>
             }
           />
-          <Suspense fallback={<div>Loading...</div>}>
-            <Route
-              path="/admin/monitoring"
-              element={
+          <Route
+            path="/admin/monitoring"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
                 <RequireRole allowedRoles={[roles.ADMIN]}>
                   <AdminMonitoring />
                 </RequireRole>
-              }
-            />
-          </Suspense>
+              </Suspense>
+            }
+          />
           <Route
             path="/admin/settings"
             element={
@@ -168,24 +173,26 @@ const AppRoutes = () => {
               </RequireRole>
             }
           />
-          <Suspense fallback={<div>Loading...</div>}>
-            <Route
-              path="/admin/archive"
-              element={
+          <Route
+            path="/admin/archive"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
                 <RequireRole allowedRoles={[roles.ADMIN]}>
                   <AdminArchive />
                 </RequireRole>
-              }
-            />
-            <Route
-              path="/admin/user-logs"
-              element={
+              </Suspense>
+            }
+          />
+          <Route
+            path="/admin/user-logs"
+            element={
+              <Suspense fallback={<div>Loading...</div>}>
                 <RequireRole allowedRoles={[roles.ADMIN]}>
                   <AdminUserLogs />
                 </RequireRole>
-              }
-            />
-          </Suspense>
+              </Suspense>
+            }
+          />
 
           {/* OFFICIAL */}
           <Route
