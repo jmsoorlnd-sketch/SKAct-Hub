@@ -222,14 +222,15 @@ export const updateStatus = async (req, res) => {
 export const getActivities = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select("barangay");
 
     let query;
 
     if (user?.role === "Admin") {
-      // Admins see all events with a startDate
+      // Admins see all events with a startDate (including admin-scheduled events)
       query = {
         startDate: { $exists: true, $ne: null },
+        isDeleted: false,
       };
     } else {
       // Non-admins see:
@@ -242,7 +243,10 @@ export const getActivities = async (req, res) => {
 
       // If user has a barangay assigned, include events for their barangay
       if (user?.barangay) {
-        orConditions.push({ attachedToBarangay: user.barangay });
+        orConditions.push({
+          attachedToBarangay: user.barangay,
+          isAdminScheduled: true,
+        });
       }
 
       query = {

@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarIcon, Clock, MapPin, Trash2 } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Trash2, X } from "lucide-react";
 
 const DateModal = ({ date, events, barangays, onClose, onDelete, user }) => {
   return (
@@ -25,7 +25,7 @@ const DateModal = ({ date, events, barangays, onClose, onDelete, user }) => {
               onClick={onClose}
               className="p-2 hover:bg-white/20 rounded-xl transition-colors"
             >
-              <Trash2 size={24} className="text-white" />
+              <X size={24} className="text-white" />
             </button>
           </div>
         </div>
@@ -125,7 +125,7 @@ const DateModal = ({ date, events, barangays, onClose, onDelete, user }) => {
                         onClick={() => onDelete(evt._id)}
                         className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
                       >
-                        <Trash2 size={16} />
+                        <X size={16} />
                         <span>Cancel</span>
                       </button>
                     )}

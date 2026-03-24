@@ -571,44 +571,119 @@ const EventCalendar = () => {
                 />
               </div>
 
-              {/* Calendar */}
-              <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden mb-6">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4">
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={handlePrevMonth}
-                      className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
-                    >
-                      <ChevronLeft size={18} /> <span>Previous</span>
-                    </button>
-                    <h2 className="text-xl font-bold text-white">
-                      {monthName}
-                    </h2>
-                    <button
-                      onClick={handleNextMonth}
-                      className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
-                    >
-                      <span>Next</span> <ChevronRight size={18} />
-                    </button>
+              {/* Two-Column Layout: Calendar + Today's Events */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Calendar - 2 columns */}
+                <div className="lg:col-span-2">
+                  <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-4">
+                      <div className="flex justify-between items-center">
+                        <button
+                          onClick={handlePrevMonth}
+                          className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
+                        >
+                          <ChevronLeft size={18} /> <span>Previous</span>
+                        </button>
+                        <h2 className="text-xl font-bold text-white">
+                          {monthName}
+                        </h2>
+                        <button
+                          onClick={handleNextMonth}
+                          className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-semibold"
+                        >
+                          <span>Next</span> <ChevronRight size={18} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <div className="grid grid-cols-7 gap-2 mb-2">
+                        {WEEKDAYS.map((day) => (
+                          <div
+                            key={day}
+                            className="font-bold text-center text-slate-700 text-xs bg-gradient-to-br from-slate-100 to-slate-50 py-2.5 rounded-lg border-2 border-slate-200"
+                          >
+                            <span className="hidden md:inline">{day}</span>
+                            <span className="md:hidden">{day.slice(0, 3)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-2">{calendarDays}</div>
+                    </div>
                   </div>
                 </div>
-                <div className="p-5">
-                  <div className="grid grid-cols-7 gap-2 mb-2">
-                    {WEEKDAYS.map((day) => (
-                      <div
-                        key={day}
-                        className="font-bold text-center text-slate-700 text-xs bg-gradient-to-br from-slate-100 to-slate-50 py-2.5 rounded-lg border-2 border-slate-200"
-                      >
-                        <span className="hidden md:inline">{day}</span>
-                        <span className="md:hidden">{day.slice(0, 3)}</span>
-                      </div>
-                    ))}
+
+                {/* Today's Events - 1 column */}
+                <div className="lg:col-span-1">
+                  <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden sticky top-6 max-h-[600px] flex flex-col">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-slate-200">
+                      <h3 className="text-base font-bold text-slate-900">
+                        Today's Events
+                      </h3>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        {new Date().toLocaleDateString("default", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className="p-4 overflow-y-auto flex-1">
+                      {(() => {
+                        const today = new Date();
+                        const todayEvents = visibleEvents.filter((e) => {
+                          const eDate = new Date(e.startDate);
+                          return (
+                            eDate.getDate() === today.getDate() &&
+                            eDate.getMonth() === today.getMonth() &&
+                            eDate.getFullYear() === today.getFullYear()
+                          );
+                        });
+
+                        if (todayEvents.length === 0) {
+                          return (
+                            <div className="text-center py-8">
+                              <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                              <p className="text-sm text-slate-500 font-medium">
+                                No events today
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-2.5">
+                            {todayEvents.map((evt) => (
+                              <div
+                                key={evt._id}
+                                className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
+                              >
+                                <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
+                                  {evt.subject}
+                                </h4>
+                                {evt.body && (
+                                  <p className="text-xs text-slate-600 mb-2 line-clamp-2">
+                                    {evt.body}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
+                                  <Clock size={12} />
+                                  {new Date(evt.startDate).toLocaleTimeString(
+                                    "default",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-7 gap-2">{calendarDays}</div>
                 </div>
               </div>
-
-              {/* Upcoming Events */}
               {statistics.upcoming > 0 && (
                 <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
                   <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-5 py-3 border-b-2 border-slate-200 flex items-center justify-between">
