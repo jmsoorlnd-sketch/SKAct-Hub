@@ -222,7 +222,7 @@ export const updateStatus = async (req, res) => {
 export const getActivities = async (req, res) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId).select("barangay");
+    const user = await User.findById(userId).select("barangay role");
 
     let query;
 
