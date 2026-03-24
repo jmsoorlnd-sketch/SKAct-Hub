@@ -12,20 +12,20 @@ import Signin from "./pages/auth/Signin";
 import Signup from "./pages/auth/Signup";
 
 // Common Pages
-import Dashboard from "./pages/Dashboard";
+// import Dashboard from "./pages/Dashboard";
 import ProfilePage from "./pages/ProfilePage";
-import Sent from "./pages/Sent";
+// import Sent from "./pages/Sent";
 import Inbox from "./pages/Inbox";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SkOfficial from "./pages/admin/SkOfficial";
 import SkPersonnelAdmin from "./pages/admin/SkPersonnelAdmin";
-import Calendar from "./pages/Calendar";
-import Profiles from "./pages/admin/Profiles";
-import BarangayManagement from "./pages/admin/BarangayManagement";
+// import Calendar from "./pages/Calendar";
+// import Profiles from "./pages/admin/Profiles";
+// import BarangayManagement from "./pages/admin/BarangayManagement";
 import AdminCalendar from "./pages/admin/AdminCalendar";
-import AdminSettings from "./pages/admin/AdminSettings";
+// import AdminSettings from "./pages/admin/AdminSettings";
 
 const AdminMonitoring = lazy(() => import("./pages/admin/AdminMonitoring"));
 import AdminNotification from "./pages/admin/AdminNotification";
@@ -33,15 +33,15 @@ const AdminArchive = lazy(() => import("./pages/admin/AdminArchive"));
 const AdminUserLogs = lazy(() => import("./pages/admin/AdminUserLogs"));
 
 // Official Pages
-import OfficialDashboard from "./pages/officials/OfficialDashboard";
+// import OfficialDashboard from "./pages/officials/OfficialDashboard";
 
 import EventCalendar from "./pages/officials/EventCalendar";
 import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
 
 // Barangay Pages
 const BarangayStorage = lazy(() => import("./pages/BarangayStorage"));
-import BarangayPage from "./pages/barangay/BarangayPage";
-import BarangayViewPage from "./pages/barangay/BarangayViewPage";
+// import BarangayPage from "./pages/barangay/BarangayPage";
+// import BarangayViewPage from "./pages/barangay/BarangayViewPage";
 import Archive from "./pages/Archive";
 
 /* ===================== ROLES ===================== */
@@ -79,9 +79,9 @@ const AppRoutes = () => {
         {/* Layout wraps all protected routes */}
         <Route element={<Layout />}>
           {/* COMMON */}
-          <Route path="/dashboard" element={<Dashboard />} />
+          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/sent" element={<Sent />} />
+          {/* <Route path="/sent" element={<Sent />} /> */}
 
           {/* BARANGAY */}
           <Route
@@ -92,11 +92,11 @@ const AppRoutes = () => {
               </Suspense>
             }
           />
-          <Route path="/barangay-page" element={<BarangayPage />} />
+          {/* <Route path="/barangay-page" element={<BarangayPage />} />
           <Route
             path="/barangay-view/:barangayId"
             element={<BarangayViewPage />}
-          />
+          /> */}
 
           {/* ADMIN */}
           <Route
@@ -107,7 +107,7 @@ const AppRoutes = () => {
               </RequireRole>
             }
           />
-          <Route
+          {/* <Route
             path="/admin/barangays"
             element={
               <RequireRole allowedRoles={[roles.ADMIN]}>
@@ -122,7 +122,7 @@ const AppRoutes = () => {
                 <Profiles />
               </RequireRole>
             }
-          />
+          /> */}
           <Route
             path="/admin/sk-officials"
             element={
@@ -157,14 +157,14 @@ const AppRoutes = () => {
               </Suspense>
             }
           />
-          <Route
+          {/* <Route
             path="/admin/settings"
             element={
               <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminSettings />
               </RequireRole>
             }
-          />
+          /> */}
           <Route
             path="/admin/notifications"
             element={
@@ -195,14 +195,14 @@ const AppRoutes = () => {
           />
 
           {/* OFFICIAL */}
-          <Route
+          {/* <Route
             path="/official-dashboard"
             element={
               <RequireRole allowedRoles={[roles.OFFICIAL]}>
                 <OfficialDashboard />
               </RequireRole>
             }
-          />
+          /> */}
           <Route
             path="/official/inbox"
             element={
@@ -235,14 +235,14 @@ const AppRoutes = () => {
               </RequireRole>
             }
           />
-          <Route
+          {/* <Route
             path="/calendar"
             element={
               <RequireRole allowedRoles={[roles.OFFICIAL, roles.YOUTH]}>
                 <Calendar />
               </RequireRole>
             }
-          />
+          /> */}
         </Route>
       </Route>
 

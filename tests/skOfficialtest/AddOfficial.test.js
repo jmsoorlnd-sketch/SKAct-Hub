@@ -180,9 +180,7 @@ function createDriver() {
     // ===============================
     // 11. SUCCESS SUBMIT
     // ===============================
-
-    const errors = await driver.findElements(By.css("p.text-red-500"));
-
+    const errors = await driver.findElements(By.css("p[class*='text-red']"));
     if (errors.length > 0) {
       console.log("❌ Form still has errors:");
       for (let err of errors) {
@@ -190,35 +188,45 @@ function createDriver() {
       }
       throw new Error("Form validation failed before submit");
     }
+
+    console.log("📝 About to submit valid form...");
+
+    // Record modal state BEFORE submit
+    const modalBefore = await driver.findElements(
+      By.xpath("//h2[text()='Create SK Official']"),
+    );
+
+    // Submit
     await submitBtn.click();
 
-    let toastText = null;
+    // Wait a moment for API/network
+    await driver.sleep(1500);
 
-    try {
-      const toast = await driver.wait(
-        until.elementLocated(By.css(".Toastify__toast")),
-        10000,
+    // Check if modal closed (PRIMARY success indicator)
+    const modalAfter = await driver.findElements(
+      By.xpath("//h2[text()='Create SK Official']"),
+    );
+
+    if (modalBefore.length > 0 && modalAfter.length === 0) {
+      console.log(
+        "✅ SUCCESS: Modal auto-closed after submit (API succeeded!)",
       );
+    } else {
+      console.log("❌ FAIL: Modal still open after submit");
 
-      // Wait until it's visible
-      await driver.wait(until.elementIsVisible(toast), 5000);
-
-      toastText = await toast.getText();
-      console.log("✅ Toast:", toastText);
-    } catch (err) {
-      console.log("⚠ No toast — checking API error...");
-
-      const apiErrors = await driver.findElements(
-        By.xpath("//p[contains(@class,'text-red')]"),
+      // Secondary: Check for API error banner
+      const apiErrorBanner = await driver.findElements(
+        By.xpath(
+          "//div[contains(@class, 'bg-red-50')]//p[contains(text(), 'Failed')]",
+        ),
       );
-
-      if (apiErrors.length > 0) {
-        const errText = await apiErrors[0].getText();
+      if (apiErrorBanner.length > 0) {
+        const errText = await apiErrorBanner[0].getText();
         console.log("❌ API Error:", errText);
       } else {
-        console.log("❌ Unknown issue: No toast, no error");
+        console.log("❌ Unknown submit failure");
       }
-    } // ===============================
+    }
     // 12. API ERROR TEST (NO TOKEN)
     // ===============================
     await driver.executeScript("localStorage.removeItem('token')");

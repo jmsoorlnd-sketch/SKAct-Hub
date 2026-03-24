@@ -2082,6 +2082,7 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
+      ====
       {/* Folder Compose Modal */}
       {showFolderComposeModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
@@ -3022,7 +3023,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
       {/* Document/Message Status Confirmation Modal */}
       {confirmationModal.isOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -3050,7 +3050,6 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-
       {/* Folder Status Confirmation Modal */}
       {statusConfirm.open && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">

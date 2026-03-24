@@ -22,7 +22,7 @@ const EventCreationModal = ({
             <div className="text-white">
               <h3 className="text-2xl font-bold flex items-center gap-2">
                 <Plus size={28} />
-                Create New Event
+                Add New Event
               </h3>
               <p className="text-blue-100 mt-2 text-sm">
                 Schedule an event for all or specific barangays

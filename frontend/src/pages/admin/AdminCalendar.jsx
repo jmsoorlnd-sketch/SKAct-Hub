@@ -412,7 +412,7 @@ const AdminCalendar = () => {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
               >
                 <Plus size={18} />
-                Create Event
+                <span> Create Event </span>
               </button>
             </div>
           </div>

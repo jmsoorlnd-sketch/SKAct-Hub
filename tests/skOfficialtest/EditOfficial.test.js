@@ -43,6 +43,20 @@ function createDriver() {
     }, 5000);
   }
 
+  // Scroll modal to TOP
+  async function scrollModalTop(driver) {
+    const modal = await driver.findElement(By.css("div.overflow-y-auto"));
+    await driver.executeScript("arguments[0].scrollTop = 0;", modal);
+  }
+
+  // Scroll to specific element
+  async function scrollToElement(driver, element) {
+    await driver.executeScript(
+      "arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });",
+      element,
+    );
+  }
+
   try {
     // ===============================
     // 1. LOGIN
@@ -106,12 +120,13 @@ function createDriver() {
 
     await barangaySelect.sendKeys("", Key.ENTER);
     await submitBtn.click();
+    await scrollModalTop(driver);
+
     let barangayValidation = await driver.executeScript(
       "return arguments[0].validationMessage;",
       barangaySelect,
     );
     console.log("✅ Barangay validation:", barangayValidation);
-
     // ===============================
     // 4. EDIT FIELDS
     // ===============================
@@ -133,6 +148,7 @@ function createDriver() {
       throw new Error("Expected at least 2 options in barangay select");
     }
     console.log("✅ Fields updated");
+
     // ===============================
     // 5. PASSWORD RESET SCENARIOS
     // ===============================
@@ -141,20 +157,36 @@ function createDriver() {
     );
     await resetBtn.click();
 
-    const passwordInput = await driver.findElement(By.name("password"));
-    const confirmInput = await driver.findElement(By.name("confirmPassword"));
+    // WAIT for password input (fresh element)
+    let passwordInput = await driver.wait(
+      until.elementLocated(By.name("password")),
+      10000,
+    );
+
+    // SCROLL DOWN
+    await scrollToElement(driver, passwordInput);
+
+    // ALWAYS re-find confirm input after render
+    let confirmInput = await driver.findElement(By.name("confirmPassword"));
 
     // PASSWORD MISMATCH
     await passwordInput.clear();
     await confirmInput.clear();
+
     await passwordInput.sendKeys("TestPass123!");
     await confirmInput.sendKeys("Mismatch123!");
-    await submitBtn.click();
 
-    // Wait for the error alert container to appear
-    // After submitting the password mismatch
+    // ⚠️ RE-FIND submit button (important!)
+    let freshSubmitBtn = await driver.findElement(
+      By.xpath("//button[contains(text(),'Save Changes')]"),
+    );
 
-    // Wait for the error element to appear
+    await freshSubmitBtn.click();
+
+    // SCROLL UP to see error
+    await scrollModalTop(driver);
+
+    // ✅ CORRECT WAIT (locate first, then visible)
     const mismatchError = await driver.wait(
       until.elementLocated(
         By.xpath("//span[contains(text(),'Passwords do not match')]"),
@@ -162,15 +194,21 @@ function createDriver() {
       10000,
     );
 
-    // Ensure it's visible
-    await driver.wait(until.elementIsVisible(mismatchError), 5000);
+    await driver.wait(until.elementIsVisible(mismatchError), 10000);
 
-    // Now you can safely read it
+    // READ TEXT
     const text = await mismatchError.getText();
     console.log("✅ Password mismatch:", text);
+
+    // 🔽 SCROLL BACK DOWN
+    passwordInput = await driver.findElement(By.name("password"));
+    confirmInput = await driver.findElement(By.name("confirmPassword"));
+
+    await scrollToElement(driver, confirmInput);
+
+    // FIX PASSWORD
     await confirmInput.clear();
     await confirmInput.sendKeys("TestPass123!");
-
     // ===============================
     // 6. SUCCESSFUL SUBMISSION
     // ===============================

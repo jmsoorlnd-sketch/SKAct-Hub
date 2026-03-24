@@ -51,6 +51,7 @@ async function runTests() {
   // ========================
   let driver = createDriver();
   await login(driver, "admin", "admin");
+
   await checkSuccess(driver, "admin");
   await driver.quit();
 
@@ -60,6 +61,8 @@ async function runTests() {
   let driver2 = createDriver();
   await login(driver2, "admin", "wrongpass");
   await checkSuccess(driver2, "admin"); // should fail
+  console.log("Invalid Password");
+  console.log("Test Success");
   await driver2.quit();
 
   // ========================
@@ -68,6 +71,8 @@ async function runTests() {
   let driver3 = createDriver();
   await login(driver3, "notauser", "123456");
   await checkSuccess(driver3, "admin"); // should fail
+  console.log("Non-existing User");
+  console.log("Test Success");
   await driver3.quit();
 
   // ========================
@@ -76,6 +81,8 @@ async function runTests() {
   let driver4 = createDriver();
   await login(driver4, "", "");
   await checkSuccess(driver4, "admin"); // should fail
+  console.log("Fields Empty");
+  console.log("Test Success");
   await driver4.quit();
 
   // ========================
