@@ -56,6 +56,15 @@ const skPersonnelSchema = new mongoose.Schema({
         enum: ["Active", "Inactive"],
         default: "Active",
       },
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      deletedAt: Date,
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
       _id: mongoose.Schema.Types.ObjectId,
     },
   ],

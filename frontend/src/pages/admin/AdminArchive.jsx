@@ -7,8 +7,9 @@ import {
   Building2,
   Search,
   AlertCircle,
-  Download,
   Calendar,
+  Archive as ArchiveIcon,
+  X,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
@@ -150,97 +151,6 @@ const ArchiveItemCard = React.memo(function ArchiveItemCard({
   );
 });
 
-/* -------- Archive Section -------- */
-const ArchiveSection = React.memo(function ArchiveSection({
-  title,
-  icon: Icon,
-  iconColor,
-  data,
-  loading,
-  searchValue,
-  setSearchValue,
-  onRestore,
-  onDelete,
-  isUser,
-}) {
-  const filteredData = useMemo(() => {
-    if (!searchValue) return data;
-    const q = searchValue.toLowerCase();
-    return data.filter((item) => {
-      const searchFields = isUser
-        ? [
-            item.firstname,
-            item.lastname,
-            item.username,
-            item.email,
-            item.position,
-            item.barangayName,
-          ]
-        : [item.barangayName, item.city, item.province, item.region];
-      return searchFields
-        .filter(Boolean)
-        .some((val) => val.toLowerCase().includes(q));
-    });
-  }, [data, searchValue, isUser]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={`p-2.5 rounded-lg ${iconColor} bg-opacity-10`}>
-            <Icon className={`${iconColor}`} size={20} />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500">{data.length} item(s)</p>
-          </div>
-        </div>
-        <div className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 font-semibold text-sm">
-          {data.length}
-        </div>
-      </div>
-
-      <div className="relative">
-        <Search
-          size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-        />
-        <input
-          type="text"
-          placeholder={`Search ${title.toLowerCase()}...`}
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
-
-      <div className="space-y-3">
-        {loading ? (
-          <div className="text-center py-12 text-sm text-gray-400">
-            Loading {title.toLowerCase()}...
-          </div>
-        ) : filteredData.length === 0 ? (
-          <div className="text-center py-12 text-sm text-gray-400">
-            No {title.toLowerCase()} found
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 max-h-[600px] overflow-y-auto pr-2">
-            {filteredData.map((item) => (
-              <ArchiveItemCard
-                key={item._id}
-                item={item}
-                isUser={isUser}
-                onRestore={() => onRestore(item._id)}
-                onDelete={() => onDelete(item)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
-
 /* -------- Main Component -------- */
 const AdminArchive = () => {
   const toast = useToast();
@@ -249,8 +159,7 @@ const AdminArchive = () => {
   const [deletedBarangays, setDeletedBarangays] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingBarangays, setLoadingBarangays] = useState(true);
-  const [searchUsers, setSearchUsers] = useState("");
-  const [searchBarangays, setSearchBarangays] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
 
@@ -335,21 +244,122 @@ const AdminArchive = () => {
     }
   };
 
+  /* ===================== COMBINED ITEMS ===================== */
+  const allArchivedItems = useMemo(() => {
+    const items = [];
+
+    // Add deleted users
+    deletedUsers.forEach((user) => {
+      items.push({
+        id: user._id,
+        type: "user",
+        name: `${user.firstname} ${user.lastname}`,
+        title: `${user.firstname} ${user.lastname}`,
+        deletedAt: user.deletedAt,
+        data: user,
+      });
+    });
+
+    // Add deleted barangays
+    deletedBarangays.forEach((barangay) => {
+      items.push({
+        id: barangay._id,
+        type: "barangay",
+        name: barangay.barangayName,
+        title: barangay.barangayName,
+        deletedAt: barangay.deletedAt,
+        data: barangay,
+      });
+    });
+
+    // Sort by deletion date (newest first)
+    return items.sort((a, b) => {
+      const dateA = new Date(a.deletedAt || 0);
+      const dateB = new Date(b.deletedAt || 0);
+      return dateB - dateA;
+    });
+  }, [deletedUsers, deletedBarangays]);
+
+  /* ===================== RENDER HELPERS ===================== */
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case "user":
+        return <Users size={16} />;
+      case "barangay":
+        return <Building2 size={16} />;
+      default:
+        return <ArchiveIcon size={16} />;
+    }
+  };
+
+  const getTypeBadgeStyles = (type) => {
+    switch (type) {
+      case "user":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "barangay":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      default:
+        return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case "user":
+        return "User";
+      case "barangay":
+        return "Barangay";
+      default:
+        return "Item";
+    }
+  };
+
+  /* ===================== FILTERED ITEMS ===================== */
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return allArchivedItems;
+
+    const query = searchQuery.toLowerCase();
+    return allArchivedItems.filter((item) => {
+      const title = item.title?.toLowerCase() || "";
+      const type = getTypeLabel(item.type)?.toLowerCase() || "";
+      const additionalDetails =
+        item.type === "user"
+          ? [item.data.username, item.data.email, item.data.position]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase()
+          : [item.data.city, item.data.province, item.data.region]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+
+      return (
+        title.includes(query) ||
+        type.includes(query) ||
+        additionalDetails.includes(query)
+      );
+    });
+  }, [allArchivedItems, searchQuery]);
+
   const stats = {
     deletedUsers: deletedUsers.length,
     deletedBarangays: deletedBarangays.length,
   };
 
+  const isLoading = loadingUsers || loadingBarangays;
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Archive</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Manage deleted users and barangays. You can restore or permanently
-            delete them.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Archive</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Manage deleted users and barangays. You can restore or permanently
+              delete them.
+            </p>
+          </div>
         </div>
 
         {/* Stats */}
@@ -368,37 +378,154 @@ const AdminArchive = () => {
           />
         </div>
 
-        {/* Archive Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-            <ArchiveSection
-              title="Deleted Users"
-              icon={Users}
-              iconColor="text-blue-600"
-              data={deletedUsers}
-              loading={loadingUsers}
-              searchValue={searchUsers}
-              setSearchValue={setSearchUsers}
-              onRestore={(id) => handleRestore("users", id)}
-              onDelete={(item) => handleDelete("users", item)}
-              isUser={true}
-            />
+        {/* Combined Archive Section */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+          {/* Header */}
+          <div className="bg-linear-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                All Archived Items
+              </h2>
+              <p className="text-xs text-gray-500 mt-1">
+                {filteredItems.length} item
+                {filteredItems.length === 1 ? "" : "s"}
+                {searchQuery && ` • Filtering ${allArchivedItems.length}`}
+              </p>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search by name, type, or details..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Clear search"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-            <ArchiveSection
-              title="Deleted Barangays"
-              icon={Building2}
-              iconColor="text-purple-600"
-              data={deletedBarangays}
-              loading={loadingBarangays}
-              searchValue={searchBarangays}
-              setSearchValue={setSearchBarangays}
-              onRestore={(id) => handleRestore("barangays", id)}
-              onDelete={(item) => handleDelete("barangays", item)}
-              isUser={false}
-            />
-          </div>
+          {/* Content */}
+          {isLoading ? (
+            <div className="p-6">
+              <p className="text-sm text-gray-500">Loading...</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ArchiveIcon className="text-gray-400" size={40} />
+              </div>
+              <p className="text-base text-gray-600 font-semibold">
+                {searchQuery ? "No matching items found" : "No archived items"}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {searchQuery
+                  ? "Try adjusting your search terms"
+                  : "Deleted users and barangays will appear here."}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {filteredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left: Type & Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${getTypeBadgeStyles(
+                            item.type,
+                          )}`}
+                        >
+                          {getTypeIcon(item.type)}
+                          {getTypeLabel(item.type)}
+                        </span>
+                      </div>
+                      <p className="font-semibold text-gray-900 truncate">
+                        {item.title}
+                      </p>
+                      <div className="text-xs text-gray-600 mt-2 space-y-1">
+                        {item.type === "user" && (
+                          <>
+                            {item.data.username && <p>@{item.data.username}</p>}
+                            {item.data.email && <p>{item.data.email}</p>}
+                            {item.data.position && (
+                              <p>Position: {item.data.position}</p>
+                            )}
+                            {item.data.barangayName && (
+                              <p>Barangay: {item.data.barangayName}</p>
+                            )}
+                          </>
+                        )}
+                        {item.type === "barangay" && (
+                          <>
+                            {item.data.city && <p>City: {item.data.city}</p>}
+                            {item.data.province && (
+                              <p>Province: {item.data.province}</p>
+                            )}
+                            {item.data.region && (
+                              <p>Region: {item.data.region}</p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        <Calendar size={12} className="inline mr-1" />
+                        Deleted{" "}
+                        {item.deletedAt
+                          ? new Date(item.deletedAt).toLocaleDateString()
+                          : "unknown"}
+                      </p>
+                    </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() =>
+                          handleRestore(
+                            item.type === "user" ? "users" : "barangays",
+                            item.id,
+                          )
+                        }
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
+                      >
+                        <RotateCcw size={14} />
+                        Restore
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleDelete(
+                            item.type === "user" ? "users" : "barangays",
+                            item.data,
+                          )
+                        }
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

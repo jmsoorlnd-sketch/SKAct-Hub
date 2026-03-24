@@ -1,6 +1,16 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
-import { Folder, FileText, RefreshCw, Trash2, RotateCcw } from "lucide-react";
+import {
+  Folder,
+  FileText,
+  RefreshCw,
+  Trash2,
+  RotateCcw,
+  Users,
+  Archive as ArchiveIcon,
+  Search,
+  X,
+} from "lucide-react";
 import { useToast } from "../components/Toast";
 
 const API_BASE = "http://localhost:5000/api";
@@ -10,6 +20,8 @@ const Archive = () => {
   const [loading, setLoading] = useState(true);
   const [folders, setFolders] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [kagawad, setKagawad] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   /* ===================== USER ===================== */
   const user = useMemo(() => {
@@ -60,15 +72,24 @@ const Archive = () => {
 
     setLoading(true);
     try {
-      const res = await apiCall(
+      // Fetch folders and messages
+      const archiveRes = await apiCall(
         "get",
         `${API_BASE}/barangays/${barangayId}/archive`,
       );
 
-      setFolders(res.data.folders || []);
-      setMessages(res.data.messages || []);
+      setFolders(archiveRes.data.folders || []);
+      setMessages(archiveRes.data.messages || []);
+
+      // Fetch deleted kagawad
+      const kagawadRes = await apiCall(
+        "get",
+        `${API_BASE}/sk-personnel/${barangayId}?includeDeleted=true`,
+      );
+
+      setKagawad(kagawadRes.data.deletedKagawad || []);
     } catch {
-      // already handled in apiCall
+      // Error already handled in apiCall
     } finally {
       setLoading(false);
     }
@@ -89,7 +110,9 @@ const Archive = () => {
         );
         toast.success("Folder restored successfully");
         fetchArchive();
-      } catch {}
+      } catch {
+        // Error already handled in apiCall
+      }
     },
     [barangayId, apiCall, fetchArchive, toast],
   );
@@ -109,7 +132,9 @@ const Archive = () => {
         );
         toast.success("Folder permanently deleted");
         fetchArchive();
-      } catch {}
+      } catch {
+        // Error already handled in apiCall
+      }
     },
     [barangayId, apiCall, fetchArchive, toast],
   );
@@ -123,7 +148,9 @@ const Archive = () => {
         await apiCall("post", `${API_BASE}/messages/${messageId}/restore`);
         toast.success("Document restored successfully");
         fetchArchive();
-      } catch {}
+      } catch {
+        // Error already handled in apiCall
+      }
     },
     [apiCall, fetchArchive, toast],
   );
@@ -142,10 +169,164 @@ const Archive = () => {
         await apiCall("delete", `${API_BASE}/messages/${messageId}/hard`);
         toast.success("Document permanently deleted");
         fetchArchive();
-      } catch {}
+      } catch {
+        // Error already handled in apiCall
+      }
     },
     [apiCall, fetchArchive, toast],
   );
+
+  const handleRestoreKagawad = useCallback(
+    async (kagawadId) => {
+      if (!kagawadId || !barangayId) return;
+      if (!confirmAction("Restore this personnel?")) return;
+
+      try {
+        await apiCall(
+          "post",
+          `${API_BASE}/sk-personnel/${barangayId}/kagawad/${kagawadId}/restore`,
+        );
+        toast.success("Personnel restored successfully");
+        fetchArchive();
+      } catch {
+        // Error already handled in apiCall
+      }
+    },
+    [barangayId, apiCall, fetchArchive, toast],
+  );
+
+  const handleHardDeleteKagawad = useCallback(
+    async (kagawadId) => {
+      if (!kagawadId || !barangayId) return;
+      if (
+        !confirmAction(
+          "Permanently delete this personnel? This cannot be undone.",
+        )
+      )
+        return;
+
+      try {
+        await apiCall(
+          "delete",
+          `${API_BASE}/sk-personnel/${barangayId}/kagawad/${kagawadId}/hard`,
+        );
+        toast.success("Personnel permanently deleted");
+        fetchArchive();
+      } catch {
+        // Error already handled in apiCall
+      }
+    },
+    [barangayId, apiCall, fetchArchive, toast],
+  );
+
+  /* ===================== COMBINED ITEMS ===================== */
+  const allArchivedItems = useMemo(() => {
+    const items = [];
+
+    // Add folders
+    folders.forEach((folder) => {
+      items.push({
+        id: folder._id,
+        type: "folder",
+        name: folder.name,
+        title: folder.name,
+        deletedAt: folder.deletedAt,
+        deletedBy: folder.deletedBy?.username || "user",
+        data: folder,
+      });
+    });
+
+    // Add messages
+    messages.forEach((msg) => {
+      items.push({
+        id: msg._id,
+        type: "document",
+        name: msg.subject,
+        title: msg.subject,
+        deletedAt: msg.deletedAt,
+        deletedBy: msg.sender?.username || "Unknown",
+        data: msg,
+      });
+    });
+
+    // Add kagawad
+    kagawad.forEach((k) => {
+      items.push({
+        id: k._id,
+        type: "personnel",
+        name: `${k.firstName} ${k.surname || ""}`.trim(),
+        title: `${k.firstName} ${k.surname || ""}`.trim(),
+        deletedAt: k.deletedAt,
+        deletedBy: k.deletedBy?.username || "user",
+        data: k,
+      });
+    });
+
+    // Sort by deletion date (newest first)
+    return items.sort((a, b) => {
+      const dateA = new Date(a.deletedAt || 0);
+      const dateB = new Date(b.deletedAt || 0);
+      return dateB - dateA;
+    });
+  }, [folders, messages, kagawad]);
+
+  /* ===================== RENDER HELPERS ===================== */
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case "folder":
+        return <Folder size={16} />;
+      case "document":
+        return <FileText size={16} />;
+      case "personnel":
+        return <Users size={16} />;
+      default:
+        return <ArchiveIcon size={16} />;
+    }
+  };
+
+  const getTypeBadgeStyles = (type) => {
+    switch (type) {
+      case "folder":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "document":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      case "personnel":
+        return "bg-green-100 text-green-700 border-green-200";
+      default:
+        return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case "folder":
+        return "Folder";
+      case "document":
+        return "Document";
+      case "personnel":
+        return "Personnel";
+      default:
+        return "Item";
+    }
+  };
+
+  /* ===================== FILTERED ITEMS ===================== */
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return allArchivedItems;
+
+    const query = searchQuery.toLowerCase();
+    return allArchivedItems.filter((item) => {
+      const title = item.title?.toLowerCase() || "";
+      const type = getTypeLabel(item.type)?.toLowerCase() || "";
+      const deletedBy = item.deletedBy?.toLowerCase() || "";
+
+      return (
+        title.includes(query) ||
+        type.includes(query) ||
+        deletedBy.includes(query)
+      );
+    });
+  }, [allArchivedItems, searchQuery]);
 
   /* ===================== EFFECT ===================== */
   useEffect(() => {
@@ -154,13 +335,13 @@ const Archive = () => {
 
   /* ===================== UI ===================== */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Archive</h1>
             <p className="text-sm text-slate-600 mt-1">
-              View deleted folders and documents for your barangay.
+              View all deleted items for your barangay.
             </p>
           </div>
           <button
@@ -179,141 +360,153 @@ const Archive = () => {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* FOLDERS */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {/* Header */}
+            <div className="bg-linear-to-r from-slate-50 to-indigo-50 px-6 py-4 border-b border-slate-200">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center">
-                    <Folder size={20} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      Deleted Folders
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      {folders.length} item{folders.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    All Archived Items
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {filteredItems.length} item
+                    {filteredItems.length === 1 ? "" : "s"}
+                    {searchQuery && ` • Filtering ${allArchivedItems.length}`}
+                  </p>
                 </div>
               </div>
 
-              {loading ? (
-                <p className="text-sm text-slate-500">Loading...</p>
-              ) : folders.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No deleted folders found.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {folders.map((folder) => (
-                    <div
-                      key={folder._id}
-                      className="p-4 border border-slate-200 rounded-xl bg-slate-50"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {folder.name}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Deleted by {folder.deletedBy?.username || "user"} on{" "}
-                            {folder.deletedAt
-                              ? new Date(folder.deletedAt).toLocaleString()
-                              : "unknown"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleRestoreFolder(folder._id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100"
-                          >
-                            <RotateCcw size={14} />
-                            Restore
-                          </button>
-                          <button
-                            onClick={() => handleHardDeleteFolder(folder._id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100"
-                          >
-                            <Trash2 size={14} />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* MESSAGES */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center">
-                    <FileText size={20} />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">
-                      Deleted Documents
-                    </h2>
-                    <p className="text-xs text-slate-500">
-                      {messages.length} item{messages.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                </div>
+              {/* Search Bar */}
+              <div className="relative">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Search by name, type, or deleted by..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Clear search"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
               </div>
+            </div>
 
-              {loading ? (
+            {/* Content */}
+            {loading ? (
+              <div className="p-6">
                 <p className="text-sm text-slate-500">Loading...</p>
-              ) : messages.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  No deleted documents found.
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <ArchiveIcon className="text-slate-400" size={40} />
+                </div>
+                <p className="text-base text-slate-600 font-semibold">
+                  {searchQuery
+                    ? "No matching items found"
+                    : "No archived items"}
                 </p>
-              ) : (
-                <div className="space-y-3">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg._id}
-                      className="p-4 border border-slate-200 rounded-xl bg-slate-50"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-slate-900">
-                            {msg.subject}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            From: {msg.sender?.username || "Unknown"}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Deleted on{" "}
-                            {msg.deletedAt
-                              ? new Date(msg.deletedAt).toLocaleString()
-                              : "unknown"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleRestoreMessage(msg._id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100"
+                <p className="text-sm text-slate-500 mt-1">
+                  {searchQuery
+                    ? "Try adjusting your search terms"
+                    : "Deleted folders, documents, and personnel will appear here."}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-200">
+                {filteredItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Left: Type & Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${getTypeBadgeStyles(
+                              item.type,
+                            )}`}
                           >
-                            <RotateCcw size={14} />
-                            Restore
-                          </button>
-                          <button
-                            onClick={() => handleHardDeleteMessage(msg._id)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100"
-                          >
-                            <Trash2 size={14} />
-                            Delete
-                          </button>
+                            {getTypeIcon(item.type)}
+                            {getTypeLabel(item.type)}
+                          </span>
                         </div>
+                        <p className="font-semibold text-slate-900 truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Deleted by {item.deletedBy} on{" "}
+                          {item.deletedAt
+                            ? new Date(item.deletedAt).toLocaleString()
+                            : "unknown"}
+                        </p>
+
+                        {/* Extra details for Personnel */}
+                        {item.type === "personnel" && item.data?.age && (
+                          <p className="text-xs text-slate-600 mt-1">
+                            Age: {item.data.age} •{" "}
+                            <span
+                              className={`${
+                                item.data.status === "Active"
+                                  ? "text-emerald-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {item.data.status}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => {
+                            if (item.type === "folder") {
+                              handleRestoreFolder(item.id);
+                            } else if (item.type === "document") {
+                              handleRestoreMessage(item.id);
+                            } else if (item.type === "personnel") {
+                              handleRestoreKagawad(item.id);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
+                        >
+                          <RotateCcw size={14} />
+                          Restore
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (item.type === "folder") {
+                              handleHardDeleteFolder(item.id);
+                            } else if (item.type === "document") {
+                              handleHardDeleteMessage(item.id);
+                            } else if (item.type === "personnel") {
+                              handleHardDeleteKagawad(item.id);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
