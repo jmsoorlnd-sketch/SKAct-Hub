@@ -490,40 +490,18 @@ graph TB
 
 ```mermaid
 erDiagram
-    User ||--o{ Barangay : "belongs_to"
-    Barangay ||--|| SKPersonnel : "has"
-    User ||--o{ Message : "sends"
-    User ||--o{ Message : "receives"
-    User ||--o{ Project : "proposes"
-    User ||--o{ Notification : "receives"
-    Barangay ||--o{ BarangayStorage : "owns"
-    BarangayStorage ||--o{ Folder : "contains"
-    Folder ||--o{ Message : "stores"
-    Message ||--o{ ActivityUpdate : "has"
-
+    direction TB
     User {
         string username PK
         string email UK
         string role "Youth|Official|Admin"
-        string password
-        string firstname
-        string lastname
-        string position "Chairman|Treasurer|Secretary|Admin"
-        number age
-        string barangayName
-        string profileImage
-        string civil "Single|Married"
         ObjectId barangay FK
         string status "Active|Inactive"
-        date createdAt
     }
 
     Barangay {
         ObjectId _id PK
         string barangayName
-        string city
-        string province
-        string region
         ObjectId chairmanId FK
     }
 
@@ -541,14 +519,8 @@ erDiagram
         ObjectId sender FK
         ObjectId recipient FK
         string subject
-        string body
-        string attachmentUrl
-        string attachmentName
-        date startDate
-        date endDate
         string status "pending|approved|ongoing|rejected|completed"
         boolean isRead
-        boolean isAttached
         date createdAt
     }
 
@@ -556,39 +528,26 @@ erDiagram
         ObjectId _id PK
         string title
         ObjectId proposer FK
-        string description
-        date startDate
-        date endDate
         string status "planned|in-progress|completed|on-hold"
         number budget
-        date createdAt
-        date updatedAt
     }
 
     Notification {
         ObjectId _id PK
         ObjectId recipient FK
         string title
-        string message
         string type "info|warning|success|error"
         boolean isRead
-        date createdAt
     }
-
     BarangayStorage {
         ObjectId _id PK
         ObjectId barangay FK
         string name
-        string description
-        date createdAt
     }
-
     Folder {
         ObjectId _id PK
         ObjectId barangayStorage FK
         string name
-        string description
-        date createdAt
     }
 
     ActivityUpdate {
@@ -596,8 +555,28 @@ erDiagram
         ObjectId message FK
         string updateText
         ObjectId updatedBy FK
-        date createdAt
     }
+
+    User||--o{Barangay:"belongs_to"
+    Barangay||--||SKPersonnel:"has"
+    User||--o{Message:"sends"
+    User||--o{Message:"receives"
+    User||--o{Project:"proposes"
+    User||--o{Notification:"receives"
+    Barangay||--o{BarangayStorage:"owns"
+    BarangayStorage||--o{Folder:"contains"
+    Folder||--o{Message:"stores"
+    Message||--o{ActivityUpdate:"has"
+
+    style User stroke:#000000,fill:transparent
+    style Barangay stroke:#000000,fill:transparent
+    style SKPersonnel stroke:#000000,fill:transparent
+    style Message stroke:#000000,fill:transparent
+    style Project stroke:#000000,fill:transparent
+    style Notification stroke:#000000,fill:transparent
+    style BarangayStorage stroke:#000000,fill:transparent
+    style Folder stroke:#000000,fill:transparent
+    style ActivityUpdate stroke:#000000,fill:transparent
 ```
 
 ### **ERD Legend & Relationships**
