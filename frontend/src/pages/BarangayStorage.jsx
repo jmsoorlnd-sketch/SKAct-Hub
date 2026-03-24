@@ -140,10 +140,12 @@ const folderStyles = `
     font-size: 14px;
     color: #1f2937;
     text-align: center;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 100%;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   .folder-count {

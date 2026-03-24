@@ -366,11 +366,12 @@ const AdminCalendar = () => {
           <div className="space-y-1 flex-1">
             {dayEvents.slice(0, 3).map((evt) => {
               const barangayName = barangayMap[evt.attachedToBarangay];
+              const creatorName = evt.sender?.username || "Unknown";
               return (
                 <div
                   key={evt._id}
                   className="text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 px-2 py-1 rounded-lg truncate border border-blue-200 font-semibold"
-                  title={`${evt.subject}${barangayName ? ` – ${barangayName}` : ""}`}
+                  title={`${evt.subject}${barangayName ? ` – ${barangayName}` : ""} | Created by: ${creatorName}`}
                 >
                   {evt.subject}
                   {barangayName && (
@@ -378,6 +379,9 @@ const AdminCalendar = () => {
                       {barangayName}
                     </span>
                   )}
+                  <span className="block text-[8px] text-slate-700 truncate">
+                    by {creatorName}
+                  </span>
                 </div>
               );
             })}
@@ -399,7 +403,7 @@ const AdminCalendar = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-4">
+          <div className="mb-4 py-4">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h1 className="text-2xl font-bold">Event Calendar</h1>
@@ -475,42 +479,116 @@ const AdminCalendar = () => {
                 </Suspense>
               </div>
 
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center py-10">
-                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-                  </div>
-                }
-              >
-                {/* Calendar */}
-                <Calendar
-                  renderCalendar={renderCalendar}
-                  handleNextMonth={handleNextMonth}
-                  handlePrevMonth={handlePrevMonth}
-                />
-              </Suspense>
-              {/* Events List */}
+              {/* Two-Column Layout: Calendar + Today's Events */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Calendar - 2 columns */}
+                <div className="lg:col-span-2">
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center py-10">
+                        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                      </div>
+                    }
+                  >
+                    {/* Calendar */}
+                    <Calendar
+                      renderCalendar={renderCalendar}
+                      handleNextMonth={handleNextMonth}
+                      handlePrevMonth={handlePrevMonth}
+                    />
+                  </Suspense>
+                </div>
 
-              {events.length > 0 && (
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center py-10">
-                      <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                {/* Today's Events - 1 column */}
+                <div className="lg:col-span-1">
+                  <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden sticky top-6 max-h-[600px] flex flex-col">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-slate-200">
+                      <h3 className="text-lg font-bold text-slate-900">
+                        Today's Events
+                      </h3>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        {new Date().toLocaleDateString("default", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
                     </div>
-                  }
-                >
-                  <EventList
-                    user={user}
-                    selectedEventIds={selectedEventIds}
-                    events={events}
-                    sortedEvents={sortedEvents}
-                    setConfirmationModal={setConfirmationModal}
-                    setSelectedEventIds={setSelectedEventIds}
-                    handleDeleteEvent={handleDeleteEvent}
-                    barangays={barangays}
-                  />
-                </Suspense>
-              )}
+                    <div className="p-4 overflow-y-auto flex-1">
+                      {(() => {
+                        const today = new Date();
+                        const todayEvents = events.filter((e) => {
+                          const eDate = new Date(e.startDate);
+                          return (
+                            eDate.getDate() === today.getDate() &&
+                            eDate.getMonth() === today.getMonth() &&
+                            eDate.getFullYear() === today.getFullYear()
+                          );
+                        });
+
+                        if (todayEvents.length === 0) {
+                          return (
+                            <div className="text-center py-8">
+                              <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                              <p className="text-sm text-slate-500 font-medium">
+                                No events today
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-2.5">
+                            {todayEvents.map((evt) => {
+                              const barangayName =
+                                barangayMap[evt.attachedToBarangay];
+                              const creatorName =
+                                evt.sender?.username || "Unknown";
+                              return (
+                                <div
+                                  key={evt._id}
+                                  className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
+                                >
+                                  <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
+                                    {evt.subject}
+                                  </h4>
+                                  {evt.body && (
+                                    <p className="text-xs text-slate-600 mb-2 line-clamp-2">
+                                      {evt.body}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold mb-1">
+                                    <Clock size={12} />
+                                    {new Date(evt.startDate).toLocaleTimeString(
+                                      "default",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
+                                  </div>
+                                  {barangayName && (
+                                    <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
+                                      <MapPin size={12} />
+                                      {barangayName}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-slate-500 font-medium px-2 py-1 bg-slate-200 rounded">
+                                    Created by:{" "}
+                                    <span className="font-semibold text-slate-700">
+                                      {creatorName}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>
