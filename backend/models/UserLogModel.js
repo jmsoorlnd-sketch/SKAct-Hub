@@ -24,6 +24,7 @@ const userLogSchema = new mongoose.Schema({
       "logout",
       "delete_message",
       "delete_event",
+      "permanently_deleted_event",
       "send_document",
       "account_change",
       "delete_document",

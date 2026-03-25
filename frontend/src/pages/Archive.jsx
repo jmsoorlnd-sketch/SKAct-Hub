@@ -177,6 +177,27 @@ const Archive = () => {
     [apiCall, fetchArchive, toast],
   );
 
+  const handleHardDeleteEvent = useCallback(
+    async (messageId) => {
+      if (!messageId) return;
+      if (
+        !confirmAction(
+          "Permanently delete this event from all storage? This cannot be undone.",
+        )
+      )
+        return;
+
+      try {
+        await apiCall("delete", `${API_BASE}/messages/${messageId}/hard-event`);
+        toast.success("Event permanently deleted from all storage");
+        fetchArchive();
+      } catch {
+        // Error already handled in apiCall
+      }
+    },
+    [apiCall, fetchArchive, toast],
+  );
+
   const handleRestoreKagawad = useCallback(
     async (kagawadId) => {
       if (!kagawadId || !barangayId) return;
@@ -500,6 +521,8 @@ const Archive = () => {
                           onClick={() => {
                             if (item.type === "folder") {
                               handleHardDeleteFolder(item.id);
+                            } else if (item.type === "event") {
+                              handleHardDeleteEvent(item.id);
                             } else if (item.type === "document") {
                               handleHardDeleteMessage(item.id);
                             } else if (item.type === "personnel") {

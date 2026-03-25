@@ -503,6 +503,71 @@ export const hardDeleteMessage = async (req, res) => {
   }
 };
 
+// Permanent deletion of events with cascading removal from all barangay storage
+export const hardDeleteEvent = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Check if it's actually an event
+    const isEvent = msg.startDate || msg.isAdminScheduled;
+    if (!isEvent) {
+      return res.status(400).json({ message: "This is not an event" });
+    }
+
+    // Only sender or admin can delete
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Only the event organizer or admin can permanently delete this event",
+        });
+    }
+
+    // Get event details before deletion for logging
+    const eventSubject = msg.subject;
+    const eventStart = msg.startDate;
+
+    // Permanently delete the message
+    await Message.findByIdAndDelete(messageId);
+
+    // Cascade: remove from all barangay storage entries
+    await BarangayStorage.deleteMany({ document: messageId });
+
+    // Log the permanent deletion action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "permanently_deleted_event",
+        description: `Permanently deleted event: ${eventSubject} (${new Date(eventStart).toLocaleDateString()})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging permanent event deletion:", logError);
+    }
+
+    res
+      .status(200)
+      .json({ message: "Event permanently deleted from all storage" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Admin approves a message from an official and stores it to barangay storage
 export const approveMessageForBarangay = async (req, res) => {
   try {
