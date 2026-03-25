@@ -160,6 +160,19 @@ const Inbox = () => {
     }
   };
 
+  const confirmAndUpdateMessageStatus = async (messageId, status) => {
+    if (!messageId) return;
+
+    if (status === "cancelled") {
+      const confirmed = window.confirm(
+        "Are you sure you want to cancel this message submission? This action cannot be undone.",
+      );
+      if (!confirmed) return;
+    }
+
+    await handleUpdateMessageStatus(messageId, status);
+  };
+
   /* ===================== HELPERS ===================== */
   const getStatusConfig = useCallback(
     (status) => STATUS_CONFIG[status] || DEFAULT_STATUS,
@@ -474,7 +487,7 @@ const Inbox = () => {
                       {activeTab === "sent" && msg.status === "pending" && (
                         <button
                           onClick={() =>
-                            handleUpdateMessageStatus(msg._id, "cancelled")
+                            confirmAndUpdateMessageStatus(msg._id, "cancelled")
                           }
                           className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[11px] font-semibold border border-red-200 transition-colors"
                         >
