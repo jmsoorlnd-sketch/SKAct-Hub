@@ -283,7 +283,7 @@ const AdminDashboard = () => {
                                 },
                               )}
                             </p>
-                            {msg.attachmentName && (
+                            {msg.attachmentNames?.length > 0 && (
                               <div className="text-slate-400">
                                 <FileText className="w-3 h-3" />
                               </div>
@@ -358,10 +358,11 @@ const AdminDashboard = () => {
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded-md font-bold">
                               {selectedMessage.status.toUpperCase()}
                             </span>
-                            {selectedMessage.attachmentName && (
+                            {selectedMessage.attachmentNames?.length > 0 && (
                               <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded-md font-bold flex items-center gap-1">
                                 <FileText className="w-3 h-3" />
-                                ATTACHMENT
+                                ATTACHMENT (
+                                {selectedMessage.attachmentNames.length})
                               </span>
                             )}
                           </div>
@@ -468,54 +469,65 @@ const AdminDashboard = () => {
                     )}
 
                     {/* Attachment */}
-                    {selectedMessage.attachmentName && (
+                    {selectedMessage.attachmentNames?.length > 0 && (
                       <div>
                         <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
                           <FileText className="w-4 h-4 text-blue-600" />
-                          Attachment
+                          Attachments ({selectedMessage.attachmentNames.length})
                         </h3>
-                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-slate-900 truncate">
-                                  {selectedMessage.attachmentName}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  Click to download
-                                </p>
-                              </div>
-                            </div>
-                            {selectedMessage.attachmentUrl && (
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <button
-                                  onClick={() => {
-                                    setPreviewUrl(
-                                      `http://localhost:5000${selectedMessage.attachmentUrl}`,
-                                    );
-                                    setShowPreviewModal(true);
-                                  }}
-                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 space-y-3">
+                          {selectedMessage.attachmentNames.map(
+                            (name, index) => {
+                              const url =
+                                selectedMessage.attachmentUrls?.[index];
+                              return (
+                                <div
+                                  key={`${name}-${index}`}
+                                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-slate-200"
                                 >
-                                  <FileText className="w-3 h-3" />
-                                  View
-                                </button>
-                                <a
-                                  href={`http://localhost:5000${selectedMessage.attachmentUrl}`}
-                                  download={selectedMessage.attachmentName}
-                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <Download className="w-3 h-3" />
-                                  Download
-                                </a>
-                              </div>
-                            )}
-                          </div>
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                                      <FileText className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-slate-900 truncate">
+                                        {name}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        Click to download
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {url && (
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      <button
+                                        onClick={() => {
+                                          setPreviewUrl(
+                                            `http://localhost:5000${url}`,
+                                          );
+                                          setShowPreviewModal(true);
+                                        }}
+                                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                                      >
+                                        <FileText className="w-3 h-3" />
+                                        View
+                                      </button>
+                                      <a
+                                        href={`http://localhost:5000${url}`}
+                                        download={name}
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <Download className="w-3 h-3" />
+                                        Download
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            },
+                          )}
                         </div>
                       </div>
                     )}

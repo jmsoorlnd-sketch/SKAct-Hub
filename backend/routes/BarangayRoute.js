@@ -70,7 +70,7 @@ router.get("/:barangayId/storage", requireAuth, getBarangayStorage);
 router.post(
   "/:barangayId/messages",
   requireAuth,
-  upload.single("attachment"),
+  upload.array("attachments"),
   createBarangayMessage,
 );
 router.get(

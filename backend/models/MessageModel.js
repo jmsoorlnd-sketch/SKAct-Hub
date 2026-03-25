@@ -20,13 +20,13 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    attachmentUrl: {
-      type: String,
-      default: null,
+    attachmentUrls: {
+      type: [String],
+      default: [],
     },
-    attachmentName: {
-      type: String,
-      default: null,
+    attachmentNames: {
+      type: [String],
+      default: [],
     },
     // Activity dates for events sent by officials
     startDate: {

@@ -207,7 +207,7 @@ const BarangayStorage = () => {
     subject: "",
     body: "",
   });
-  const [folderComposeFile, setFolderComposeFile] = useState(null);
+  const [folderComposeFiles, setFolderComposeFiles] = useState([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -861,7 +861,7 @@ const BarangayStorage = () => {
       fd.append("subject", folderComposeData.subject);
       fd.append("body", folderComposeData.body);
       fd.append("folderId", folderId);
-      if (folderComposeFile) fd.append("attachment", folderComposeFile);
+      folderComposeFiles.forEach((file) => fd.append("attachments", file));
 
       // Create the message with approval required
       await axios.post(
@@ -880,7 +880,7 @@ const BarangayStorage = () => {
       );
       setShowFolderComposeModal(false);
       setFolderComposeData({ subject: "", body: "" });
-      setFolderComposeFile(null);
+      setFolderComposeFiles([]);
       setSelectedFolderForUpload(null);
       fetchStorageDocuments(selectedBarangay);
       fetchFolders(selectedBarangay);
@@ -2108,7 +2108,7 @@ const BarangayStorage = () => {
                   onClick={() => {
                     setShowFolderComposeModal(false);
                     setFolderComposeData({ subject: "", body: "" });
-                    setFolderComposeFile(null);
+                    setFolderComposeFiles([]);
                   }}
                   className="p-2 hover:bg-white/20 rounded-xl transition-colors"
                 >
@@ -2171,9 +2171,11 @@ const BarangayStorage = () => {
                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 hover:border-blue-400 transition-colors">
                   <input
                     type="file"
-                    onChange={(e) =>
-                      setFolderComposeFile(e.target.files?.[0] || null)
-                    }
+                    multiple
+                    onChange={(e) => {
+                      const newFiles = Array.from(e.target.files || []);
+                      setFolderComposeFiles((prev) => [...prev, ...newFiles]);
+                    }}
                     className="block w-full text-sm text-slate-500
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-lg file:border-0
@@ -2181,18 +2183,38 @@ const BarangayStorage = () => {
                       file:bg-blue-100 file:text-blue-700
                       hover:file:bg-blue-200 transition-all cursor-pointer"
                   />
-                  {folderComposeFile && (
-                    <div className="mt-3 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                      <span className="text-xs font-semibold text-blue-700 truncate">
-                        {folderComposeFile.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setFolderComposeFile(null)}
-                        className="ml-2 text-blue-400 hover:text-blue-600 flex-shrink-0"
-                      >
-                        <X size={14} />
-                      </button>
+                  {folderComposeFiles.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-xs font-semibold text-blue-700">
+                        {folderComposeFiles.length} file
+                        {folderComposeFiles.length !== 1 ? "s" : ""} selected
+                      </p>
+                      <div className="space-y-2">
+                        {folderComposeFiles.map((file, index) => (
+                          <div
+                            key={`${file.name}-${index}`}
+                            className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2"
+                          >
+                            <span className="text-xs font-semibold text-blue-700 truncate flex-1">
+                              {file.name}
+                            </span>
+                            <span className="text-xs text-blue-600 mx-2 flex-shrink-0">
+                              {(file.size / 1024).toFixed(1)} KB
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFolderComposeFiles((prev) =>
+                                  prev.filter((_, i) => i !== index),
+                                )
+                              }
+                              className="text-blue-400 hover:text-blue-600 flex-shrink-0 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2240,7 +2262,7 @@ const BarangayStorage = () => {
                 onClick={() => {
                   setShowFolderComposeModal(false);
                   setFolderComposeData({ subject: "", body: "" });
-                  setFolderComposeFile(null);
+                  setFolderComposeFiles([]);
                 }}
                 className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
               >
