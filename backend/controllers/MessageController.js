@@ -227,7 +227,7 @@ export const updateStatus = async (req, res) => {
 
     // Log user action for cancellations (and other status changes if desired)
     try {
-      const actionType = status === "cancelled" ? "cancel_event" : "other";
+      const actionType = status === "cancelled" ? "cancel_message" : "other";
       await UserLog.create({
         userId: req.user._id,
         username: req.user.username,
@@ -239,7 +239,7 @@ export const updateStatus = async (req, res) => {
         actionType,
         description:
           status === "cancelled"
-            ? `User canceled event: "${msg.subject}"`
+            ? `User canceled message: "${msg.subject}"`
             : `User updated message status to ${status}: "${msg.subject}"`,
         ipAddress: req.ip || "Unknown",
         userAgent: req.get("user-agent") || "Unknown",
@@ -411,6 +411,9 @@ export const deleteMessage = async (req, res) => {
 
     // Log the action
     try {
+      // Determine if this is an event or document
+      const isEvent = msg.startDate || msg.isAdminScheduled;
+
       await UserLog.create({
         userId: req.user._id,
         username: req.user.username,
@@ -418,8 +421,10 @@ export const deleteMessage = async (req, res) => {
         lastname: req.user.lastname,
         barangayId: req.user.barangay,
         role: req.user.role,
-        actionType: "delete_message",
-        description: `Deleted message with subject: ${msg.subject}`,
+        actionType: isEvent ? "delete_event" : "delete_message",
+        description: isEvent
+          ? `Deleted event with subject: ${msg.subject}`
+          : `Deleted message with subject: ${msg.subject}`,
         ipAddress: req.ip || "Unknown",
         userAgent: req.get("user-agent") || "Unknown",
       });

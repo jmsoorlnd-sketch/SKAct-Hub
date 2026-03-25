@@ -24,6 +24,7 @@ import {
   UserX,
   Building2,
   RotateCcw,
+  Calendar,
 } from "lucide-react";
 import { useToast } from "../../components/Toast";
 
@@ -34,6 +35,7 @@ const ACTION_META = {
   login: { label: "Login", icon: LogIn, color: "green" },
   logout: { label: "Logout", icon: LogOut, color: "red" },
   delete_message: { label: "Delete Message", icon: Trash2, color: "red" },
+  delete_event: { label: "Delete Event", icon: Calendar, color: "red" },
   send_document: { label: "Send Document", icon: FileText, color: "blue" },
   account_change: { label: "Account Change", icon: Settings, color: "purple" },
   delete_document: { label: "Delete Document", icon: Trash2, color: "red" },
