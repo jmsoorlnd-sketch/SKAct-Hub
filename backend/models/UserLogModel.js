@@ -39,6 +39,7 @@ const userLogSchema = new mongoose.Schema({
       "restore_barangay",
       "approve_message",
       "reject_message",
+      "cancel_message",
       "other",
     ],
     required: true,

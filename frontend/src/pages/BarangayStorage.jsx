@@ -706,7 +706,8 @@ const BarangayStorage = () => {
     if (
       action === "ongoing" ||
       action === "completed" ||
-      action === "pending"
+      action === "pending" ||
+      action === "cancelled"
     ) {
       await handleUpdateStatus(messageId, action);
       // Update the modal's displayed document with new status

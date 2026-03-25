@@ -40,6 +40,11 @@ const STATUS_CONFIG = {
     icon: AlertCircle,
     label: "Pending",
   },
+  cancelled: {
+    color: "from-red-100 to-red-50 text-red-700 border-red-200",
+    icon: XCircle,
+    label: "Cancelled",
+  },
   completed: {
     color: "from-purple-100 to-purple-50 text-purple-700 border-purple-200",
     icon: CheckCircle,
@@ -139,6 +144,21 @@ const Inbox = () => {
     () => receivedMessages.filter((m) => m.isAdminScheduled).length,
     [receivedMessages],
   );
+
+  const handleUpdateMessageStatus = async (messageId, status) => {
+    if (!messageId) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${API_BASE}/messages/${messageId}/status`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      fetchMessages();
+    } catch (err) {
+      console.error("Failed to update message status:", err);
+    }
+  };
 
   /* ===================== HELPERS ===================== */
   const getStatusConfig = useCallback(
@@ -450,6 +470,16 @@ const Inbox = () => {
                           <Clock size={11} />
                           Awaiting Review
                         </span>
+                      )}
+                      {activeTab === "sent" && msg.status === "pending" && (
+                        <button
+                          onClick={() =>
+                            handleUpdateMessageStatus(msg._id, "cancelled")
+                          }
+                          className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[11px] font-semibold border border-red-200 transition-colors"
+                        >
+                          Cancel
+                        </button>
                       )}
                     </div>
                   </div>

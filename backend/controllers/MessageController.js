@@ -190,9 +190,14 @@ export const updateStatus = async (req, res) => {
     const { status } = req.body;
 
     if (
-      !["pending", "approved", "ongoing", "rejected", "completed"].includes(
-        status,
-      )
+      ![
+        "pending",
+        "approved",
+        "ongoing",
+        "rejected",
+        "completed",
+        "cancelled",
+      ].includes(status)
     ) {
       return res.status(400).json({ message: "Invalid status" });
     }
@@ -210,6 +215,29 @@ export const updateStatus = async (req, res) => {
     msg.status = status;
     await msg.save();
     await msg.populate("sender", "username email role");
+
+    // Log user action for cancellations (and other status changes if desired)
+    try {
+      const actionType = status === "cancelled" ? "cancel_message" : "other";
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        barangayName: req.user.barangayName,
+        role: req.user.role,
+        actionType,
+        description:
+          status === "cancelled"
+            ? `User canceled message: "${msg.subject}"`
+            : `User updated message status to ${status}: "${msg.subject}"`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.warn("Failed to log status update action:", logError);
+    }
 
     res.status(200).json({ message: "Status updated", data: msg });
   } catch (error) {
