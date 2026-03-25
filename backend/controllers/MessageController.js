@@ -140,12 +140,6 @@ export const getInbox = async (req, res) => {
       // Non-admins (Youth/Official): include admin-scheduled events relevant to them
       // Admin events are broadcast, not sent to individual users, so don't check recipient for them
       const orConditions = [
-        // Regular messages - must be recipient
-        {
-          recipient: userId,
-          isAdminScheduled: { $ne: true },
-          isDeleted: false,
-        },
         // Admin-created events for all barangays - broadcast to all
         {
           isAdminScheduled: true,
@@ -156,15 +150,30 @@ export const getInbox = async (req, res) => {
 
       // If user has a barangay assigned, include events for their barangay
       if (user?.barangay) {
-        orConditions.push({
-          isAdminScheduled: true,
-          attachedToBarangay: user.barangay,
-          isDeleted: false,
-        });
+        orConditions.push(
+          {
+            isAdminScheduled: true,
+            attachedToBarangay: user.barangay,
+            isDeleted: false,
+          },
+          {
+            // Include official-submitted events for their barangay (pending/approved/ongoing)
+            attachedToBarangay: user.barangay,
+            status: { $in: ["pending", "approved", "ongoing", "completed"] },
+            isDeleted: false,
+          },
+        );
       }
 
+      // Include events created by the user (so non-admin can see own submissions)
+      orConditions.push({
+        sender: userId,
+        isDeleted: false,
+      });
+
       query = {
-        isAttached: { $ne: true },
+        startDate: { $exists: true, $ne: null },
+        isDeleted: false,
         $or: orConditions,
       };
     }
@@ -262,20 +271,39 @@ export const getActivities = async (req, res) => {
       };
     } else {
       // Non-admins see:
-      // 1. Events for their specific barangay (if they have one), OR
-      // 2. Admin-created events for all barangays (broadcast events)
+      // 1. Events for their specific barangay (admin or official events)
+      // 2. Events they created
+      // 3. Admin-created events for all barangays (broadcast events)
       const orConditions = [
-        // Admin-created events for all barangays (always show these)
-        { attachedToBarangay: null, isAdminScheduled: true },
+        // Admin-created events for all barangays (broadcast)
+        {
+          attachedToBarangay: null,
+          isAdminScheduled: true,
+          isDeleted: false,
+        },
       ];
 
-      // If user has a barangay assigned, include events for their barangay
       if (user?.barangay) {
+        // Admin-scheduled to this barangay
         orConditions.push({
           attachedToBarangay: user.barangay,
           isAdminScheduled: true,
+          isDeleted: false,
+        });
+
+        // Non-admin events for this barangay (pending/approved/ongoing/completed)
+        orConditions.push({
+          attachedToBarangay: user.barangay,
+          status: { $in: ["pending", "approved", "ongoing", "completed"] },
+          isDeleted: false,
         });
       }
+
+      // Events created by the user (sender), regardless of attachedToBarangay (useful for draft/resubmitted)
+      orConditions.push({
+        sender: userId,
+        isDeleted: false,
+      });
 
       query = {
         startDate: { $exists: true, $ne: null },
