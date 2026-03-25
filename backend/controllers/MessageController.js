@@ -227,7 +227,7 @@ export const updateStatus = async (req, res) => {
 
     // Log user action for cancellations (and other status changes if desired)
     try {
-      const actionType = status === "cancelled" ? "cancel_message" : "other";
+      const actionType = status === "cancelled" ? "cancel_event" : "other";
       await UserLog.create({
         userId: req.user._id,
         username: req.user.username,
@@ -239,7 +239,7 @@ export const updateStatus = async (req, res) => {
         actionType,
         description:
           status === "cancelled"
-            ? `User canceled message: "${msg.subject}"`
+            ? `User canceled event: "${msg.subject}"`
             : `User updated message status to ${status}: "${msg.subject}"`,
         ipAddress: req.ip || "Unknown",
         userAgent: req.get("user-agent") || "Unknown",
