@@ -140,12 +140,6 @@ export const getInbox = async (req, res) => {
       // Non-admins (Youth/Official): include admin-scheduled events relevant to them
       // Admin events are broadcast, not sent to individual users, so don't check recipient for them
       const orConditions = [
-        // Regular messages - must be recipient
-        {
-          recipient: userId,
-          isAdminScheduled: { $ne: true },
-          isDeleted: false,
-        },
         // Admin-created events for all barangays - broadcast to all
         {
           isAdminScheduled: true,
@@ -156,15 +150,30 @@ export const getInbox = async (req, res) => {
 
       // If user has a barangay assigned, include events for their barangay
       if (user?.barangay) {
-        orConditions.push({
-          isAdminScheduled: true,
-          attachedToBarangay: user.barangay,
-          isDeleted: false,
-        });
+        orConditions.push(
+          {
+            isAdminScheduled: true,
+            attachedToBarangay: user.barangay,
+            isDeleted: false,
+          },
+          {
+            // Include official-submitted events for their barangay (pending/approved/ongoing)
+            attachedToBarangay: user.barangay,
+            status: { $in: ["pending", "approved", "ongoing", "completed"] },
+            isDeleted: false,
+          },
+        );
       }
 
+      // Include events created by the user (so non-admin can see own submissions)
+      orConditions.push({
+        sender: userId,
+        isDeleted: false,
+      });
+
       query = {
-        isAttached: { $ne: true },
+        startDate: { $exists: true, $ne: null },
+        isDeleted: false,
         $or: orConditions,
       };
     }
@@ -190,9 +199,14 @@ export const updateStatus = async (req, res) => {
     const { status } = req.body;
 
     if (
-      !["pending", "approved", "ongoing", "rejected", "completed"].includes(
-        status,
-      )
+      ![
+        "pending",
+        "approved",
+        "ongoing",
+        "rejected",
+        "completed",
+        "cancelled",
+      ].includes(status)
     ) {
       return res.status(400).json({ message: "Invalid status" });
     }
@@ -210,6 +224,29 @@ export const updateStatus = async (req, res) => {
     msg.status = status;
     await msg.save();
     await msg.populate("sender", "username email role");
+
+    // Log user action for cancellations (and other status changes if desired)
+    try {
+      const actionType = status === "cancelled" ? "cancel_message" : "other";
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        barangayName: req.user.barangayName,
+        role: req.user.role,
+        actionType,
+        description:
+          status === "cancelled"
+            ? `User canceled message: "${msg.subject}"`
+            : `User updated message status to ${status}: "${msg.subject}"`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.warn("Failed to log status update action:", logError);
+    }
 
     res.status(200).json({ message: "Status updated", data: msg });
   } catch (error) {
@@ -234,20 +271,39 @@ export const getActivities = async (req, res) => {
       };
     } else {
       // Non-admins see:
-      // 1. Events for their specific barangay (if they have one), OR
-      // 2. Admin-created events for all barangays (broadcast events)
+      // 1. Events for their specific barangay (admin or official events)
+      // 2. Events they created
+      // 3. Admin-created events for all barangays (broadcast events)
       const orConditions = [
-        // Admin-created events for all barangays (always show these)
-        { attachedToBarangay: null, isAdminScheduled: true },
+        // Admin-created events for all barangays (broadcast)
+        {
+          attachedToBarangay: null,
+          isAdminScheduled: true,
+          isDeleted: false,
+        },
       ];
 
-      // If user has a barangay assigned, include events for their barangay
       if (user?.barangay) {
+        // Admin-scheduled to this barangay
         orConditions.push({
           attachedToBarangay: user.barangay,
           isAdminScheduled: true,
+          isDeleted: false,
+        });
+
+        // Non-admin events for this barangay (pending/approved/ongoing/completed)
+        orConditions.push({
+          attachedToBarangay: user.barangay,
+          status: { $in: ["pending", "approved", "ongoing", "completed"] },
+          isDeleted: false,
         });
       }
+
+      // Events created by the user (sender), regardless of attachedToBarangay (useful for draft/resubmitted)
+      orConditions.push({
+        sender: userId,
+        isDeleted: false,
+      });
 
       query = {
         startDate: { $exists: true, $ne: null },
@@ -355,6 +411,9 @@ export const deleteMessage = async (req, res) => {
 
     // Log the action
     try {
+      // Determine if this is an event or document
+      const isEvent = msg.startDate || msg.isAdminScheduled;
+
       await UserLog.create({
         userId: req.user._id,
         username: req.user.username,
@@ -362,8 +421,10 @@ export const deleteMessage = async (req, res) => {
         lastname: req.user.lastname,
         barangayId: req.user.barangay,
         role: req.user.role,
-        actionType: "delete_message",
-        description: `Deleted message with subject: ${msg.subject}`,
+        actionType: isEvent ? "delete_event" : "delete_message",
+        description: isEvent
+          ? `Deleted event with subject: ${msg.subject}`
+          : `Deleted message with subject: ${msg.subject}`,
         ipAddress: req.ip || "Unknown",
         userAgent: req.get("user-agent") || "Unknown",
       });
@@ -437,6 +498,71 @@ export const hardDeleteMessage = async (req, res) => {
     await BarangayStorage.deleteMany({ document: messageId });
 
     res.status(200).json({ message: "Message permanently deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Permanent deletion of events with cascading removal from all barangay storage
+export const hardDeleteEvent = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Check if it's actually an event
+    const isEvent = msg.startDate || msg.isAdminScheduled;
+    if (!isEvent) {
+      return res.status(400).json({ message: "This is not an event" });
+    }
+
+    // Only sender or admin can delete
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Only the event organizer or admin can permanently delete this event",
+        });
+    }
+
+    // Get event details before deletion for logging
+    const eventSubject = msg.subject;
+    const eventStart = msg.startDate;
+
+    // Permanently delete the message
+    await Message.findByIdAndDelete(messageId);
+
+    // Cascade: remove from all barangay storage entries
+    await BarangayStorage.deleteMany({ document: messageId });
+
+    // Log the permanent deletion action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: req.user.barangay,
+        role: req.user.role,
+        actionType: "permanently_deleted_event",
+        description: `Permanently deleted event: ${eventSubject} (${new Date(eventStart).toLocaleDateString()})`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging permanent event deletion:", logError);
+    }
+
+    res
+      .status(200)
+      .json({ message: "Event permanently deleted from all storage" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

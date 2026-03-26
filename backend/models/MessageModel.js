@@ -35,10 +35,17 @@ const messageSchema = new mongoose.Schema(
     endDate: {
       type: Date,
     },
-    // status: pending | approved | ongoing | rejected | completed
+    // status: pending | approved | ongoing | rejected | completed | cancelled
     status: {
       type: String,
-      enum: ["pending", "approved", "ongoing", "rejected", "completed"],
+      enum: [
+        "pending",
+        "approved",
+        "ongoing",
+        "rejected",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
     },
     // optional reason for rejection (admins can enter when rejecting)

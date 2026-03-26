@@ -288,9 +288,24 @@ const DocumentItem = ({
             >
               Mark Completed
             </button>
+            {item.document?.status === "pending" && (
+              <button
+                onClick={() =>
+                  openConfirmationModal(
+                    "cancelled",
+                    item.document?._id,
+                    null,
+                    "Cancel Submission",
+                    "Are you sure you want to cancel this document submission for approval?",
+                  )
+                }
+                className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
+              >
+                Cancel
+              </button>
+            )}
           </>
         )}
-
         {user?.role === "Official" &&
           (user.position === "Secretary" ||
             user.position === "Treasurer" ||

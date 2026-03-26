@@ -706,7 +706,8 @@ const BarangayStorage = () => {
     if (
       action === "ongoing" ||
       action === "completed" ||
-      action === "pending"
+      action === "pending" ||
+      action === "cancelled"
     ) {
       await handleUpdateStatus(messageId, action);
       // Update the modal's displayed document with new status
@@ -1078,6 +1079,37 @@ const BarangayStorage = () => {
     return matchesSearch && matchesProvince && matchesCity;
   });
 
+  const matchesFolderSearch = (folder) => {
+    if (!docSearch || !docSearch.trim()) return true;
+    const q = docSearch.trim().toLowerCase();
+
+    if (folder.name?.toLowerCase().includes(q)) return true;
+    if ((folder.status || "").toLowerCase().includes(q)) return true;
+
+    const folderDocs = storage.filter(
+      (item) => item.folder?._id === folder._id,
+    );
+
+    return folderDocs.some((item) => {
+      const docName = item.documentName || "";
+      const docSubject = item.document?.subject || "";
+      const docBody = item.document?.body || "";
+      const content = `${docName} ${docSubject} ${docBody}`.toLowerCase();
+      return content.includes(q);
+    });
+  };
+
+  const matchesFolderStatus = (folder) => {
+    if (!docStatusFilter) return true;
+    return (
+      (folder.status || "").toLowerCase() === docStatusFilter.toLowerCase()
+    );
+  };
+
+  const filteredFolders = folders.filter(
+    (folder) => matchesFolderSearch(folder) && matchesFolderStatus(folder),
+  );
+
   const matchesDocSearch = (item) => {
     if (!docSearch || !docSearch.trim()) return true;
     const q = docSearch.trim().toLowerCase();
@@ -1315,7 +1347,7 @@ const BarangayStorage = () => {
                             />
                             <input
                               type="text"
-                              placeholder="Search documents..."
+                              placeholder="Search folders by name, status, or content..."
                               value={docSearch}
                               onChange={(e) => setDocSearch(e.target.value)}
                               className="w-full pl-10 pr-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -1335,7 +1367,7 @@ const BarangayStorage = () => {
                               className="pl-10 pr-8 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
                             >
                               <option value="">All Status</option>
-                              <option value="approved">Approved</option>
+                              <option value="pending">Pending</option>
                               <option value="ongoing">Ongoing</option>
                               <option value="completed">Completed</option>
                             </select>
@@ -1357,7 +1389,7 @@ const BarangayStorage = () => {
                       </div>
 
                       {/* Folders Grid */}
-                      {folders.length > 0 && (
+                      {filteredFolders.length > 0 && (
                         <div className="mb-8">
                           <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-bold text-slate-900">
@@ -1373,7 +1405,7 @@ const BarangayStorage = () => {
                             )}
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
-                            {folders.map((folder) => {
+                            {filteredFolders.map((folder) => {
                               const folderDocuments = filterDocuments(
                                 storage.filter(
                                   (item) =>

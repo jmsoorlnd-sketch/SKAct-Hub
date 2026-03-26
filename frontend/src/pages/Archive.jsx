@@ -10,6 +10,7 @@ import {
   Archive as ArchiveIcon,
   Search,
   X,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { useToast } from "../components/Toast";
 
@@ -176,6 +177,27 @@ const Archive = () => {
     [apiCall, fetchArchive, toast],
   );
 
+  const handleHardDeleteEvent = useCallback(
+    async (messageId) => {
+      if (!messageId) return;
+      if (
+        !confirmAction(
+          "Permanently delete this event from all storage? This cannot be undone.",
+        )
+      )
+        return;
+
+      try {
+        await apiCall("delete", `${API_BASE}/messages/${messageId}/hard-event`);
+        toast.success("Event permanently deleted from all storage");
+        fetchArchive();
+      } catch {
+        // Error already handled in apiCall
+      }
+    },
+    [apiCall, fetchArchive, toast],
+  );
+
   const handleRestoreKagawad = useCallback(
     async (kagawadId) => {
       if (!kagawadId || !barangayId) return;
@@ -238,9 +260,12 @@ const Archive = () => {
 
     // Add messages
     messages.forEach((msg) => {
+      // Determine if this is an event or document
+      // Events have startDate or are admin scheduled
+      const isEvent = msg.startDate || msg.isAdminScheduled;
       items.push({
         id: msg._id,
-        type: "document",
+        type: isEvent ? "event" : "document",
         name: msg.subject,
         title: msg.subject,
         deletedAt: msg.deletedAt,
@@ -275,6 +300,8 @@ const Archive = () => {
     switch (type) {
       case "folder":
         return <Folder size={16} />;
+      case "event":
+        return <CalendarIcon size={16} />;
       case "document":
         return <FileText size={16} />;
       case "personnel":
@@ -288,6 +315,8 @@ const Archive = () => {
     switch (type) {
       case "folder":
         return "bg-blue-100 text-blue-700 border-blue-200";
+      case "event":
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
       case "document":
         return "bg-purple-100 text-purple-700 border-purple-200";
       case "personnel":
@@ -301,6 +330,8 @@ const Archive = () => {
     switch (type) {
       case "folder":
         return "Folder";
+      case "event":
+        return "Event";
       case "document":
         return "Document";
       case "personnel":
@@ -490,6 +521,8 @@ const Archive = () => {
                           onClick={() => {
                             if (item.type === "folder") {
                               handleHardDeleteFolder(item.id);
+                            } else if (item.type === "event") {
+                              handleHardDeleteEvent(item.id);
                             } else if (item.type === "document") {
                               handleHardDeleteMessage(item.id);
                             } else if (item.type === "personnel") {

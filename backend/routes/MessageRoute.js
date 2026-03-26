@@ -10,6 +10,7 @@ import {
   deleteMessage,
   restoreMessage,
   hardDeleteMessage,
+  hardDeleteEvent,
   getAdmins,
   updateStatus,
   getSentMessages,
@@ -59,6 +60,9 @@ router.post("/:messageId/restore", requireAuth, restoreMessage);
 
 // Hard delete message
 router.delete("/:messageId/hard", requireAuth, hardDeleteMessage);
+
+// Hard delete event (permanent deletion with cascading removal from all storage)
+router.delete("/:messageId/hard-event", requireAuth, hardDeleteEvent);
 
 // Get all admins
 router.get("/admins/list", requireAuth, getAdmins);
