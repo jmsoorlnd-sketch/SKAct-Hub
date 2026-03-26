@@ -371,7 +371,7 @@ const SKPersonnelPage = () => {
       skPersonnel.chairman,
       skPersonnel.secretary,
       skPersonnel.treasurer,
-      ...(skPersonnel.kagawad || []),
+      ...(skPersonnel.kagawad?.filter((k) => !k.isDeleted) || []),
     ].filter(Boolean);
 
     const total = allMembers.length;
@@ -672,83 +672,86 @@ const SKPersonnelPage = () => {
                 )}
 
               {/* Kagawad List */}
-              {skPersonnel?.kagawad && skPersonnel.kagawad.length > 0 ? (
+              {skPersonnel?.kagawad &&
+              skPersonnel.kagawad.filter((k) => !k.isDeleted).length > 0 ? (
                 <div className="space-y-3">
-                  {skPersonnel.kagawad.map((k) => (
-                    <div
-                      key={k._id}
-                      className="p-5 bg-white rounded-xl border-2 border-slate-200 hover:shadow-lg hover:border-blue-400 transition-all duration-200"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        {/* Left Content */}
-                        <div className="flex items-center gap-4 flex-1">
-                          {/* Avatar */}
-                          <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
-                            <span className="text-white font-bold text-lg">
-                              {k.firstName?.charAt(0) ||
-                                k.name?.charAt(0) ||
-                                "K"}
-                            </span>
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1">
-                            <h4 className="font-bold text-slate-900 text-base">
-                              {k.name || `${k.firstName} ${k.surname || ""}`}
-                            </h4>
-                            <div className="flex items-center gap-4 mt-2 text-sm">
-                              <span className="text-slate-600">
-                                <span className="font-semibold">Age:</span>{" "}
-                                {k.age}
+                  {skPersonnel.kagawad
+                    .filter((k) => !k.isDeleted)
+                    .map((k) => (
+                      <div
+                        key={k._id}
+                        className="p-5 bg-white rounded-xl border-2 border-slate-200 hover:shadow-lg hover:border-blue-400 transition-all duration-200"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          {/* Left Content */}
+                          <div className="flex items-center gap-4 flex-1">
+                            {/* Avatar */}
+                            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                              <span className="text-white font-bold text-lg">
+                                {k.firstName?.charAt(0) ||
+                                  k.name?.charAt(0) ||
+                                  "K"}
                               </span>
-                              {k.middleName && (
-                                <span className="text-slate-500 text-xs">
-                                  {k.firstName} {k.middleName} {k.surname}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1">
+                              <h4 className="font-bold text-slate-900 text-base">
+                                {k.name || `${k.firstName} ${k.surname || ""}`}
+                              </h4>
+                              <div className="flex items-center gap-4 mt-2 text-sm">
+                                <span className="text-slate-600">
+                                  <span className="font-semibold">Age:</span>{" "}
+                                  {k.age}
                                 </span>
-                              )}
+                                {k.middleName && (
+                                  <span className="text-slate-500 text-xs">
+                                    {k.firstName} {k.middleName} {k.surname}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Right Actions */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          {/* Status Badge */}
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 whitespace-nowrap ${
-                              k.status === "Active"
-                                ? "bg-emerald-100 text-emerald-700 border-emerald-300"
-                                : "bg-red-100 text-red-700 border-red-300"
-                            }`}
-                          >
-                            {k.status === "Active" ? (
-                              <UserCheck size={14} />
-                            ) : (
-                              <UserX size={14} />
-                            )}
-                            {k.status}
-                          </span>
+                          {/* Right Actions */}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {/* Status Badge */}
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 whitespace-nowrap ${
+                                k.status === "Active"
+                                  ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                                  : "bg-red-100 text-red-700 border-red-300"
+                              }`}
+                            >
+                              {k.status === "Active" ? (
+                                <UserCheck size={14} />
+                              ) : (
+                                <UserX size={14} />
+                              )}
+                              {k.status}
+                            </span>
 
-                          {/* Edit Button */}
-                          <button
-                            onClick={() => setEditingKagawad(k._id)}
-                            className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                            title="Edit Kagawad"
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => setEditingKagawad(k._id)}
+                              className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                              title="Edit Kagawad"
+                            >
+                              <Edit2 size={16} />
+                            </button>
 
-                          {/* Delete Button */}
-                          <button
-                            onClick={() => handleDeleteKagawad(k._id)}
-                            className="p-2.5 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                            title="Delete Kagawad"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => handleDeleteKagawad(k._id)}
+                              className="p-2.5 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                              title="Delete Kagawad"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
                 <div className="text-center py-12">

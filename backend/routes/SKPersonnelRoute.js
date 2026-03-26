@@ -8,6 +8,8 @@ import {
   addKagawad,
   updateKagawad,
   deleteKagawad,
+  restoreKagawad,
+  hardDeleteKagawad,
 } from "../controllers/SKPersonnelController.js";
 
 const router = express.Router();
@@ -30,7 +32,21 @@ router.post("/:barangayId/kagawad", requireAuth, addKagawad);
 // Update Kagawad
 router.put("/:barangayId/kagawad/:kagawadId", requireAuth, updateKagawad);
 
-// Delete Kagawad
+// Delete Kagawad (soft delete)
 router.delete("/:barangayId/kagawad/:kagawadId", requireAuth, deleteKagawad);
+
+// Restore Kagawad from archive
+router.post(
+  "/:barangayId/kagawad/:kagawadId/restore",
+  requireAuth,
+  restoreKagawad,
+);
+
+// Hard delete Kagawad permanently
+router.delete(
+  "/:barangayId/kagawad/:kagawadId/hard",
+  requireAuth,
+  hardDeleteKagawad,
+);
 
 export default router;

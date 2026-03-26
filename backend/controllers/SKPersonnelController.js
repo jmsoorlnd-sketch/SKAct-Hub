@@ -7,8 +7,14 @@ import mongoose from "mongoose";
 export const getSKPersonnelByBarangay = async (req, res) => {
   try {
     const { barangayId } = req.params;
+    const { includeDeleted } = req.query;
 
-    console.log("Received barangayId:", barangayId);
+    console.log(
+      "Received barangayId:",
+      barangayId,
+      "includeDeleted:",
+      includeDeleted,
+    );
 
     if (!barangayId) {
       return res.status(400).json({ message: "Barangay ID is required" });
@@ -48,6 +54,14 @@ export const getSKPersonnelByBarangay = async (req, res) => {
         kagawad: [],
       });
       await skPersonnel.save();
+    }
+
+    // If includeDeleted is true, filter and return only deleted kagawad
+    if (includeDeleted === "true") {
+      const deletedKagawad = skPersonnel.kagawad.filter(
+        (k) => k.isDeleted === true,
+      );
+      return res.status(200).json({ deletedKagawad });
     }
 
     res.status(200).json({ skPersonnel });
@@ -481,7 +495,7 @@ export const updateKagawad = async (req, res) => {
   }
 };
 
-// Delete Kagawad
+// Delete Kagawad (soft delete - archive)
 export const deleteKagawad = async (req, res) => {
   try {
     const { barangayId, kagawadId } = req.params;
@@ -514,9 +528,16 @@ export const deleteKagawad = async (req, res) => {
 
     const deletedName = `${kagawadToDelete.firstName} ${kagawadToDelete.surname}`;
 
-    skPersonnel.kagawad = skPersonnel.kagawad.filter(
-      (k) => k._id.toString() !== kagawadId,
+    // Soft delete - mark as deleted instead of removing
+    const kagawadIndex = skPersonnel.kagawad.findIndex(
+      (k) => k._id.toString() === kagawadId,
     );
+
+    if (kagawadIndex !== -1) {
+      skPersonnel.kagawad[kagawadIndex].isDeleted = true;
+      skPersonnel.kagawad[kagawadIndex].deletedAt = new Date();
+      skPersonnel.kagawad[kagawadIndex].deletedBy = userId;
+    }
 
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
@@ -542,6 +563,142 @@ export const deleteKagawad = async (req, res) => {
       .json({ message: "Kagawad deleted successfully", skPersonnel });
   } catch (error) {
     console.error("Error deleting Kagawad:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Restore Kagawad from archive
+export const restoreKagawad = async (req, res) => {
+  try {
+    const { barangayId, kagawadId } = req.params;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
+
+    if (
+      !mongoose.Types.ObjectId.isValid(barangayId) ||
+      !mongoose.Types.ObjectId.isValid(kagawadId)
+    ) {
+      return res.status(400).json({ message: "Invalid IDs" });
+    }
+
+    const skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
+
+    if (!skPersonnel) {
+      return res.status(404).json({ message: "SK Personnel record not found" });
+    }
+
+    const kagawadToRestore = skPersonnel.kagawad.find(
+      (k) => k._id.toString() === kagawadId,
+    );
+
+    if (!kagawadToRestore) {
+      return res.status(404).json({ message: "Kagawad not found" });
+    }
+
+    // Restore by marking as not deleted
+    const kagawadIndex = skPersonnel.kagawad.findIndex(
+      (k) => k._id.toString() === kagawadId,
+    );
+
+    if (kagawadIndex !== -1) {
+      skPersonnel.kagawad[kagawadIndex].isDeleted = false;
+      skPersonnel.kagawad[kagawadIndex].deletedAt = null;
+      skPersonnel.kagawad[kagawadIndex].deletedBy = null;
+    }
+
+    skPersonnel.updatedAt = new Date();
+    await skPersonnel.save();
+
+    // Log the action
+    if (userId) {
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType: "restore_sk_personnel",
+        description: `Restored SK Kagawad: ${kagawadToRestore.firstName} ${kagawadToRestore.surname}`,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Kagawad restored successfully", skPersonnel });
+  } catch (error) {
+    console.error("Error restoring Kagawad:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Hard delete Kagawad permanently
+export const hardDeleteKagawad = async (req, res) => {
+  try {
+    const { barangayId, kagawadId } = req.params;
+    const userId = req.user?._id;
+    const username = req.user?.username;
+    const firstname = req.user?.firstname;
+    const lastname = req.user?.lastname;
+    const role = req.user?.role;
+
+    if (
+      !mongoose.Types.ObjectId.isValid(barangayId) ||
+      !mongoose.Types.ObjectId.isValid(kagawadId)
+    ) {
+      return res.status(400).json({ message: "Invalid IDs" });
+    }
+
+    const skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
+
+    if (!skPersonnel) {
+      return res.status(404).json({ message: "SK Personnel record not found" });
+    }
+
+    const kagawadToDelete = skPersonnel.kagawad.find(
+      (k) => k._id.toString() === kagawadId,
+    );
+
+    if (!kagawadToDelete) {
+      return res.status(404).json({ message: "Kagawad not found" });
+    }
+
+    const kagawadName = `${kagawadToDelete.firstName} ${kagawadToDelete.surname}`;
+
+    // Permanently remove from array
+    skPersonnel.kagawad = skPersonnel.kagawad.filter(
+      (k) => k._id.toString() !== kagawadId,
+    );
+
+    skPersonnel.updatedAt = new Date();
+    await skPersonnel.save();
+
+    // Log the action
+    if (userId) {
+      await UserLog.create({
+        userId,
+        username,
+        firstname,
+        lastname,
+        barangayId,
+        role,
+        actionType: "hard_delete_sk_personnel",
+        description: `Permanently deleted SK Kagawad: ${kagawadName}`,
+        ipAddress: req.ip || req.connection.remoteAddress || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Kagawad permanently deleted", skPersonnel });
+  } catch (error) {
+    console.error("Error permanently deleting Kagawad:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

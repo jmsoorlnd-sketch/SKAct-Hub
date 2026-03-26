@@ -537,12 +537,12 @@ export const createBarangayMessage = async (req, res) => {
         .json({ message: "No admin/recipient available for this barangay" });
     }
 
-    // handle attachment
-    let attachmentUrl = null;
-    let attachmentName = null;
-    if (req.file) {
-      attachmentUrl = `/uploads/${req.file.filename}`;
-      attachmentName = req.file.originalname;
+    // handle attachments (multiple files)
+    let attachmentUrls = [];
+    let attachmentNames = [];
+    if (req.files && req.files.length > 0) {
+      attachmentUrls = req.files.map((file) => `/uploads/${file.filename}`);
+      attachmentNames = req.files.map((file) => file.originalname);
     }
 
     const s = startDate ? new Date(startDate) : null;
@@ -554,8 +554,8 @@ export const createBarangayMessage = async (req, res) => {
       recipient: recipientId,
       subject,
       body,
-      attachmentUrl,
-      attachmentName,
+      attachmentUrls,
+      attachmentNames,
       startDate: s,
       endDate: e,
       status: "pending",
