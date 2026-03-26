@@ -3,6 +3,8 @@ import UserLog from "../models/UserLogModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
 //Register a new user
 const signupUser = async (req, res) => {
   try {
@@ -99,28 +101,70 @@ const signinUser = async (req, res) => {
     const { username, password } = req.body;
 
     const user = await User.findOne({ username });
+
     if (!user) {
       return res.status(400).json({ message: "Invalid username or password" });
     }
-    if (user.status == "Inactive") {
+
+    if (user.status === "Inactive") {
       return res
         .status(400)
         .json({ message: "User is deactivated, please contact admin" });
     }
 
-    const passMatch = await bcrypt.compare(password, user.password);
-    if (!passMatch) {
-      return res.status(400).json({ message: "Invalid username or password" });
+    // Auto-unlock if lock time already expired
+    if (user.lockUntil && user.lockUntil <= new Date()) {
+      user.loginAttempts = 0;
+      user.lockUntil = null;
+      user.lastLoginAttempt = null;
+      await user.save();
     }
 
-    // generate token
+    // Check if still locked
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const remainingTime = Math.ceil(
+        (new Date(user.lockUntil).getTime() - Date.now()) / 60000,
+      );
+
+      return res.status(423).json({
+        message: `Account is locked. Try again in ${remainingTime} minute(s).`,
+      });
+    }
+
+    const passMatch = await bcrypt.compare(password, user.password);
+
+    if (!passMatch) {
+      user.loginAttempts += 1;
+      user.lastLoginAttempt = new Date();
+
+      if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        user.lockUntil = new Date(Date.now() + LOCK_TIME);
+      }
+
+      await user.save();
+
+      const attemptsLeft = MAX_LOGIN_ATTEMPTS - user.loginAttempts;
+
+      return res.status(400).json({
+        message:
+          attemptsLeft > 0
+            ? `Invalid username or password. ${attemptsLeft} attempt(s) remaining.`
+            : "Too many failed login attempts. Account locked for 15 minutes.",
+      });
+    }
+
+    // Reset after successful login
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    user.lastLoginAttempt = null;
+    await user.save();
+
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
 
-    // Log the login action
     try {
       await UserLog.create({
         userId: user._id,
@@ -136,10 +180,9 @@ const signinUser = async (req, res) => {
       });
     } catch (logError) {
       console.error("Error logging login action:", logError);
-      // Don't fail the login if logging fails
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       token,
       user: {
         firstname: user.firstname,
@@ -153,10 +196,9 @@ const signinUser = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
-
 // create or update  user profile
 const createProfile = async (req, res) => {
   try {

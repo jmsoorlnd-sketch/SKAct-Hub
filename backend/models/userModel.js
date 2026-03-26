@@ -52,6 +52,20 @@ const userSchema = new mongoose.Schema({
   },
   deletedAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },
+  // Login attempt tracking fields
+  loginAttempts: {
+    type: Number,
+    default: 0,
+  },
+  lockUntil: {
+    type: Date,
+    default: null,
+  },
+  // Optional: track last login attempt time
+  lastLoginAttempt: {
+    type: Date,
+    default: null,
+  },
 });
 
 const User = mongoose.model("User", userSchema);
