@@ -148,9 +148,7 @@ const AdminDashboard = () => {
       setSelectedMessage(null);
     } catch (error) {
       console.error("Reject failed:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to reject message",
-      );
+      toast.error(error?.response?.data?.message || "Failed to reject message");
     } finally {
       setShowRejectModal(false);
     }
@@ -631,8 +629,9 @@ const AdminDashboard = () => {
               </button>
             </div>
             <p className="text-sm text-gray-700 mb-2">
-              Are you sure you want to reject this message? A rejection reason is
-              required, because it helps the sender improve and track the decision.
+              Are you sure you want to reject this message? A rejection reason
+              is required, because it helps the sender improve and track the
+              decision.
             </p>
             <textarea
               className="w-full border rounded p-2 mb-4"

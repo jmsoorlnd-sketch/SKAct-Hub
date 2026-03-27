@@ -759,9 +759,7 @@ export const rejectMessage = async (req, res) => {
     // Reject only with non-empty reason (recommended to avoid unhelpful feedback)
     const trimmedReason = reason ? reason.trim() : "";
     if (!trimmedReason) {
-      return res
-        .status(400)
-        .json({ message: "Rejection reason is required" });
+      return res.status(400).json({ message: "Rejection reason is required" });
     }
 
     message.status = "rejected";
