@@ -27,7 +27,13 @@ import {
 
 const API_BASE = "http://localhost:5000/api";
 
-const DEFAULT_FORM = { subject: "", body: "", startDate: "", endDate: "" };
+const DEFAULT_FORM = {
+  subject: "",
+  body: "",
+  startDate: "",
+  endDate: "",
+  participants: "",
+};
 const WEEKDAYS = [
   "Sunday",
   "Monday",
@@ -427,6 +433,25 @@ const EventCalendar = () => {
     if (start && end && end < start)
       errors.endDate = "End date cannot be before start date";
 
+    const conflict = events.some((event) => {
+      if (!event.startDate) return false;
+      const existingStart = new Date(event.startDate);
+      const existingEnd = event.endDate ? new Date(event.endDate) : null;
+
+      const exactStart = existingStart.getTime() === start?.getTime();
+      const overlaps =
+        start && end && existingEnd
+          ? existingStart <= end && existingEnd >= start
+          : exactStart;
+
+      return exactStart || overlaps;
+    });
+
+    if (conflict && !formData.participants.trim()) {
+      errors.participants =
+        "Conflict with another event; provide participants to proceed.";
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -455,6 +480,16 @@ const EventCalendar = () => {
       if (formData.endDate) fd.append("endDate", formData.endDate);
       if (userBarangay?._id) fd.append("barangayId", userBarangay._id);
       fd.append("recipientId", user._id);
+      if (formData.participants.trim()) {
+        fd.append(
+          "participants",
+          formData.participants
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .join(","),
+        );
+      }
       await axios.post(`${API_BASE}/messages/send`, fd, {
         headers: authHeaders(),
       });
@@ -1014,6 +1049,25 @@ const EventCalendar = () => {
                       </p>
                     )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-2">
+                    <Tag size={15} className="text-indigo-600" />
+                    Participants (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.participants}
+                    onChange={updateForm("participants")}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                    placeholder="e.g., John Doe, Jane Smith"
+                  />
+                  {formErrors.participants && (
+                    <p className="text-red-500 text-xs font-semibold mt-1.5 flex items-center gap-1">
+                      <X size={11} /> {formErrors.participants}
+                    </p>
+                  )}
                 </div>
 
                 {/* Live Preview */}

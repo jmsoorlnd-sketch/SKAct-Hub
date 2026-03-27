@@ -16,6 +16,7 @@ export const sendMessage = async (req, res) => {
       body,
       startDate,
       endDate,
+      participants,
       recipient,
       status,
       barangayId,
@@ -64,6 +65,33 @@ export const sendMessage = async (req, res) => {
         .json({ message: "End date/time cannot be before start date/time" });
     }
 
+    if (s) {
+      const conflictingEvent = await Message.findOne({
+        isDeleted: false,
+        startDate: { $lte: e || s },
+        $or: [
+          { endDate: null },
+          { endDate: { $exists: false } },
+          { endDate: { $gte: s } },
+        ],
+      });
+
+      if (conflictingEvent) {
+        const overlapping =
+          s &&
+          (!conflictingEvent.endDate || conflictingEvent.endDate >= s) &&
+          (!e || conflictingEvent.startDate <= e);
+
+        if (overlapping && (!participants || participants.length === 0)) {
+          return res
+            .status(400)
+            .json({
+              message: "Event conflict detected; please add participant names.",
+            });
+        }
+      }
+    }
+
     // Create message
     // Mark as admin-scheduled if the sender is an admin and recipient is also an admin
     const senderUser = await User.findById(senderId);
@@ -81,6 +109,14 @@ export const sendMessage = async (req, res) => {
       attachmentName,
       startDate: s,
       endDate: e,
+      participants: Array.isArray(participants)
+        ? participants.filter((p) => p && p.trim())
+        : typeof participants === "string"
+          ? participants
+              .split(",")
+              .map((p) => p.trim())
+              .filter(Boolean)
+          : [],
       status: messageStatus,
       isAdminScheduled: isAdminEvent,
       attachedToBarangay: barangayId || null,

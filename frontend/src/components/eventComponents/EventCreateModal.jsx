@@ -136,6 +136,24 @@ const EventCreationModal = ({
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-2">
+                Participants (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={eventFormData.participants}
+                onChange={(e) =>
+                  setEventFormData({
+                    ...eventFormData,
+                    participants: e.target.value,
+                  })
+                }
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="e.g., John Doe, Jane Smith"
+              />
+            </div>
+
             {/* Event Visibility */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">

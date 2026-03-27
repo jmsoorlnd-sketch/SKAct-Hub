@@ -14,6 +14,7 @@ const EventScheduler = () => {
     startDate: "",
     endDate: "",
     barangayId: "",
+    participants: "",
   });
 
   const now = new Date();
@@ -77,6 +78,25 @@ const EventScheduler = () => {
       return;
     }
 
+    const conflict = events.some((event) => {
+      if (!event.startDate) return false;
+      const existingStart = new Date(event.startDate);
+      const existingEnd = event.endDate ? new Date(event.endDate) : null;
+      const exactStart = existingStart.getTime() === start.getTime();
+      const overlap =
+        end && existingEnd
+          ? existingStart <= end && existingEnd >= start
+          : exactStart;
+      return exactStart || overlap;
+    });
+
+    if (conflict && !formData.participants.trim()) {
+      alert(
+        "Conflict detected with another event. Please specify participants to continue.",
+      );
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       await axios.post(
@@ -87,6 +107,10 @@ const EventScheduler = () => {
           startDate: formData.startDate,
           endDate: formData.endDate,
           barangayId: formData.barangayId || null,
+          participants: formData.participants
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean),
           recipient: "admin",
         },
         {
@@ -100,6 +124,7 @@ const EventScheduler = () => {
         startDate: "",
         endDate: "",
         barangayId: "",
+        participants: "",
       });
       setShowForm(false);
       fetchEvents();
@@ -267,6 +292,20 @@ const EventScheduler = () => {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Participants (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={formData.participants}
+                onChange={(e) =>
+                  setFormData({ ...formData, participants: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., John Doe, Jane Smith"
+              />
             </div>
             <div className="flex gap-2">
               <button

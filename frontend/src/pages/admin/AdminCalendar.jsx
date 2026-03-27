@@ -68,6 +68,7 @@ const AdminCalendar = () => {
     endDate: "",
     visibility: "all", // "all" or "specific"
     barangayId: "",
+    participants: "",
   });
 
   /* ===================== DATA FETCHING ===================== */
@@ -223,6 +224,28 @@ const AdminCalendar = () => {
       return;
     }
 
+    const isConflict = events.some((event) => {
+      if (!event.startDate) return false;
+      const existingStart = new Date(event.startDate);
+      const existingEnd = event.endDate ? new Date(event.endDate) : null;
+
+      // exact same start date/time conflict or overlapping window
+      const overlap =
+        existingStart.getTime() === start.getTime() ||
+        (end && existingEnd && existingStart <= end && existingEnd >= start) ||
+        (end && !existingEnd && existingStart.getTime() === start.getTime()) ||
+        (!end && existingEnd && start >= existingStart && start <= existingEnd);
+
+      return overlap;
+    });
+
+    if (isConflict && !eventFormData.participants.trim()) {
+      setCreateEventMessage(
+        "Conflicting event exists. Provide participant names to continue.",
+      );
+      return;
+    }
+
     setCreatingEvent(true);
     setCreateEventMessage("");
 
@@ -239,6 +262,10 @@ const AdminCalendar = () => {
           eventFormData.visibility === "specific"
             ? eventFormData.barangayId
             : null,
+        participants: eventFormData.participants
+          .split(",")
+          .map((p) => p.trim())
+          .filter(Boolean),
       };
 
       const response = await axios.post(
@@ -258,6 +285,7 @@ const AdminCalendar = () => {
           endDate: "",
           visibility: "all",
           barangayId: "",
+          participants: "",
         });
         fetchEvents();
 
