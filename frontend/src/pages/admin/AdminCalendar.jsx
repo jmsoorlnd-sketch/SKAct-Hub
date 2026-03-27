@@ -38,6 +38,35 @@ const EventList = lazy(
 const EventCreationModal = lazy(
   () => import("../../components/eventComponents/EventCreateModal"),
 );
+
+const STATUS_OPTIONS = [
+  "pending",
+  "approved",
+  "ongoing",
+  "rejected",
+  "completed",
+  "cancelled",
+];
+
+const getStatusClasses = (status) => {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    case "approved":
+      return "bg-emerald-100 text-emerald-700 border-emerald-300";
+    case "ongoing":
+      return "bg-blue-100 text-blue-700 border-blue-300";
+    case "rejected":
+      return "bg-red-100 text-red-700 border-red-300";
+    case "completed":
+      return "bg-slate-100 text-slate-700 border-slate-300";
+    case "cancelled":
+      return "bg-rose-100 text-rose-700 border-rose-300";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-300";
+  }
+};
+
 /* ===================== MAIN COMPONENT ===================== */
 const AdminCalendar = () => {
   /* ===================== STATE ===================== */
@@ -68,6 +97,7 @@ const AdminCalendar = () => {
     endDate: "",
     visibility: "all", // "all" or "specific"
     barangayId: "",
+    participants: "",
   });
 
   /* ===================== DATA FETCHING ===================== */
@@ -144,7 +174,11 @@ const AdminCalendar = () => {
     (eventId) => {
       const evt = events.find((e) => e._id === eventId);
 
-      if (!evt || !user || String(evt.sender?._id) !== String(user._id)) {
+      if (
+        !evt ||
+        !user ||
+        (user.role !== "Admin" && String(evt.sender?._id) !== String(user._id))
+      ) {
         return;
       }
 
@@ -173,6 +207,21 @@ const AdminCalendar = () => {
       message: "",
       title: "",
     });
+  };
+
+  const handleUpdateEventStatus = async (eventId, status) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      await axios.put(
+        `http://localhost:5000/api/messages/${eventId}/status`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      fetchEvents();
+    } catch (err) {
+      console.error("Failed to update event status", err);
+    }
   };
 
   const handleConfirmAction = async () => {
@@ -206,6 +255,45 @@ const AdminCalendar = () => {
       return;
     }
 
+    const now = new Date();
+    const start = new Date(eventFormData.startDate);
+    const end = eventFormData.endDate ? new Date(eventFormData.endDate) : null;
+
+    if (start < now) {
+      setCreateEventMessage("Start date/time cannot be in the past");
+      return;
+    }
+    if (end && end < now) {
+      setCreateEventMessage("End date/time cannot be in the past");
+      return;
+    }
+    if (end && end < start) {
+      setCreateEventMessage("End date/time cannot be before start date/time");
+      return;
+    }
+
+    const isConflict = events.some((event) => {
+      if (!event.startDate) return false;
+      const existingStart = new Date(event.startDate);
+      const existingEnd = event.endDate ? new Date(event.endDate) : null;
+
+      // exact same start date/time conflict or overlapping window
+      const overlap =
+        existingStart.getTime() === start.getTime() ||
+        (end && existingEnd && existingStart <= end && existingEnd >= start) ||
+        (end && !existingEnd && existingStart.getTime() === start.getTime()) ||
+        (!end && existingEnd && start >= existingStart && start <= existingEnd);
+
+      return overlap;
+    });
+
+    if (isConflict && !eventFormData.participants.trim()) {
+      setCreateEventMessage(
+        "Conflicting event exists. Provide participant names to continue.",
+      );
+      return;
+    }
+
     setCreatingEvent(true);
     setCreateEventMessage("");
 
@@ -218,10 +306,15 @@ const AdminCalendar = () => {
         startDate: eventFormData.startDate,
         endDate: eventFormData.endDate,
         recipient: "admin",
+        status: "ongoing",
         barangayId:
           eventFormData.visibility === "specific"
             ? eventFormData.barangayId
             : null,
+        participants: eventFormData.participants
+          .split(",")
+          .map((p) => p.trim())
+          .filter(Boolean),
       };
 
       const response = await axios.post(
@@ -241,6 +334,7 @@ const AdminCalendar = () => {
           endDate: "",
           visibility: "all",
           barangayId: "",
+          participants: "",
         });
         fetchEvents();
 
@@ -363,32 +457,13 @@ const AdminCalendar = () => {
               </span>
             )}
           </div>
-          <div className="space-y-1 flex-1">
-            {dayEvents.slice(0, 3).map((evt) => {
-              const barangayName = barangayMap[evt.attachedToBarangay];
-              const creatorName = evt.sender?.username || "Unknown";
-              return (
-                <div
-                  key={evt._id}
-                  className="text-xs bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 px-2 py-1 rounded-lg truncate border border-blue-200 font-semibold"
-                  title={`${evt.subject}${barangayName ? ` – ${barangayName}` : ""} | Created by: ${creatorName}`}
-                >
-                  {evt.subject}
-                  {barangayName && (
-                    <span className="block text-[8px] text-slate-600 truncate">
-                      {barangayName}
-                    </span>
-                  )}
-                  <span className="block text-[8px] text-slate-700 truncate">
-                    by {creatorName}
-                  </span>
-                </div>
-              );
-            })}
-            {dayEvents.length > 3 && (
-              <div className="text-xs text-blue-600 font-bold text-center">
-                +{dayEvents.length - 3} more
-              </div>
+          <div className="flex-1 flex items-center justify-center">
+            {dayEvents.length > 0 ? (
+              <span className="text-xs font-semibold text-blue-700">
+                {dayEvents.length} event{dayEvents.length > 1 ? "s" : ""}
+              </span>
+            ) : (
+              <span className="text-xs text-slate-400">No events</span>
             )}
           </div>
         </div>,
@@ -396,7 +471,7 @@ const AdminCalendar = () => {
     }
 
     return { days, monthName };
-  }, [currentDate, eventsByDate, barangayMap]);
+  }, [currentDate, eventsByDate]);
   /* ===================== RENDER ===================== */
   return (
     <>
@@ -544,19 +619,33 @@ const AdminCalendar = () => {
                                 barangayMap[evt.attachedToBarangay];
                               const creatorName =
                                 evt.sender?.username || "Unknown";
+                              const isOwner =
+                                user &&
+                                String(evt.sender?._id) === String(user._id);
                               return (
                                 <div
                                   key={evt._id}
                                   className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
                                 >
-                                  <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
-                                    {evt.subject}
-                                  </h4>
+                                  <div className="flex items-start justify-between gap-2 mb-1">
+                                    <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
+                                      {evt.subject}
+                                    </h4>
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getStatusClasses(
+                                        evt.status,
+                                      )}`}
+                                    >
+                                      {evt.status || "pending"}
+                                    </span>
+                                  </div>
+
                                   {evt.body && (
                                     <p className="text-xs text-slate-600 mb-2 line-clamp-2">
                                       {evt.body}
                                     </p>
                                   )}
+
                                   <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold mb-1">
                                     <Clock size={12} />
                                     {new Date(evt.startDate).toLocaleTimeString(
@@ -573,7 +662,33 @@ const AdminCalendar = () => {
                                       {barangayName}
                                     </div>
                                   )}
-                                  <div className="text-xs text-slate-500 font-medium px-2 py-1 bg-slate-200 rounded">
+
+                                  {isOwner && (
+                                    <div className="mt-2">
+                                      <label className="text-xs font-semibold text-slate-700 mr-2">
+                                        Set status:
+                                      </label>
+                                      <select
+                                        value={evt.status || "pending"}
+                                        onChange={(e) =>
+                                          handleUpdateEventStatus(
+                                            evt._id,
+                                            e.target.value,
+                                          )
+                                        }
+                                        className="text-xs px-2 py-1 rounded border border-slate-300"
+                                      >
+                                        {STATUS_OPTIONS.map((status) => (
+                                          <option key={status} value={status}>
+                                            {status.charAt(0).toUpperCase() +
+                                              status.slice(1)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  )}
+
+                                  <div className="text-xs text-slate-500 font-medium px-2 py-1 bg-slate-200 rounded mt-2">
                                     Created by:{" "}
                                     <span className="font-semibold text-slate-700">
                                       {creatorName}
@@ -622,6 +737,7 @@ const AdminCalendar = () => {
           barangays={barangays}
           onClose={() => setShowDateModal(false)}
           onDelete={handleDeleteEvent}
+          onStatusUpdate={handleUpdateEventStatus}
           user={user}
         />
       )}

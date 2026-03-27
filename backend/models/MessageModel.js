@@ -78,6 +78,10 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    participants: {
+      type: [String],
+      default: [],
+    },
     isDeleted: {
       type: Boolean,
       default: false,

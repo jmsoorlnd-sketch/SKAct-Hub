@@ -16,6 +16,7 @@ export const sendMessage = async (req, res) => {
       body,
       startDate,
       endDate,
+      participants,
       recipient,
       status,
       barangayId,
@@ -47,6 +48,48 @@ export const sendMessage = async (req, res) => {
     let s = startDate ? new Date(startDate) : null;
     let e = endDate ? new Date(endDate) : null;
 
+    const now = new Date();
+    if (s && s < now) {
+      return res
+        .status(400)
+        .json({ message: "Start date/time cannot be in the past" });
+    }
+    if (e && e < now) {
+      return res
+        .status(400)
+        .json({ message: "End date/time cannot be in the past" });
+    }
+    if (s && e && e < s) {
+      return res
+        .status(400)
+        .json({ message: "End date/time cannot be before start date/time" });
+    }
+
+    if (s) {
+      const conflictingEvent = await Message.findOne({
+        isDeleted: false,
+        startDate: { $lte: e || s },
+        $or: [
+          { endDate: null },
+          { endDate: { $exists: false } },
+          { endDate: { $gte: s } },
+        ],
+      });
+
+      if (conflictingEvent) {
+        const overlapping =
+          s &&
+          (!conflictingEvent.endDate || conflictingEvent.endDate >= s) &&
+          (!e || conflictingEvent.startDate <= e);
+
+        if (overlapping && (!participants || participants.length === 0)) {
+          return res.status(400).json({
+            message: "Event conflict detected; please add participant names.",
+          });
+        }
+      }
+    }
+
     // Create message
     // Mark as admin-scheduled if the sender is an admin and recipient is also an admin
     const senderUser = await User.findById(senderId);
@@ -64,6 +107,14 @@ export const sendMessage = async (req, res) => {
       attachmentName,
       startDate: s,
       endDate: e,
+      participants: Array.isArray(participants)
+        ? participants.filter((p) => p && p.trim())
+        : typeof participants === "string"
+          ? participants
+              .split(",")
+              .map((p) => p.trim())
+              .filter(Boolean)
+          : [],
       status: messageStatus,
       isAdminScheduled: isAdminEvent,
       attachedToBarangay: barangayId || null,
@@ -129,12 +180,27 @@ export const getInbox = async (req, res) => {
     let query;
 
     if (user?.role === "Admin") {
-      // Admins: exclude admin-scheduled events from inbox (they see them in calendar only)
+      // Admins: see both direct messages AND all pending documents for storage approval
       query = {
-        recipient: userId,
-        isAttached: { $ne: true },
-        isAdminScheduled: { $ne: true },
-        isDeleted: false,
+        $or: [
+          // Direct messages to this admin
+          {
+            recipient: userId,
+            isAttached: { $ne: true },
+            isAdminScheduled: { $ne: true },
+            isDeleted: false,
+          },
+          // Official documents that were created for approval, including pending/rejected
+          {
+            status: { $in: ["pending", "rejected"] },
+            isAdminScheduled: { $ne: true },
+            $or: [
+              { intendedFolder: { $exists: true, $ne: null } },
+              { attachedToBarangay: { $exists: true, $ne: null } },
+            ],
+            isDeleted: false,
+          },
+        ],
       };
     } else {
       // Non-admins (Youth/Official): include admin-scheduled events relevant to them
@@ -214,11 +280,14 @@ export const updateStatus = async (req, res) => {
     const msg = await Message.findById(messageId);
     if (!msg) return res.status(404).json({ message: "Message not found" });
 
-    // Only the original sender can change the status (admins cannot)
-    if (String(msg.sender) !== String(req.user._id)) {
+    // Original sender or admin can change status
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
       return res
         .status(403)
-        .json({ message: "Only the message sender can update status" });
+        .json({ message: "Only the sender or an admin can update status" });
     }
 
     msg.status = status;
@@ -387,10 +456,13 @@ export const deleteMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    if (String(msg.sender) !== String(req.user._id)) {
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
       return res
         .status(403)
-        .json({ message: "Only the message sender can delete this item" });
+        .json({ message: "Only the sender or an admin can delete this item" });
     }
 
     // Soft delete message
@@ -524,12 +596,10 @@ export const hardDeleteEvent = async (req, res) => {
       String(msg.sender) !== String(req.user._id) &&
       req.user.role !== "Admin"
     ) {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Only the event organizer or admin can permanently delete this event",
-        });
+      return res.status(403).json({
+        message:
+          "Only the event organizer or admin can permanently delete this event",
+      });
     }
 
     // Get event details before deletion for logging
@@ -685,9 +755,14 @@ export const rejectMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    // Update message status to rejected and store the reason
+    // Reject only with non-empty reason (recommended to avoid unhelpful feedback)
+    const trimmedReason = reason ? reason.trim() : "";
+    if (!trimmedReason) {
+      return res.status(400).json({ message: "Rejection reason is required" });
+    }
+
     message.status = "rejected";
-    message.rejectionReason = reason ? reason.trim() : "No reason provided";
+    message.rejectionReason = trimmedReason;
     await message.save();
     await message.populate("sender", "username email role");
 

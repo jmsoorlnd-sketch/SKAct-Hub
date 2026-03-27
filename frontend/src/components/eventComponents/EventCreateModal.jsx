@@ -13,6 +13,10 @@ const EventCreationModal = ({
 }) => {
   if (!isOpen) return null;
 
+  const now = new Date();
+  now.setSeconds(0, 0);
+  const minDateTime = now.toISOString().slice(0, 16);
+
   return (
     <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -103,6 +107,7 @@ const EventCreationModal = ({
                 <input
                   type="datetime-local"
                   value={eventFormData.startDate}
+                  min={minDateTime}
                   onChange={(e) =>
                     setEventFormData({
                       ...eventFormData,
@@ -119,6 +124,7 @@ const EventCreationModal = ({
                 <input
                   type="datetime-local"
                   value={eventFormData.endDate}
+                  min={minDateTime}
                   onChange={(e) =>
                     setEventFormData({
                       ...eventFormData,
@@ -128,6 +134,24 @@ const EventCreationModal = ({
                   className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-900 mb-2">
+                Participants (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={eventFormData.participants}
+                onChange={(e) =>
+                  setEventFormData({
+                    ...eventFormData,
+                    participants: e.target.value,
+                  })
+                }
+                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="e.g., John Doe, Jane Smith"
+              />
             </div>
 
             {/* Event Visibility */}
