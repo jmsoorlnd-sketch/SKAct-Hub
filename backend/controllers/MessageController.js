@@ -756,9 +756,16 @@ export const rejectMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    // Update message status to rejected and store the reason
+    // Reject only with non-empty reason (recommended to avoid unhelpful feedback)
+    const trimmedReason = reason ? reason.trim() : "";
+    if (!trimmedReason) {
+      return res
+        .status(400)
+        .json({ message: "Rejection reason is required" });
+    }
+
     message.status = "rejected";
-    message.rejectionReason = reason ? reason.trim() : "No reason provided";
+    message.rejectionReason = trimmedReason;
     await message.save();
     await message.populate("sender", "username email role");
 

@@ -131,10 +131,16 @@ const AdminDashboard = () => {
   };
 
   const confirmReject = async () => {
+    const trimmedReason = rejectReason?.trim();
+    if (!trimmedReason) {
+      toast.warning("Please provide a reason for rejection before proceeding.");
+      return;
+    }
+
     try {
       await axios.post(
         `${API_BASE}/messages/admin/reject`,
-        { messageId: selectedMessage._id, reason: rejectReason },
+        { messageId: selectedMessage._id, reason: trimmedReason },
         { headers: getAuthHeaders() },
       );
       toast.success("Message rejected");
@@ -142,7 +148,9 @@ const AdminDashboard = () => {
       setSelectedMessage(null);
     } catch (error) {
       console.error("Reject failed:", error);
-      toast.error("Failed to reject message");
+      toast.error(
+        error?.response?.data?.message || "Failed to reject message",
+      );
     } finally {
       setShowRejectModal(false);
     }
@@ -623,8 +631,8 @@ const AdminDashboard = () => {
               </button>
             </div>
             <p className="text-sm text-gray-700 mb-2">
-              Are you sure you want to reject this message? You may provide a
-              reason (optional).
+              Are you sure you want to reject this message? A rejection reason is
+              required, because it helps the sender improve and track the decision.
             </p>
             <textarea
               className="w-full border rounded p-2 mb-4"
