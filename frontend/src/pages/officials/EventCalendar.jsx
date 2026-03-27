@@ -559,7 +559,6 @@ const EventCalendar = () => {
       if (formData.endDate) fd.append("endDate", formData.endDate);
       if (userBarangay?._id) fd.append("barangayId", userBarangay._id);
       fd.append("recipientId", user._id);
-      fd.append("status", "ongoing");
       if (formData.participants.trim()) {
         fd.append(
           "participants",

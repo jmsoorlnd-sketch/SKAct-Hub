@@ -182,12 +182,23 @@ export const getInbox = async (req, res) => {
     let query;
 
     if (user?.role === "Admin") {
-      // Admins: exclude admin-scheduled events from inbox (they see them in calendar only)
+      // Admins: see both direct messages AND all pending messages from officials for approval
       query = {
-        recipient: userId,
-        isAttached: { $ne: true },
-        isAdminScheduled: { $ne: true },
-        isDeleted: false,
+        $or: [
+          // Direct messages to this admin
+          {
+            recipient: userId,
+            isAttached: { $ne: true },
+            isAdminScheduled: { $ne: true },
+            isDeleted: false,
+          },
+          // Pending messages from officials (for approval) - all admins see these
+          {
+            status: "pending",
+            isAdminScheduled: { $ne: true },
+            isDeleted: false,
+          },
+        ],
       };
     } else {
       // Non-admins (Youth/Official): include admin-scheduled events relevant to them
