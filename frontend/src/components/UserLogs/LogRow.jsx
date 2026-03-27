@@ -36,9 +36,7 @@ const LogRow = ({
         <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate">
           {log.description ?? "—"}
         </td>
-        <td className="px-4 py-2.5 text-gray-400 font-mono text-xs whitespace-nowrap">
-          {log.ipAddress}
-        </td>
+
         <td className="px-4 py-2.5 text-gray-300">
           <ChevronDown
             size={14}

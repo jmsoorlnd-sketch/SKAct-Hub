@@ -104,7 +104,7 @@ const StatCard = React.memo(function StatCard({
   iconClass,
 }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
       <div>
         <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
           {label}
@@ -116,12 +116,19 @@ const StatCard = React.memo(function StatCard({
   );
 });
 
+// ✅ After
 const ExpandedDetails = React.memo(function ExpandedDetails({ log }) {
+  // Handles: populated object, flat string, or missing
+  const barangayName =
+    log.barangayId?.barangayName || // ✅ populated from .populate()
+    log.barangayName || // fallback: flat string if stored directly
+    "—";
+
   return (
     <tr className="bg-gray-50 border-b border-gray-100">
       <td colSpan={6} className="px-6 py-3">
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-          <Detail label="Barangay" value={log.barangayName || "—"} />
+          <Detail label="Barangay" value={barangayName} /> {/* ✅ */}
           <Detail label="Role" value={log.role} />
           <div className="col-span-2">
             <Detail
@@ -140,7 +147,6 @@ const ExpandedDetails = React.memo(function ExpandedDetails({ log }) {
     </tr>
   );
 });
-
 const Detail = React.memo(function Detail({ label, value }) {
   return (
     <div>
@@ -230,15 +236,7 @@ export default function AdminUserLogs() {
   }, [logs, searchTerm]);
   const exportCSV = useCallback(() => {
     const rows = [
-      [
-        "Timestamp",
-        "User",
-        "Username",
-        "Barangay",
-        "Action",
-        "Description",
-        "IP Address",
-      ],
+      ["Timestamp", "User", "Username", "Barangay", "Action", "Description"],
       ...logs.map((log) => [
         new Date(log.createdAt).toLocaleString(),
         `${log.firstname} ${log.lastname}`,
@@ -284,7 +282,7 @@ export default function AdminUserLogs() {
 
         {/* Stats - Sticky */}
         {statistics && (
-          <div className="sticky top-0 z-10 bg-gray-50 pb-3">
+          <div className="sticky top-0 z-10  ">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <StatCard
                 label="Total Logs"
@@ -319,7 +317,7 @@ export default function AdminUserLogs() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
+        <div className="bg-white rounded-lg border shadow-sm border-gray-200 px-4 py-3 my-2">
           <div className="flex flex-wrap gap-2 items-center">
             {/* Search */}
             <div className="relative flex-1 min-w-48">
@@ -345,7 +343,7 @@ export default function AdminUserLogs() {
               }}
               className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All actions</option>
+              <option value="">All Activities</option>
               {Object.entries(ACTION_META).map(([key, { label }]) => (
                 <option key={key} value={key}>
                   {label}
@@ -385,7 +383,7 @@ export default function AdminUserLogs() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
           {loading ? (
             <div className="text-center py-16 text-sm text-gray-400">
               Loading…
@@ -396,7 +394,7 @@ export default function AdminUserLogs() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto ">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
@@ -407,12 +405,11 @@ export default function AdminUserLogs() {
                         User
                       </th>
                       <th className="px-4 py-2.5 text-left font-medium">
-                        Action
+                        User Activity
                       </th>
                       <th className="px-4 py-2.5 text-left font-medium">
                         Description
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium">IP</th>
                       <th className="px-4 py-2.5 w-8" />
                     </tr>
                   </thead>

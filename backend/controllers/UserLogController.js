@@ -32,7 +32,7 @@ export const logUserAction = async (req, res) => {
       username: user.username,
       firstname: user.firstname,
       lastname: user.lastname,
-      barangayId: barangayId || user.barangay,
+      barangayId: barangayId || user.barangayName?._id,
       role: user.role,
       actionType,
       description: description || "",
