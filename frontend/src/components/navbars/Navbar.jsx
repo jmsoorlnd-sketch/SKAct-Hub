@@ -104,7 +104,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   console.log("Navbar debug - userRole:", userRole, "isAdmin:", isAdmin);
 
   return (
-    <nav className="bg-white p-2  border-green-50 flex justify-between items-center shadow-2xs gap-2 ">
+    <nav className="bg-blue-600 p-2  border-green-50 flex justify-between items-center shadow-2xs gap-2 ">
       {/* Mobile Menu Button & Logo */}
       <div className="flex items-center gap-2 sm:gap-3">
         <button
@@ -118,7 +118,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
           alt="Logo"
           className="h-8 sm:h-10 w-8 sm:w-10 object-contain"
         />
-        <h1 className="text-lg sm:text-xl font-bold tracking-wide hidden sm:block">
+        <h1 className="text-lg sm:text-xl text-gray-200 font-bold tracking-wide hidden sm:block">
           SKActhub
         </h1>
       </div>

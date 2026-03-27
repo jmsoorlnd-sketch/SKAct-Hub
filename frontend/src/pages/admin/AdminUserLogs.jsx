@@ -272,8 +272,8 @@ export default function AdminUserLogs() {
   }, [page, totalPages]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-5">
+    <div className="min-h-screen bg-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div>
           <h1 className="text-xl font-semibold text-gray-900">User Logs</h1>

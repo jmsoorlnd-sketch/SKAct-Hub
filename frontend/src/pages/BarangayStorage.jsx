@@ -1162,7 +1162,7 @@ const BarangayStorage = () => {
   return (
     <>
       <style>{folderStyles}</style>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-blue-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
           {/* Enhanced Header */}
           <div className="mb-4">
@@ -1213,7 +1213,7 @@ const BarangayStorage = () => {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 bg">
             {/* Barangay Sidebar */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden sticky top-6">
@@ -2116,7 +2116,7 @@ const BarangayStorage = () => {
           </div>
         </div>
       )}
-      ====
+
       {/* Folder Compose Modal */}
       {showFolderComposeModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
