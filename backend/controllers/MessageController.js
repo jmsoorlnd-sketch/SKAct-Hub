@@ -190,10 +190,9 @@ export const getInbox = async (req, res) => {
             isAdminScheduled: { $ne: true },
             isDeleted: false,
           },
-          // Pending documents from officials (for storage approval) - all admins see these
-          // Only documents intended for barangay storage (have intendedFolder or attachedToBarangay)
+          // Official documents that were created for approval, including pending/rejected
           {
-            status: "pending",
+            status: { $in: ["pending", "rejected"] },
             isAdminScheduled: { $ne: true },
             $or: [
               { intendedFolder: { $exists: true, $ne: null } },
