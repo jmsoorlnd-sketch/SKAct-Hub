@@ -29,7 +29,8 @@ const AdminDashboard = () => {
   const location = useLocation();
 
   /* ==================== STATE ==================== */
-  const [messages, setMessages] = useState([]);
+  const [pendingMessages, setPendingMessages] = useState([]);
+  const [rejectedMessages, setRejectedMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [barangays, setBarangays] = useState([]);
@@ -54,24 +55,32 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading && location?.state?.messageId && messages.length > 0) {
-      const found = messages.find((m) => m._id === location.state.messageId);
+    const allMessages = [...pendingMessages, ...rejectedMessages];
+
+    if (!loading && location?.state?.messageId && allMessages.length > 0) {
+      const found = allMessages.find((m) => m._id === location.state.messageId);
       if (found) setSelectedMessage(found);
     }
-  }, [loading, messages, location]);
+  }, [loading, pendingMessages, rejectedMessages, location]);
 
   const fetchMessages = async () => {
     try {
       const res = await axios.get(`${API_BASE}/messages/inbox`, {
         headers: getAuthHeaders(),
       });
-      const pendingMessages = res.data.messages.filter(
+      const officialMessages = res.data.messages.filter(
         (msg) =>
           msg.sender?.role === "Official" &&
           !msg.isAdminScheduled &&
-          msg.status === "pending",
+          ["pending", "rejected"].includes(msg.status),
       );
-      setMessages(pendingMessages);
+
+      setPendingMessages(
+        officialMessages.filter((msg) => msg.status === "pending"),
+      );
+      setRejectedMessages(
+        officialMessages.filter((msg) => msg.status === "rejected"),
+      );
     } catch (error) {
       console.error("Failed to fetch messages:", error);
     } finally {
@@ -97,8 +106,9 @@ const AdminDashboard = () => {
       await axios.delete(`${API_BASE}/messages/${messageId}`, {
         headers: getAuthHeaders(),
       });
-      setMessages(messages.filter((m) => m._id !== messageId));
-      setSelectedMessage(null);
+      setPendingMessages((prev) => prev.filter((m) => m._id !== messageId));
+      setRejectedMessages((prev) => prev.filter((m) => m._id !== messageId));
+      if (selectedMessage?._id === messageId) setSelectedMessage(null);
       toast.success("Message deleted");
     } catch (error) {
       console.error("Delete failed:", error);
@@ -106,11 +116,13 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleApproveMessage = async () => {
+  const handleApproveMessage = async (message = selectedMessage) => {
+    if (!message?._id) return;
+
     try {
       await axios.post(
         `${API_BASE}/messages/admin/approve`,
-        { messageId: selectedMessage._id },
+        { messageId: message._id },
         { headers: getAuthHeaders() },
       );
       toast.success("Message approved and stored to barangay!");
@@ -182,7 +194,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <p className="text-xl sm:text-2xl font-bold text-blue-600">
-                    {messages.length}
+                    {pendingMessages.length}
                   </p>
                   <p className="text-xs text-slate-500 font-medium">Pending</p>
                 </div>
@@ -208,7 +220,9 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                    <span className="text-sm font-bold">{messages.length}</span>
+                    <span className="text-sm font-bold">
+                      {pendingMessages.length}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -221,7 +235,7 @@ const AdminDashboard = () => {
                     Loading...
                   </p>
                 </div>
-              ) : messages.length === 0 ? (
+              ) : pendingMessages.length === 0 ? (
                 /* Empty State */
                 <div className="p-8 text-center">
                   <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -237,7 +251,7 @@ const AdminDashboard = () => {
               ) : (
                 /* Message List */
                 <div className="overflow-y-auto max-h-[calc(100vh-280px)]">
-                  {messages.map((msg) => (
+                  {pendingMessages.map((msg) => (
                     <div
                       key={msg._id}
                       onClick={() => setSelectedMessage(msg)}
@@ -301,6 +315,100 @@ const AdminDashboard = () => {
                         {!msg.isRead && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Rejected Messages Section */}
+            <div className="mt-4 bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-3 sm:px-5 py-3 sm:py-4">
+                <div className="flex items-center justify-between text-white">
+                  <div>
+                    <h2 className="text-sm sm:text-base font-bold">
+                      Rejected Messages
+                    </h2>
+                    <p className="text-xs text-orange-100 mt-0.5">
+                      Send back to pending
+                    </p>
+                  </div>
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-bold">
+                      {rejectedMessages.length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-amber-600 border-t-transparent mx-auto mb-3"></div>
+                  <p className="text-sm text-slate-600 font-medium">
+                    Loading...
+                  </p>
+                </div>
+              ) : rejectedMessages.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-sm font-bold text-slate-900 mb-1">
+                    No rejected messages
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Rejected messages will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-y-auto max-h-[calc(100vh-280px)]">
+                  {rejectedMessages.map((msg) => (
+                    <div
+                      key={msg._id}
+                      onClick={() => setSelectedMessage(msg)}
+                      className={`p-4 border-b border-slate-100 cursor-pointer transition-all hover:bg-amber-50 ${
+                        selectedMessage?._id === msg._id
+                          ? "bg-amber-100 border-l-4 border-l-amber-600"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex-shrink-0 overflow-hidden border-2 border-white shadow-md">
+                            {msg.sender?.profileImage ? (
+                              <img
+                                src={`http://localhost:5000${msg.sender.profileImage}`}
+                                alt={msg.sender.username}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white font-bold text-sm">
+                                {msg.sender?.username
+                                  ?.charAt(0)
+                                  ?.toUpperCase() || "?"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {msg.sender?.username || "Unknown"}
+                            </p>
+                            <p className="text-xs font-semibold text-slate-700 truncate mb-1">
+                              {msg.subject}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              Rejected: {msg.rejectionReason || "No reason"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedMessage(msg);
+                            handleApproveMessage(msg);
+                          }}
+                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700"
+                        >
+                          Approve back
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -582,13 +690,46 @@ const AdminDashboard = () => {
                             Reject
                           </button>
                           <button
-                            onClick={handleApproveMessage}
+                            onClick={() =>
+                              handleApproveMessage(selectedMessage)
+                            }
                             className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-1.5"
                           >
                             <CheckCircle className="w-4 h-4" />
                             Approve
                           </button>
                         </div>
+                      </div>
+                    )}
+
+                    {selectedMessage.status === "rejected" && (
+                      <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <XCircle className="w-4 h-4 text-amber-700" />
+                          </div>
+                          <h4 className="text-base font-bold text-amber-900">
+                            Rejected Message
+                          </h4>
+                        </div>
+
+                        <div className="mb-4 p-3 bg-white rounded-lg border border-amber-200">
+                          <p className="text-xs text-slate-600 mb-1 font-semibold">
+                            Rejection Reason:
+                          </p>
+                          <p className="text-sm font-bold text-slate-900">
+                            {selectedMessage.rejectionReason ||
+                              "No reason provided"}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => handleApproveMessage(selectedMessage)}
+                          className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-1.5"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Approve back
+                        </button>
                       </div>
                     )}
                   </div>
