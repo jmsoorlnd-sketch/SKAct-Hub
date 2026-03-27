@@ -47,6 +47,23 @@ export const sendMessage = async (req, res) => {
     let s = startDate ? new Date(startDate) : null;
     let e = endDate ? new Date(endDate) : null;
 
+    const now = new Date();
+    if (s && s < now) {
+      return res
+        .status(400)
+        .json({ message: "Start date/time cannot be in the past" });
+    }
+    if (e && e < now) {
+      return res
+        .status(400)
+        .json({ message: "End date/time cannot be in the past" });
+    }
+    if (s && e && e < s) {
+      return res
+        .status(400)
+        .json({ message: "End date/time cannot be before start date/time" });
+    }
+
     // Create message
     // Mark as admin-scheduled if the sender is an admin and recipient is also an admin
     const senderUser = await User.findById(senderId);
@@ -524,12 +541,10 @@ export const hardDeleteEvent = async (req, res) => {
       String(msg.sender) !== String(req.user._id) &&
       req.user.role !== "Admin"
     ) {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Only the event organizer or admin can permanently delete this event",
-        });
+      return res.status(403).json({
+        message:
+          "Only the event organizer or admin can permanently delete this event",
+      });
     }
 
     // Get event details before deletion for logging

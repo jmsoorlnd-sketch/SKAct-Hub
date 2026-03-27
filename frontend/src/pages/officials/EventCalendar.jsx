@@ -406,12 +406,27 @@ const EventCalendar = () => {
   };
 
   /* ---- Form ---- */
+  const minDateTime = (() => {
+    const d = new Date();
+    d.setSeconds(0, 0);
+    return d.toISOString().slice(0, 16);
+  })();
+
   const validateForm = () => {
     const errors = {};
+    const now = new Date();
+    const start = formData.startDate ? new Date(formData.startDate) : null;
+    const end = formData.endDate ? new Date(formData.endDate) : null;
+
     if (!formData.subject.trim()) errors.subject = "Event title is required";
     if (!formData.startDate) errors.startDate = "Start date is required";
-    if (formData.endDate && formData.endDate < formData.startDate)
+    if (start && start < now)
+      errors.startDate = "Start date/time cannot be in the past";
+    if (end && end < now)
+      errors.endDate = "End date/time cannot be in the past";
+    if (start && end && end < start)
       errors.endDate = "End date cannot be before start date";
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -607,7 +622,9 @@ const EventCalendar = () => {
                           </div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-7 gap-2">{calendarDays}</div>
+                      <div className="grid grid-cols-7 gap-2">
+                        {calendarDays}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -961,6 +978,7 @@ const EventCalendar = () => {
                     <input
                       type="datetime-local"
                       value={formData.startDate}
+                      min={minDateTime}
                       onChange={updateForm("startDate")}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                         formErrors.startDate
@@ -982,6 +1000,7 @@ const EventCalendar = () => {
                     <input
                       type="datetime-local"
                       value={formData.endDate}
+                      min={minDateTime}
                       onChange={updateForm("endDate")}
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
                         formErrors.endDate

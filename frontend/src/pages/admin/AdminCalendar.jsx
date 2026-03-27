@@ -206,6 +206,23 @@ const AdminCalendar = () => {
       return;
     }
 
+    const now = new Date();
+    const start = new Date(eventFormData.startDate);
+    const end = eventFormData.endDate ? new Date(eventFormData.endDate) : null;
+
+    if (start < now) {
+      setCreateEventMessage("Start date/time cannot be in the past");
+      return;
+    }
+    if (end && end < now) {
+      setCreateEventMessage("End date/time cannot be in the past");
+      return;
+    }
+    if (end && end < start) {
+      setCreateEventMessage("End date/time cannot be before start date/time");
+      return;
+    }
+
     setCreatingEvent(true);
     setCreateEventMessage("");
 

@@ -16,6 +16,10 @@ const EventScheduler = () => {
     barangayId: "",
   });
 
+  const now = new Date();
+  now.setSeconds(0, 0);
+  const minDateTime = now.toISOString().slice(0, 16);
+
   // Fetch events and barangays
   useEffect(() => {
     console.log("EventScheduler mounted, fetching events...");
@@ -53,6 +57,23 @@ const EventScheduler = () => {
     e.preventDefault();
     if (!formData.subject || !formData.startDate) {
       alert("Please fill in required fields");
+      return;
+    }
+
+    const now = new Date();
+    const start = new Date(formData.startDate);
+    const end = formData.endDate ? new Date(formData.endDate) : null;
+
+    if (start < now) {
+      alert("Start date/time cannot be in the past");
+      return;
+    }
+    if (end && end < now) {
+      alert("End date/time cannot be in the past");
+      return;
+    }
+    if (end && end < start) {
+      alert("End date/time cannot be before start date/time");
       return;
     }
 
@@ -206,6 +227,7 @@ const EventScheduler = () => {
                 <input
                   type="datetime-local"
                   value={formData.startDate}
+                  min={minDateTime}
                   onChange={(e) =>
                     setFormData({ ...formData, startDate: e.target.value })
                   }
@@ -219,6 +241,7 @@ const EventScheduler = () => {
                 <input
                   type="datetime-local"
                   value={formData.endDate}
+                  min={minDateTime}
                   onChange={(e) =>
                     setFormData({ ...formData, endDate: e.target.value })
                   }
