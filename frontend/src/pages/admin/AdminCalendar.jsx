@@ -174,7 +174,11 @@ const AdminCalendar = () => {
     (eventId) => {
       const evt = events.find((e) => e._id === eventId);
 
-      if (!evt || !user || String(evt.sender?._id) !== String(user._id)) {
+      if (
+        !evt ||
+        !user ||
+        (user.role !== "Admin" && String(evt.sender?._id) !== String(user._id))
+      ) {
         return;
       }
 

@@ -83,11 +83,9 @@ export const sendMessage = async (req, res) => {
           (!e || conflictingEvent.startDate <= e);
 
         if (overlapping && (!participants || participants.length === 0)) {
-          return res
-            .status(400)
-            .json({
-              message: "Event conflict detected; please add participant names.",
-            });
+          return res.status(400).json({
+            message: "Event conflict detected; please add participant names.",
+          });
         }
       }
     }
@@ -283,11 +281,14 @@ export const updateStatus = async (req, res) => {
     const msg = await Message.findById(messageId);
     if (!msg) return res.status(404).json({ message: "Message not found" });
 
-    // Only the original sender can change the status (admins cannot)
-    if (String(msg.sender) !== String(req.user._id)) {
+    // Original sender or admin can change status
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
       return res
         .status(403)
-        .json({ message: "Only the message sender can update status" });
+        .json({ message: "Only the sender or an admin can update status" });
     }
 
     msg.status = status;
@@ -456,10 +457,13 @@ export const deleteMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    if (String(msg.sender) !== String(req.user._id)) {
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
       return res
         .status(403)
-        .json({ message: "Only the message sender can delete this item" });
+        .json({ message: "Only the sender or an admin can delete this item" });
     }
 
     // Soft delete message

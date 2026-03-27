@@ -117,7 +117,8 @@ const DateModal = ({
                       </span>
                       {user &&
                         evt.sender &&
-                        String(user._id) === String(evt.sender._id) && (
+                        (user.role === "Admin" ||
+                          String(user._id) === String(evt.sender._id)) && (
                           <select
                             value={evt.status || "pending"}
                             onChange={(e) =>
@@ -185,7 +186,8 @@ const DateModal = ({
                   </div>
                   {user &&
                     evt.sender &&
-                    String(user._id) === String(evt.sender._id) && (
+                    (user.role === "Admin" ||
+                      String(user._id) === String(evt.sender._id)) && (
                       <button
                         onClick={() => onDelete(evt._id)}
                         className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-sm transition-colors flex items-center gap-2 flex-shrink-0"
