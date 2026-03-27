@@ -182,7 +182,7 @@ export const getInbox = async (req, res) => {
     let query;
 
     if (user?.role === "Admin") {
-      // Admins: see both direct messages AND all pending messages from officials for approval
+      // Admins: see both direct messages AND all pending documents for storage approval
       query = {
         $or: [
           // Direct messages to this admin
@@ -192,10 +192,15 @@ export const getInbox = async (req, res) => {
             isAdminScheduled: { $ne: true },
             isDeleted: false,
           },
-          // Pending messages from officials (for approval) - all admins see these
+          // Pending documents from officials (for storage approval) - all admins see these
+          // Only documents intended for barangay storage (have intendedFolder or attachedToBarangay)
           {
             status: "pending",
             isAdminScheduled: { $ne: true },
+            $or: [
+              { intendedFolder: { $exists: true, $ne: null } },
+              { attachedToBarangay: { $exists: true, $ne: null } },
+            ],
             isDeleted: false,
           },
         ],
