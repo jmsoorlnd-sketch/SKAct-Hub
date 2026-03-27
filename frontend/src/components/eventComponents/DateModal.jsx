@@ -1,7 +1,43 @@
 import React from "react";
 import { CalendarIcon, Clock, MapPin, Trash2, X } from "lucide-react";
 
-const DateModal = ({ date, events, barangays, onClose, onDelete, user }) => {
+const STATUS_OPTIONS = [
+  "pending",
+  "approved",
+  "ongoing",
+  "rejected",
+  "completed",
+  "cancelled",
+];
+
+const getStatusClasses = (status) => {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    case "approved":
+      return "bg-emerald-100 text-emerald-700 border-emerald-300";
+    case "ongoing":
+      return "bg-blue-100 text-blue-700 border-blue-300";
+    case "rejected":
+      return "bg-red-100 text-red-700 border-red-300";
+    case "completed":
+      return "bg-slate-100 text-slate-700 border-slate-300";
+    case "cancelled":
+      return "bg-rose-100 text-rose-700 border-rose-300";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-300";
+  }
+};
+
+const DateModal = ({
+  date,
+  events,
+  barangays,
+  onClose,
+  onDelete,
+  onStatusUpdate,
+  user,
+}) => {
   return (
     <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -70,6 +106,35 @@ const DateModal = ({ date, events, barangays, onClose, onDelete, user }) => {
                         {evt.subject}
                       </h3>
                     </div>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <span
+                        className={`text-xs font-bold px-2 py-1 rounded-full border ${getStatusClasses(
+                          evt.status,
+                        )}`}
+                      >
+                        {evt.status || "pending"}
+                      </span>
+                      {user &&
+                        evt.sender &&
+                        String(user._id) === String(evt.sender._id) && (
+                          <select
+                            value={evt.status || "pending"}
+                            onChange={(e) =>
+                              onStatusUpdate(evt._id, e.target.value)
+                            }
+                            className="text-xs px-2 py-1 rounded border border-slate-300"
+                          >
+                            {STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {status.charAt(0).toUpperCase() +
+                                  status.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                    </div>
+
                     {evt.body && (
                       <p className="text-sm text-slate-700 mb-3 p-3 bg-white rounded-lg border border-blue-200">
                         {evt.body}

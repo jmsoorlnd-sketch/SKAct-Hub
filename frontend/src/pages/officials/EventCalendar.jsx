@@ -44,6 +44,34 @@ const WEEKDAYS = [
   "Saturday",
 ];
 
+const STATUS_OPTIONS = [
+  "pending",
+  "approved",
+  "ongoing",
+  "rejected",
+  "completed",
+  "cancelled",
+];
+
+const getStatusClasses = (status) => {
+  switch (status) {
+    case "pending":
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    case "approved":
+      return "bg-emerald-100 text-emerald-700 border-emerald-300";
+    case "ongoing":
+      return "bg-blue-100 text-blue-700 border-blue-300";
+    case "rejected":
+      return "bg-red-100 text-red-700 border-red-300";
+    case "completed":
+      return "bg-slate-100 text-slate-700 border-slate-300";
+    case "cancelled":
+      return "bg-rose-100 text-rose-700 border-rose-300";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-300";
+  }
+};
+
 const getToken = () => localStorage.getItem("token");
 const authHeaders = () => ({ Authorization: `Bearer ${getToken()}` });
 
@@ -87,7 +115,14 @@ const StatCard = ({ icon: Icon, title, value, color, subtitle }) => {
 };
 
 /* ==================== EVENT CARD ==================== */
-const EventCard = ({ evt, user, onDelete, onToggleSelect, isSelected }) => {
+const EventCard = ({
+  evt,
+  user,
+  onDelete,
+  onToggleSelect,
+  isSelected,
+  onStatusChange,
+}) => {
   const isOwner = user && String(evt.sender?._id) === String(user._id);
   return (
     <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all">
@@ -100,13 +135,44 @@ const EventCard = ({ evt, user, onDelete, onToggleSelect, isSelected }) => {
         />
       )}
       <div className="flex items-start gap-2.5 mb-2.5">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md shrink-0">
           <CalendarIcon className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
-          <h4 className="font-bold text-slate-900 text-base">{evt.subject}</h4>
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="font-bold text-slate-900 text-base">
+              {evt.subject}
+            </h4>
+            <span
+              className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getStatusClasses(evt.status)}`}
+            >
+              {evt.status || "pending"}
+            </span>
+          </div>
           {evt.body && (
             <p className="text-xs text-slate-700 mt-0.5">{evt.body}</p>
+          )}
+          {isOwner && onStatusChange && (
+            <div className="mt-2 flex items-center gap-2">
+              <label
+                className="text-xs text-slate-600"
+                htmlFor={`status-${evt._id}`}
+              >
+                Status
+              </label>
+              <select
+                id={`status-${evt._id}`}
+                value={evt.status || "pending"}
+                onChange={(e) => onStatusChange(evt._id, e.target.value)}
+                className="text-xs px-2 py-1 rounded border border-slate-300"
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
           {isOwner && (
             <button
@@ -173,6 +239,19 @@ const EventCalendar = () => {
       setLoading(false);
     }
   }, []);
+
+  const handleUpdateEventStatus = async (eventId, status) => {
+    try {
+      await axios.put(
+        `${API_BASE}/messages/${eventId}/status`,
+        { status },
+        { headers: authHeaders() },
+      );
+      fetchEvents();
+    } catch (err) {
+      console.error("Failed to update event status:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchUserBarangay = async () => {
@@ -480,6 +559,7 @@ const EventCalendar = () => {
       if (formData.endDate) fd.append("endDate", formData.endDate);
       if (userBarangay?._id) fd.append("barangayId", userBarangay._id);
       fd.append("recipientId", user._id);
+      fd.append("status", "ongoing");
       if (formData.participants.trim()) {
         fd.append(
           "participants",
@@ -704,31 +784,62 @@ const EventCalendar = () => {
 
                         return (
                           <div className="space-y-2.5">
-                            {todayEvents.map((evt) => (
-                              <div
-                                key={evt._id}
-                                className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
-                              >
-                                <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
-                                  {evt.subject}
-                                </h4>
-                                {evt.body && (
-                                  <p className="text-xs text-slate-600 mb-2 line-clamp-2">
-                                    {evt.body}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
-                                  <Clock size={12} />
-                                  {new Date(evt.startDate).toLocaleTimeString(
-                                    "default",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    },
+                            {todayEvents.map((evt) => {
+                              const isOwner =
+                                user &&
+                                String(evt.sender?._id) === String(user._id);
+                              return (
+                                <div
+                                  key={evt._id}
+                                  className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h4 className="font-bold text-sm text-slate-900 truncate">
+                                      {evt.subject}
+                                    </h4>
+                                    <span
+                                      className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getStatusClasses(evt.status)}`}
+                                    >
+                                      {evt.status || "pending"}
+                                    </span>
+                                  </div>
+                                  {evt.body && (
+                                    <p className="text-xs text-slate-600 mb-2 line-clamp-2">
+                                      {evt.body}
+                                    </p>
                                   )}
+                                  {isOwner && (
+                                    <select
+                                      value={evt.status || "pending"}
+                                      onChange={(e) =>
+                                        handleUpdateEventStatus(
+                                          evt._id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="text-xs px-2 py-1 rounded border border-slate-300 mb-2 w-full"
+                                    >
+                                      {STATUS_OPTIONS.map((status) => (
+                                        <option key={status} value={status}>
+                                          {status.charAt(0).toUpperCase() +
+                                            status.slice(1)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                  <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
+                                    <Clock size={12} />
+                                    {new Date(evt.startDate).toLocaleTimeString(
+                                      "default",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         );
                       })()}
@@ -780,6 +891,7 @@ const EventCalendar = () => {
                         onDelete={handleDeleteEvent}
                         onToggleSelect={toggleSelectEvent}
                         isSelected={selectedEventIds.has(evt._id)}
+                        onStatusChange={handleUpdateEventStatus}
                       />
                     ))}
                   </div>
@@ -875,13 +987,20 @@ const EventCalendar = () => {
                       key={evt._id}
                       className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg"
                     >
-                      <div className="flex items-center gap-2.5 mb-2.5">
-                        <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                          <CalendarIcon className="w-4 h-4 text-white" />
+                      <div className="flex items-center justify-between gap-2.5 mb-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                            <CalendarIcon className="w-4 h-4 text-white" />
+                          </div>
+                          <h3 className="font-bold text-slate-900 text-base">
+                            {evt.subject}
+                          </h3>
                         </div>
-                        <h3 className="font-bold text-slate-900 text-base">
-                          {evt.subject}
-                        </h3>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getStatusClasses(evt.status)}`}
+                        >
+                          {evt.status || "pending"}
+                        </span>
                       </div>
                       {evt.body && (
                         <p className="text-xs text-slate-700 mb-2.5 p-2.5 bg-white rounded-lg border border-blue-200">
@@ -889,12 +1008,28 @@ const EventCalendar = () => {
                         </p>
                       )}
                       {user && String(evt.sender?._id) === String(user._id) && (
-                        <button
-                          onClick={() => handleDeleteEvent(evt._id)}
-                          className="mb-2 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 size={14} /> Cancel
-                        </button>
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <select
+                            value={evt.status || "pending"}
+                            onChange={(e) =>
+                              handleUpdateEventStatus(evt._id, e.target.value)
+                            }
+                            className="text-xs px-2 py-1 rounded border border-slate-300"
+                          >
+                            {STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {status.charAt(0).toUpperCase() +
+                                  status.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleDeleteEvent(evt._id)}
+                            className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-semibold text-xs transition-colors flex items-center gap-2"
+                          >
+                            <Trash2 size={14} /> Cancel
+                          </button>
+                        </div>
                       )}
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5 text-xs">
