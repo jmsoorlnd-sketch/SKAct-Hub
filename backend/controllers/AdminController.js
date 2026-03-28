@@ -16,6 +16,8 @@ const randomString = (length = 8) => {
 
 /**
  * @desc Admin creates a new official account
+ * @note Only one official per position allowed per barangay
+ *       If creating with duplicate position, old official is deactivated
  */
 const createOfficial = async (req, res) => {
   try {
@@ -84,6 +86,47 @@ const createOfficial = async (req, res) => {
       }
     }
 
+    // ===== POSITION-BASED LIMIT CHECK =====
+    // Check if another ACTIVE official with same position exists in this barangay
+    let deactivatedOfficial = null;
+    const existingOfficial = await User.findOne({
+      barangay,
+      position,
+      status: "Active",
+      role: "Official",
+    });
+
+    if (existingOfficial) {
+      // Deactivate the existing official with this position
+      existingOfficial.status = "Inactive";
+      await existingOfficial.save();
+      deactivatedOfficial = {
+        _id: existingOfficial._id,
+        firstname: existingOfficial.firstname,
+        lastname: existingOfficial.lastname,
+        position: existingOfficial.position,
+      };
+
+      // Log the deactivation action
+      try {
+        await UserLog.create({
+          userId: req.user._id,
+          username: req.user.username,
+          firstname: req.user.firstname,
+          lastname: req.user.lastname,
+          barangayId: req.user.barangay,
+          role: req.user.role,
+          actionType: "deactivate_user",
+          description: `Admin deactivated official: ${existingOfficial.firstname} ${existingOfficial.lastname} (${existingOfficial.position}) to make room for new ${position} official`,
+          ipAddress: req.ip || "Unknown",
+          userAgent: req.get("user-agent") || "Unknown",
+        });
+      } catch (logError) {
+        console.error("Error logging deactivation:", logError);
+        // Don't fail the creation if logging fails
+      }
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -120,7 +163,7 @@ const createOfficial = async (req, res) => {
         barangayId: req.user.barangay,
         role: req.user.role,
         actionType: "create_user",
-        description: `Admin created new user: ${newOfficial.firstname} ${newOfficial.lastname} (${newOfficial.username}) with role ${newOfficial.role}`,
+        description: `Admin created new user: ${newOfficial.firstname} ${newOfficial.lastname} (${newOfficial.username}) with role ${newOfficial.role}${deactivatedOfficial ? ` [replaced ${deactivatedOfficial.firstname} ${deactivatedOfficial.lastname}]` : ""}`,
         ipAddress: req.ip || "Unknown",
         userAgent: req.get("user-agent") || "Unknown",
       });
@@ -129,8 +172,13 @@ const createOfficial = async (req, res) => {
       // Don't fail the creation if logging fails
     }
 
+    let message = "Official created successfully";
+    if (deactivatedOfficial) {
+      message = `Official created successfully. Previous ${position} officer (${deactivatedOfficial.firstname} ${deactivatedOfficial.lastname}) has been deactivated.`;
+    }
+
     res.status(201).json({
-      message: "Official created successfully",
+      message,
       user: {
         _id: newOfficial._id,
         username: newOfficial.username,
@@ -147,6 +195,8 @@ const createOfficial = async (req, res) => {
         username,
         password,
       },
+      // Include info about deactivated official if applicable
+      deactivatedOfficial,
     });
   } catch (error) {
     console.error("Create Official error:", error);
