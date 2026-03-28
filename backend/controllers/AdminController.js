@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/UserModel.js";
 import UserLog from "../models/UserLogModel.js";
 import bcrypt from "bcryptjs";
+import { validateEmail } from "../utils/validateEmail.js";
 
 // helper for random strings used when credentials are auto-generated
 const randomString = (length = 8) => {
@@ -68,12 +69,17 @@ const createOfficial = async (req, res) => {
 
     // Email is optional - only check uniqueness if provided
     if (email && email.trim()) {
+      // ✅ Validate email provider + MX record
+      const emailCheck = await validateEmail(email.trim());
+      if (!emailCheck.valid) {
+        return res.status(400).json({ message: emailCheck.reason });
+      }
+
       const existEmail = await User.findOne({ email });
       if (existEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
     }
-
     // Check if username exists
     // ensure uniqueness of generated or provided username
     let existUsername = await User.findOne({ username });
@@ -429,12 +435,17 @@ const updateOfficial = async (req, res) => {
 
     // Check if email is being changed and already exists (only if email is provided and not empty)
     if (email && email.trim() && email !== official.email) {
+      // ✅ Validate email provider + MX record
+      const emailCheck = await validateEmail(email.trim());
+      if (!emailCheck.valid) {
+        return res.status(400).json({ message: emailCheck.reason });
+      }
+
       const existEmail = await User.findOne({ email });
       if (existEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
     }
-
     // Check if username is being changed and already exists
     if (username && username !== official.username) {
       const existUsername = await User.findOne({ username });

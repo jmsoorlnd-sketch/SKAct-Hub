@@ -6,6 +6,9 @@ import {
   getAllProfile,
   deleteUser,
   logoutUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 } from "../controllers/UserController.js";
 import express from "express";
 import { requireAuth, adminOnly } from "../middleware/auth.js";
@@ -95,5 +98,8 @@ router.post(
     }
   },
 );
+router.post("/forgot-password", forgotPassword); // Step 1
+router.post("/verify-otp", verifyOtp); // Step 2
+router.post("/reset-password", resetPassword); // Step 3
 
 export default router;

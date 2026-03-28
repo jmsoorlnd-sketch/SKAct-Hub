@@ -66,7 +66,12 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  // UserModel.js — add these fields before the closing of userSchema
+  emailOtp: { type: String, default: null },
+  emailOtpExpires: { type: Date, default: null },
+  passwordResetToken: { type: String, default: null },
+  passwordResetExpires: { type: Date, default: null },
 });
-
+userSchema.index({ emailOtpExpires: 1 }, { expireAfterSeconds: 0 });
 const User = mongoose.model("User", userSchema);
 export default User;

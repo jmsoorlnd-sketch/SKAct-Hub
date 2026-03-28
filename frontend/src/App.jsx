@@ -77,6 +77,7 @@ const AppRoutes = () => {
 
       {/* ===== PROTECTED ROUTES ===== */}
       <Route element={<RequireAuth />}>
+        <Route path="/profile-create" element={<ProfilePage />} />
         {/* Layout wraps all protected routes */}
         <Route element={<Layout />}>
           {/* COMMON */}

@@ -2,6 +2,10 @@ import User from "../models/UserModel.js";
 import UserLog from "../models/UserLogModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { validateEmail } from "../utils/validateEmail.js";
+// Add these imports at the top
+import crypto from "crypto";
+import sendEmail from "../utils/sendEmail.js";
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCK_TIME = 15 * 60 * 1000; // 15 minutes
@@ -193,6 +197,7 @@ const signinUser = async (req, res) => {
         role: user.role,
         barangay: user.barangay,
         position: user.position,
+        hasEmail: !!(user.email && user.email.trim()),
       },
     });
   } catch (error) {
@@ -252,12 +257,17 @@ const createProfile = async (req, res) => {
 
     // handle email change: ensure uniqueness
     if (email) {
+      // ✅ Validate email provider + MX record
+      const emailCheck = await validateEmail(email);
+      if (!emailCheck.valid) {
+        return res.status(400).json({ message: emailCheck.reason });
+      }
+
       const existingEmail = await User.findOne({ email });
       if (existingEmail && String(existingEmail._id) !== String(userId)) {
         return res.status(400).json({ message: "Email already in use" });
       }
     }
-
     // handle password change
     if (password && String(password).trim().length > 0) {
       const hashed = await bcrypt.hash(String(password), 10);
@@ -435,6 +445,181 @@ const logoutUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+// ─────────────────────────────────────────
+// STEP 1: User submits email → send OTP
+// ─────────────────────────────────────────
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Validate email format + provider + MX
+    const emailCheck = await validateEmail(email.trim());
+    if (!emailCheck.valid) {
+      return res.status(400).json({ message: emailCheck.reason });
+    }
+
+    const user = await User.findOne({ email: email.trim() });
+
+    // Always return same response — prevents email enumeration
+    if (!user) {
+      return res.status(200).json({
+        message: "If that email is registered, an OTP has been sent.",
+      });
+    }
+
+    if (user.status === "Inactive") {
+      return res.status(400).json({
+        message: "Account is deactivated. Please contact admin.",
+      });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store HASHED otp — never store plain OTP
+    user.emailOtp = crypto.createHash("sha256").update(otp).digest("hex");
+    user.emailOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    await user.save();
+
+    await sendEmail({
+      to: email,
+      subject: "SKActHub — Password Reset OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #2563eb, #4f46e5); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">SKActHub</h1>
+            <p style="color: #bfdbfe; margin: 4px 0 0;">Password Reset Request</p>
+          </div>
+          <div style="background: #f8fafc; padding: 32px; border-radius: 0 0 12px 12px; border: 2px solid #e2e8f0;">
+            <p style="color: #1e293b; font-size: 15px;">Hi <strong>${user.firstname || user.username}</strong>,</p>
+            <p style="color: #475569; font-size: 14px;">Use the OTP below to reset your password. It expires in <strong>10 minutes</strong>.</p>
+            <div style="background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+              <p style="margin: 0 0 8px; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Your OTP Code</p>
+              <p style="font-size: 42px; font-weight: bold; letter-spacing: 12px; color: #2563eb; margin: 0;">${otp}</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 13px; text-align: center;">If you didn't request this, you can safely ignore this email.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      message: "If that email is registered, an OTP has been sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// ─────────────────────────────────────────
+// STEP 2: User submits OTP → get reset token
+// ─────────────────────────────────────────
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+    const user = await User.findOne({
+      email,
+      emailOtp: hashedOtp,
+      emailOtpExpires: { $gt: new Date() }, // not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // OTP verified — generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // Store HASHED token in DB
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    // Clear OTP — one time use only
+    user.emailOtp = null;
+    user.emailOtpExpires = null;
+    await user.save();
+
+    // Return PLAIN token to frontend
+    return res.status(200).json({
+      message: "OTP verified successfully",
+      resetToken,
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// ─────────────────────────────────────────
+// STEP 3: User submits new password
+// ─────────────────────────────────────────
+const resetPassword = async (req, res) => {
+  try {
+    const { resetToken, password, confirmPassword } = req.body;
+
+    if (!resetToken || !password || !confirmPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Reset token is invalid or has expired",
+      });
+    }
+
+    // Save new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // Clear all reset fields + unlock account
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    user.lastLoginAttempt = null;
+    await user.save();
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 export {
   signupUser,
@@ -445,4 +630,7 @@ export {
   getAllProfile,
   deleteUser,
   logoutUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };
