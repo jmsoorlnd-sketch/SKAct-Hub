@@ -60,7 +60,8 @@ const DEFAULT_STATUS = {
 
 /* ===================== MAIN COMPONENT ===================== */
 const Inbox = () => {
-  const [activeTab, setActiveTab] = useState("received");
+  const [activeTab, setActiveTab] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [sentMessages, setSentMessages] = useState([]);
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -116,28 +117,48 @@ const Inbox = () => {
   }, [fetchMessages]);
 
   /* ===================== DERIVED DATA ===================== */
-  const messages = useMemo(
-    () => (activeTab === "sent" ? sentMessages : receivedMessages),
-    [activeTab, sentMessages, receivedMessages],
-  );
+  const messages = useMemo(() => {
+    if (activeTab === "sent") return sentMessages;
+    if (activeTab === "received") return receivedMessages;
+    return [...receivedMessages, ...sentMessages].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+  }, [activeTab, sentMessages, receivedMessages]);
+
+  const filteredMessages = useMemo(() => {
+    if (statusFilter === "all") return messages;
+    return messages.filter((m) => m.status === statusFilter);
+  }, [messages, statusFilter]);
+
+  const statusToggleOptions = [
+    "all",
+    "pending",
+    "approved",
+    "rejected",
+    "ongoing",
+    "completed",
+    "cancelled",
+  ];
 
   const stats = useMemo(() => {
-    let pending = 0,
-      approved = 0,
-      rejected = 0;
+    const counts = {
+      total: messages.length,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      ongoing: 0,
+      completed: 0,
+      cancelled: 0,
+      other: 0,
+    };
 
     messages.forEach((m) => {
-      if (m.status === "pending") pending++;
-      else if (m.status === "approved") approved++;
-      else if (m.status === "rejected") rejected++;
+      const s = m.status || "other";
+      if (counts[s] !== undefined) counts[s]++;
+      else counts.other++;
     });
 
-    return {
-      total: messages.length,
-      pending,
-      approved,
-      rejected,
-    };
+    return counts;
   }, [messages]);
 
   const adminEventCount = useMemo(
@@ -211,6 +232,19 @@ const Inbox = () => {
           {/* Tab Switcher */}
           <div className="flex gap-2 mb-4 border-b-2 border-slate-200">
             <button
+              onClick={() => setActiveTab("all")}
+              className={`px-4 py-2 font-semibold text-sm transition-all border-b-2 ${
+                activeTab === "all"
+                  ? "text-blue-600 border-blue-600"
+                  : "text-slate-600 border-transparent hover:text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <InboxIcon size={16} />
+                All ({receivedMessages.length + sentMessages.length})
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab("received")}
               className={`px-4 py-2 font-semibold text-sm transition-all border-b-2 ${
                 activeTab === "received"
@@ -236,6 +270,27 @@ const Inbox = () => {
                 Sent ({sentMessages.length})
               </div>
             </button>
+          </div>
+
+          {/* Statistics Cards */}
+          {/* Status Filter Buttons */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-sm font-semibold text-slate-600">
+              Filter:
+            </span>
+            {statusToggleOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setStatusFilter(option)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  statusFilter === option
+                    ? "bg-blue-500 text-white border-blue-600"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                }`}
+              >
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </button>
+            ))}
           </div>
 
           {/* Statistics Cards */}
@@ -350,10 +405,23 @@ const Inbox = () => {
                 : "Admin notifications and received messages will appear here"}
             </p>
           </div>
+        ) : filteredMessages.length === 0 ? (
+          /* Filter Empty State */
+          <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-12 text-center">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <InboxIcon className="w-10 h-10 text-slate-400" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              No {statusFilter !== "all" ? `${statusFilter} ` : ""}Messages
+            </h3>
+            <p className="text-slate-500 text-sm">
+              No messages match the selected status filter.
+            </p>
+          </div>
         ) : (
           /* Messages List */
           <div className="space-y-3">
-            {messages.map((msg) => {
+            {filteredMessages.map((msg) => {
               const statusConfig = getStatusConfig(msg.status);
               const StatusIcon = statusConfig.icon;
 
