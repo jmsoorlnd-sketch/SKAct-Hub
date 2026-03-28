@@ -210,6 +210,15 @@ const BarangayStorage = () => {
   const [folderComposeFiles, setFolderComposeFiles] = useState([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderDocumentType, setNewFolderDocumentType] = useState("");
+
+  const DOCUMENT_TYPES = [
+    "Financial Document",
+    "Legislative Documents",
+    "Administrative Records",
+    "Inventory and property Records",
+    "Compliance Report",
+  ];
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [showFolderViewModal, setShowFolderViewModal] = useState(false);
@@ -587,7 +596,7 @@ const BarangayStorage = () => {
   const normalizeFolderName = (name) =>
     name?.trim().replace(/\s+/g, " ").toLowerCase() || "";
 
-  const handleCreateFolder = async (folderName) => {
+  const handleCreateFolder = async (folderName, documentType) => {
     if (!selectedBarangay || !folderName.trim()) return;
 
     // local guard: only secretaries/treasurers/chairmen may create folders
@@ -619,7 +628,7 @@ const BarangayStorage = () => {
       const token = localStorage.getItem("token");
       await axios.post(
         `http://localhost:5000/api/barangays/${selectedBarangay}/folders`,
-        { name: folderName },
+        { name: folderName, documentType: documentType || null },
         { headers: { Authorization: `Bearer ${token}` } },
       );
       toast.success("Folder created successfully!");
@@ -1085,6 +1094,7 @@ const BarangayStorage = () => {
 
     if (folder.name?.toLowerCase().includes(q)) return true;
     if ((folder.status || "").toLowerCase().includes(q)) return true;
+    if ((folder.documentType || "").toLowerCase().includes(q)) return true;
 
     const folderDocs = storage.filter(
       (item) => item.folder?._id === folder._id,
@@ -1492,8 +1502,15 @@ const BarangayStorage = () => {
                                       {folderDocuments.length !== 1 ? "s" : ""}
                                     </div>
 
-                                    {/* Status badge */}
+                                    {/* Document Type & Status badges */}
                                     <div className="mt-2 flex flex-col items-center justify-center gap-2">
+                                      {/* Document Type Badge */}
+                                      {folder.documentType && (
+                                        <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300">
+                                          {folder.documentType}
+                                        </div>
+                                      )}
+                                      {/* Status Badge */}
                                       <div className="text-sm font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
                                         {folder.status
                                           ? folder.status
@@ -2365,12 +2382,31 @@ const BarangayStorage = () => {
                   autoFocus
                   onKeyPress={(e) => {
                     if (e.key === "Enter" && newFolderName.trim()) {
-                      handleCreateFolder(newFolderName);
+                      handleCreateFolder(newFolderName, newFolderDocumentType);
                       setShowCreateFolderModal(false);
                       setNewFolderName("");
+                      setNewFolderDocumentType("");
                     }
                   }}
                 />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
+                  <FileText size={15} className="text-indigo-600" />
+                  Document Type
+                </label>
+                <select
+                  value={newFolderDocumentType}
+                  onChange={(e) => setNewFolderDocumentType(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
+                >
+                  <option value="">-- Select a type --</option>
+                  {DOCUMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -2379,9 +2415,10 @@ const BarangayStorage = () => {
               <button
                 onClick={() => {
                   if (newFolderName.trim()) {
-                    handleCreateFolder(newFolderName);
+                    handleCreateFolder(newFolderName, newFolderDocumentType);
                     setShowCreateFolderModal(false);
                     setNewFolderName("");
+                    setNewFolderDocumentType("");
                   }
                 }}
                 disabled={!newFolderName.trim()}
@@ -2395,6 +2432,7 @@ const BarangayStorage = () => {
                 onClick={() => {
                   setShowCreateFolderModal(false);
                   setNewFolderName("");
+                  setNewFolderDocumentType("");
                 }}
                 className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
               >

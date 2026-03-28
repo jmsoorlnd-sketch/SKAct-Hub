@@ -696,7 +696,7 @@ export const detachMessageFromBarangay = async (req, res) => {
 export const createFolder = async (req, res) => {
   try {
     const { barangayId } = req.params;
-    const { name } = req.body;
+    const { name, documentType } = req.body;
     const createdBy = req.user._id;
 
     if (!name) {
@@ -707,6 +707,7 @@ export const createFolder = async (req, res) => {
       name,
       barangay: barangayId,
       createdBy,
+      documentType: documentType || null,
     });
 
     await folder.save();
