@@ -761,7 +761,7 @@ const BarangayStorage = () => {
         toast.success(
           `Folder deleted successfully${
             documentsInFolder.length > 0
-              ? `! ${documentsInFolder.length} document(s) returned to stored documents.`
+              ? `! ${documentsInFolder.length} document(s) archived.`
               : "!"
           }`,
         );
@@ -1107,7 +1107,10 @@ const BarangayStorage = () => {
   };
 
   const filteredFolders = folders.filter(
-    (folder) => matchesFolderSearch(folder) && matchesFolderStatus(folder),
+    (folder) =>
+      !folder.isDeleted &&
+      matchesFolderSearch(folder) &&
+      matchesFolderStatus(folder),
   );
 
   const matchesDocSearch = (item) => {

@@ -822,7 +822,7 @@ export const moveDocumentToFolder = async (req, res) => {
   }
 };
 
-// Delete a folder and return documents to stored documents
+// Delete a folder and archive all its documents
 export const deleteFolder = async (req, res) => {
   try {
     const { barangayId, folderId } = req.params;
@@ -843,11 +843,17 @@ export const deleteFolder = async (req, res) => {
     // Find all documents in this folder
     const documentsInFolder = await BarangayStorage.find({ folder: folderId });
 
-    // Remove folder assignment from all documents (return them to stored documents)
+    // Archive (soft-delete) all documents in this folder instead of returning them to stored
     if (documentsInFolder.length > 0) {
       await BarangayStorage.updateMany(
         { folder: folderId },
-        { $set: { folder: null } },
+        {
+          $set: {
+            isDeleted: true,
+            deletedAt: new Date(),
+            folder: null,
+          },
+        },
       );
     }
 
