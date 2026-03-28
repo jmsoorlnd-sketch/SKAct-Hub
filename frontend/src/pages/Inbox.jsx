@@ -60,9 +60,11 @@ const DEFAULT_STATUS = {
 
 /* ===================== MAIN COMPONENT ===================== */
 const Inbox = () => {
-  const [activeTab, setActiveTab] = useState("received");
+  const [activeTab, setActiveTab] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [sentMessages, setSentMessages] = useState([]);
   const [receivedMessages, setReceivedMessages] = useState([]);
+  const [selectedMessage, setSelectedMessage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -116,28 +118,48 @@ const Inbox = () => {
   }, [fetchMessages]);
 
   /* ===================== DERIVED DATA ===================== */
-  const messages = useMemo(
-    () => (activeTab === "sent" ? sentMessages : receivedMessages),
-    [activeTab, sentMessages, receivedMessages],
-  );
+  const messages = useMemo(() => {
+    if (activeTab === "sent") return sentMessages;
+    if (activeTab === "received") return receivedMessages;
+    return [...receivedMessages, ...sentMessages].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+  }, [activeTab, sentMessages, receivedMessages]);
+
+  const filteredMessages = useMemo(() => {
+    if (statusFilter === "all") return messages;
+    return messages.filter((m) => m.status === statusFilter);
+  }, [messages, statusFilter]);
+
+  const statusToggleOptions = [
+    "all",
+    "pending",
+    "approved",
+    "rejected",
+    "ongoing",
+    "completed",
+    "cancelled",
+  ];
 
   const stats = useMemo(() => {
-    let pending = 0,
-      approved = 0,
-      rejected = 0;
+    const counts = {
+      total: messages.length,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      ongoing: 0,
+      completed: 0,
+      cancelled: 0,
+      other: 0,
+    };
 
     messages.forEach((m) => {
-      if (m.status === "pending") pending++;
-      else if (m.status === "approved") approved++;
-      else if (m.status === "rejected") rejected++;
+      const s = m.status || "other";
+      if (counts[s] !== undefined) counts[s]++;
+      else counts.other++;
     });
 
-    return {
-      total: messages.length,
-      pending,
-      approved,
-      rejected,
-    };
+    return counts;
   }, [messages]);
 
   const adminEventCount = useMemo(
@@ -211,6 +233,19 @@ const Inbox = () => {
           {/* Tab Switcher */}
           <div className="flex gap-2 mb-4 border-b-2 border-slate-200">
             <button
+              onClick={() => setActiveTab("all")}
+              className={`px-4 py-2 font-semibold text-sm transition-all border-b-2 ${
+                activeTab === "all"
+                  ? "text-blue-600 border-blue-600"
+                  : "text-slate-600 border-transparent hover:text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <InboxIcon size={16} />
+                All ({receivedMessages.length + sentMessages.length})
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab("received")}
               className={`px-4 py-2 font-semibold text-sm transition-all border-b-2 ${
                 activeTab === "received"
@@ -236,6 +271,27 @@ const Inbox = () => {
                 Sent ({sentMessages.length})
               </div>
             </button>
+          </div>
+
+          {/* Statistics Cards */}
+          {/* Status Filter Buttons */}
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-sm font-semibold text-slate-600">
+              Filter:
+            </span>
+            {statusToggleOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => setStatusFilter(option)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  statusFilter === option
+                    ? "bg-blue-500 text-white border-blue-600"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                }`}
+              >
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </button>
+            ))}
           </div>
 
           {/* Statistics Cards */}
@@ -350,17 +406,31 @@ const Inbox = () => {
                 : "Admin notifications and received messages will appear here"}
             </p>
           </div>
+        ) : filteredMessages.length === 0 ? (
+          /* Filter Empty State */
+          <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-12 text-center">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <InboxIcon className="w-10 h-10 text-slate-400" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              No {statusFilter !== "all" ? `${statusFilter} ` : ""}Messages
+            </h3>
+            <p className="text-slate-500 text-sm">
+              No messages match the selected status filter.
+            </p>
+          </div>
         ) : (
           /* Messages List */
           <div className="space-y-3">
-            {messages.map((msg) => {
+            {filteredMessages.map((msg) => {
               const statusConfig = getStatusConfig(msg.status);
               const StatusIcon = statusConfig.icon;
 
               return (
                 <div
                   key={msg._id}
-                  className="bg-white rounded-lg shadow-md border-2 border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                  onClick={() => setSelectedMessage(msg)}
+                  className="bg-white rounded-lg shadow-md border-2 border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
                 >
                   <div className="p-4">
                     {/* Header */}
@@ -486,12 +556,24 @@ const Inbox = () => {
                       )}
                       {activeTab === "sent" && msg.status === "pending" && (
                         <button
-                          onClick={() =>
-                            confirmAndUpdateMessageStatus(msg._id, "cancelled")
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmAndUpdateMessageStatus(msg._id, "cancelled");
+                          }}
                           className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[11px] font-semibold border border-red-200 transition-colors"
                         >
                           Cancel
+                        </button>
+                      )}
+                      {activeTab === "sent" && msg.status === "cancelled" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateMessageStatus(msg._id, "pending");
+                          }}
+                          className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg text-[11px] font-semibold border border-amber-200 transition-colors"
+                        >
+                          Resend
                         </button>
                       )}
                     </div>
@@ -499,6 +581,74 @@ const Inbox = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {selectedMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-slate-200">
+                <h2 className="text-lg font-bold">Message Details</h2>
+                <button
+                  onClick={() => setSelectedMessage(null)}
+                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <p className="text-sm text-slate-600">
+                  <strong>Subject:</strong> {selectedMessage.subject}
+                </p>
+                <p className="text-sm text-slate-600">
+                  <strong>Status:</strong> {selectedMessage.status}
+                </p>
+                <p className="text-sm text-slate-600">
+                  <strong>{activeTab === "sent" ? "To" : "From"}:</strong>{" "}
+                  {activeTab === "sent"
+                    ? selectedMessage.recipient?.username || "Admin"
+                    : selectedMessage.sender?.username || "Unknown"}
+                </p>
+                <p className="text-sm text-slate-600">
+                  <strong>Body:</strong>
+                </p>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-700 whitespace-pre-wrap">
+                  {selectedMessage.body}
+                </div>
+                {selectedMessage.status === "rejected" &&
+                  selectedMessage.rejectionReason && (
+                    <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                      <p className="text-sm text-red-700">
+                        <strong>Rejection Reason:</strong>{" "}
+                        {selectedMessage.rejectionReason}
+                      </p>
+                    </div>
+                  )}
+                {(selectedMessage.isAttached &&
+                  selectedMessage.attachmentUrl) ||
+                selectedMessage.attachmentName ? (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <a
+                      href={`http://localhost:5000${selectedMessage.attachmentUrl}`}
+                      download
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      {selectedMessage.attachmentName || "Download attachment"}
+                    </a>
+                  </div>
+                ) : null}
+                <p className="text-sm text-slate-500">
+                  <strong>Created:</strong>{" "}
+                  {new Date(selectedMessage.createdAt).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

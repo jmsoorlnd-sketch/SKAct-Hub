@@ -183,6 +183,7 @@ const BarangayStorage = () => {
   const [search, setSearch] = useState("");
   const [docSearch, setDocSearch] = useState("");
   const [docStatusFilter, setDocStatusFilter] = useState("");
+  const [docTypeFilter, setDocTypeFilter] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -210,6 +211,15 @@ const BarangayStorage = () => {
   const [folderComposeFiles, setFolderComposeFiles] = useState([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderDocumentType, setNewFolderDocumentType] = useState("");
+
+  const DOCUMENT_TYPES = [
+    "Financial Document",
+    "Legislative Documents",
+    "Administrative Records",
+    "Inventory and property Records",
+    "Compliance Report",
+  ];
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [showFolderViewModal, setShowFolderViewModal] = useState(false);
@@ -246,11 +256,11 @@ const BarangayStorage = () => {
 
   /* ---- Fetch documents and folders when barangay is selected ---- */
   useEffect(() => {
-    if (selectedBarangay) {
+    if (selectedBarangay && user) {
       fetchStorageDocuments(selectedBarangay, user);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBarangay]);
+  }, [selectedBarangay, user]);
 
   /* ---- Auto-refresh for admin approvals (poll every 10 seconds) ---- */
   useEffect(() => {
@@ -329,11 +339,10 @@ const BarangayStorage = () => {
           },
         );
         setStorage(res.data.storage || []);
-        // Fetch folders for officials too
         if (barangayId) {
           await fetchFolders(barangayId);
         }
-      } else {
+      } else if (currentUser && currentUser.role === "Admin") {
         const res = await axios.get(
           `http://localhost:5000/api/barangays/${barangayId}/storage`,
           {
@@ -345,6 +354,9 @@ const BarangayStorage = () => {
         await fetchUsersInBarangay(barangayId);
         await fetchAvailableUsers();
         await fetchFolders(barangayId);
+      } else {
+        console.warn("fetchStorageDocuments called before user role is set");
+        return;
       }
     } catch (error) {
       console.error("Error fetching storage:", error);
@@ -453,23 +465,6 @@ const BarangayStorage = () => {
       } else {
         toast.error("Failed to create barangay.");
       }
-    }
-  };
-
-  const handleDeleteBarangay = async (barangayId) => {
-    if (!window.confirm("Delete this barangay?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/barangays/${barangayId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBarangays(barangays.filter((b) => b._id !== barangayId));
-      toast.success("Barangay deleted successfully!");
-      setSelectedBarangay(null);
-      setStorage([]);
-    } catch (error) {
-      console.error("Error deleting barangay:", error);
-      toast.error("Failed to delete barangay.");
     }
   };
 
@@ -587,7 +582,7 @@ const BarangayStorage = () => {
   const normalizeFolderName = (name) =>
     name?.trim().replace(/\s+/g, " ").toLowerCase() || "";
 
-  const handleCreateFolder = async (folderName) => {
+  const handleCreateFolder = async (folderName, documentType) => {
     if (!selectedBarangay || !folderName.trim()) return;
 
     // local guard: only secretaries/treasurers/chairmen may create folders
@@ -619,7 +614,7 @@ const BarangayStorage = () => {
       const token = localStorage.getItem("token");
       await axios.post(
         `http://localhost:5000/api/barangays/${selectedBarangay}/folders`,
-        { name: folderName },
+        { name: folderName, documentType: documentType || null },
         { headers: { Authorization: `Bearer ${token}` } },
       );
       toast.success("Folder created successfully!");
@@ -761,7 +756,7 @@ const BarangayStorage = () => {
         toast.success(
           `Folder deleted successfully${
             documentsInFolder.length > 0
-              ? `! ${documentsInFolder.length} document(s) returned to stored documents.`
+              ? `! ${documentsInFolder.length} document(s) archived.`
               : "!"
           }`,
         );
@@ -1085,6 +1080,7 @@ const BarangayStorage = () => {
 
     if (folder.name?.toLowerCase().includes(q)) return true;
     if ((folder.status || "").toLowerCase().includes(q)) return true;
+    if ((folder.documentType || "").toLowerCase().includes(q)) return true;
 
     const folderDocs = storage.filter(
       (item) => item.folder?._id === folder._id,
@@ -1106,8 +1102,19 @@ const BarangayStorage = () => {
     );
   };
 
+  const matchesFolderDocType = (folder) => {
+    if (!docTypeFilter) return true;
+    return (
+      (folder.documentType || "").toLowerCase() === docTypeFilter.toLowerCase()
+    );
+  };
+
   const filteredFolders = folders.filter(
-    (folder) => matchesFolderSearch(folder) && matchesFolderStatus(folder),
+    (folder) =>
+      !folder.isDeleted &&
+      matchesFolderSearch(folder) &&
+      matchesFolderStatus(folder) &&
+      matchesFolderDocType(folder),
   );
 
   const matchesDocSearch = (item) => {
@@ -1300,18 +1307,6 @@ const BarangayStorage = () => {
                                   {b.city}, {b.province}
                                 </p>
                               </div>
-                              {user?.role === "Admin" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteBarangay(b._id);
-                                  }}
-                                  className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Delete barangay"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
                             </div>
                           </div>
                         );
@@ -1370,6 +1365,25 @@ const BarangayStorage = () => {
                               <option value="pending">Pending</option>
                               <option value="ongoing">Ongoing</option>
                               <option value="completed">Completed</option>
+                            </select>
+                          </div>
+
+                          <div className="relative">
+                            <Filter
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                              size={18}
+                            />
+                            <select
+                              value={docTypeFilter}
+                              onChange={(e) => setDocTypeFilter(e.target.value)}
+                              className="pl-10 pr-8 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
+                            >
+                              <option value="">All Document Types</option>
+                              {DOCUMENT_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
@@ -1489,8 +1503,15 @@ const BarangayStorage = () => {
                                       {folderDocuments.length !== 1 ? "s" : ""}
                                     </div>
 
-                                    {/* Status badge */}
+                                    {/* Document Type & Status badges */}
                                     <div className="mt-2 flex flex-col items-center justify-center gap-2">
+                                      {/* Document Type Badge */}
+                                      {folder.documentType && (
+                                        <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300">
+                                          {folder.documentType}
+                                        </div>
+                                      )}
+                                      {/* Status Badge */}
                                       <div className="text-sm font-semibold px-2 py-1 rounded-full bg-slate-100 text-slate-700">
                                         {folder.status
                                           ? folder.status
@@ -2362,12 +2383,31 @@ const BarangayStorage = () => {
                   autoFocus
                   onKeyPress={(e) => {
                     if (e.key === "Enter" && newFolderName.trim()) {
-                      handleCreateFolder(newFolderName);
+                      handleCreateFolder(newFolderName, newFolderDocumentType);
                       setShowCreateFolderModal(false);
                       setNewFolderName("");
+                      setNewFolderDocumentType("");
                     }
                   }}
                 />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3">
+                  <FileText size={15} className="text-indigo-600" />
+                  Document Type
+                </label>
+                <select
+                  value={newFolderDocumentType}
+                  onChange={(e) => setNewFolderDocumentType(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
+                >
+                  <option value="">-- Select a type --</option>
+                  {DOCUMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -2376,9 +2416,10 @@ const BarangayStorage = () => {
               <button
                 onClick={() => {
                   if (newFolderName.trim()) {
-                    handleCreateFolder(newFolderName);
+                    handleCreateFolder(newFolderName, newFolderDocumentType);
                     setShowCreateFolderModal(false);
                     setNewFolderName("");
+                    setNewFolderDocumentType("");
                   }
                 }}
                 disabled={!newFolderName.trim()}
@@ -2392,6 +2433,7 @@ const BarangayStorage = () => {
                 onClick={() => {
                   setShowCreateFolderModal(false);
                   setNewFolderName("");
+                  setNewFolderDocumentType("");
                 }}
                 className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all"
               >

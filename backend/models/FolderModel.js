@@ -20,6 +20,21 @@ const folderSchema = new mongoose.Schema({
     enum: ["pending", "ongoing", "completed"],
     default: "pending",
   },
+  documentType: {
+    type: String,
+    enum: [
+      "Financial Document",
+      "Legislative Documents",
+      "Administrative Records",
+      "Inventory and property Records",
+      "Compliance Report",
+    ],
+    default: null,
+  },
+  isShared: {
+    type: Boolean,
+    default: false,
+  },
   isDeleted: {
     type: Boolean,
     default: false,

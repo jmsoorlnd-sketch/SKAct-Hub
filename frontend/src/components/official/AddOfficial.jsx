@@ -191,6 +191,12 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
 
       // show success with credentials if provided
       let msg = `SK Official "${response.data.user.firstname} ${response.data.user.lastname}" created successfully!`;
+
+      // Add deactivation notice if applicable
+      if (response.data.deactivatedOfficial) {
+        msg += `\n⚠️ Previous ${response.data.user.position} officer (${response.data.deactivatedOfficial.firstname} ${response.data.deactivatedOfficial.lastname}) has been deactivated.`;
+      }
+
       if (response.data.credentials) {
         msg += `\nUsername: ${response.data.credentials.username}\nPassword: ${response.data.credentials.password}`;
       }
@@ -327,6 +333,22 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                 <option value="Treasurer">Treasurer</option>
               </select>
             </FormField>
+
+            {/* ---- Position Limit Notice ---- */}
+            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertCircle
+                size={18}
+                className="text-amber-600 flex-shrink-0 mt-0.5"
+              />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold">One position per barangay</p>
+                <p>
+                  Only one official per position is allowed. Creating a new
+                  official with an existing position will deactivate the
+                  previous one.
+                </p>
+              </div>
+            </div>
 
             {/* ---- Barangay ---- */}
             <FormField

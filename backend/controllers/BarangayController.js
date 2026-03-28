@@ -696,7 +696,7 @@ export const detachMessageFromBarangay = async (req, res) => {
 export const createFolder = async (req, res) => {
   try {
     const { barangayId } = req.params;
-    const { name } = req.body;
+    const { name, documentType, isShared } = req.body;
     const createdBy = req.user._id;
 
     if (!name) {
@@ -707,6 +707,9 @@ export const createFolder = async (req, res) => {
       name,
       barangay: barangayId,
       createdBy,
+      documentType: documentType || null,
+      isShared: !!isShared,
+      sharedWith: Array.isArray(sharedWith) ? sharedWith : [],
     });
 
     await folder.save();
@@ -745,12 +748,26 @@ export const getFolders = async (req, res) => {
     // build query
     const q = { barangay: barangayId, isDeleted: false };
 
-    // if secretary or treasurer, only return folders they created
+    // Secretaries and treasurers can see folders they created and shared folders in the barangay
     if (
       req.user &&
       (req.user.position === "Secretary" || req.user.position === "Treasurer")
     ) {
-      q.createdBy = userId;
+      q.$or = [
+        { createdBy: userId },
+        { isShared: true },
+        { sharedWith: userId },
+      ];
+    } else if (req.user && req.user.position === "Chairman") {
+      // Chairman can see all folders in the barangay
+      // no additional filters required
+    } else if (req.user && req.user.role !== "Admin") {
+      // Other users can see their own folders, shared by all, or explicitly shared with them
+      q.$or = [
+        { createdBy: userId },
+        { isShared: true },
+        { sharedWith: userId },
+      ];
     }
 
     const folders = await Folder.find(q).populate(
@@ -822,7 +839,7 @@ export const moveDocumentToFolder = async (req, res) => {
   }
 };
 
-// Delete a folder and return documents to stored documents
+// Delete a folder and archive all its documents
 export const deleteFolder = async (req, res) => {
   try {
     const { barangayId, folderId } = req.params;
@@ -843,11 +860,17 @@ export const deleteFolder = async (req, res) => {
     // Find all documents in this folder
     const documentsInFolder = await BarangayStorage.find({ folder: folderId });
 
-    // Remove folder assignment from all documents (return them to stored documents)
+    // Archive (soft-delete) all documents in this folder instead of returning them to stored
     if (documentsInFolder.length > 0) {
       await BarangayStorage.updateMany(
         { folder: folderId },
-        { $set: { folder: null } },
+        {
+          $set: {
+            isDeleted: true,
+            deletedAt: new Date(),
+            folder: null,
+          },
+        },
       );
     }
 
@@ -970,6 +993,55 @@ export const updateFolderStatus = async (req, res) => {
     res.status(200).json({ message: "Folder status updated", folder });
   } catch (error) {
     console.error("Error updating folder status:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// Toggle folder share visibility within barangay
+export const shareFolder = async (req, res) => {
+  try {
+    const { barangayId, folderId } = req.params;
+    const { isShared } = req.body;
+
+    const folder = await Folder.findById(folderId);
+    if (!folder) {
+      return res.status(404).json({ message: "Folder not found" });
+    }
+
+    if (String(folder.barangay) !== String(barangayId)) {
+      return res
+        .status(403)
+        .json({ message: "Folder does not belong to this barangay" });
+    }
+
+    if (req.user.barangay && String(req.user.barangay) !== String(barangayId)) {
+      return res
+        .status(403)
+        .json({ message: "You are not assigned to this barangay" });
+    }
+
+    // Only chairman, secretary, and treasurer can toggle sharing
+    if (!["Chairman", "Secretary", "Treasurer"].includes(req.user.position)) {
+      return res.status(403).json({
+        message: "Only designated barangay officials can share folders",
+      });
+    }
+
+    folder.isShared = !!isShared;
+    folder.sharedWith = isShared
+      ? []
+      : Array.isArray(sharedWith)
+      ? sharedWith
+      : [];
+
+    await folder.save();
+
+    res.status(200).json({
+      message: `Folder ${folder.isShared ? "shared" : "unshared"} successfully`,
+      folder,
+    });
+  } catch (error) {
+    console.error("Error toggling folder share:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

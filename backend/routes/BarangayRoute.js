@@ -23,6 +23,7 @@ import {
   restoreFolder,
   hardDeleteFolder,
   updateFolderStatus,
+  shareFolder,
   moveDocumentToFolder,
   deleteFolder,
   getDeletedBarangays,
@@ -118,6 +119,12 @@ router.put(
   requireAuth,
   officialOnly,
   updateFolderStatus,
+);
+router.put(
+  "/:barangayId/folders/:folderId/share",
+  requireAuth,
+  officialOnly,
+  shareFolder,
 );
 router.put(
   "/:barangayId/storage/:storageId/move",
