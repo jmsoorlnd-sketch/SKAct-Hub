@@ -88,10 +88,8 @@ const ActionBadge = React.memo(function ActionBadge({ actionType }) {
   };
   const Icon = meta.icon;
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${COLOR_CLASSES[meta.color]}`}
-    >
-      <Icon size={11} className={ICON_COLOR_CLASSES[meta.color]} />
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-700">
+      <Icon size={11} className="text-gray-500" />
       {meta.label}
     </span>
   );
