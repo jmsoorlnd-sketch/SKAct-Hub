@@ -64,6 +64,7 @@ const AppRoutes = () => {
           </PublicRoute>
         }
       />
+
       <Route
         path="/signup"
         element={

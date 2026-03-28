@@ -162,7 +162,7 @@ const createOfficial = async (req, res) => {
  */
 const getAllOfficials = async (req, res) => {
   try {
-    const officials = await User.find({ role: "Official" })
+    const officials = await User.find({ role: "Official", isDeleted: false })
       .select("-password")
       .populate("barangay", "barangayName ");
 

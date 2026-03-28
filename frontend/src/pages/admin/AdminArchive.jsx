@@ -349,7 +349,7 @@ const AdminArchive = () => {
   const isLoading = loadingUsers || loadingBarangays;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-blue-50 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -138,7 +138,7 @@ const Signin = () => {
   /* ===================== RENDER ===================== */
   return (
     <>
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="min-h-screen w-full bg-blue-200 flex items-center justify-center p-4">
         <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
           {/* LEFT SIDE - Hero Section */}
           <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 lg:p-12 flex flex-col justify-center text-white relative overflow-hidden">
@@ -219,7 +219,7 @@ const Signin = () => {
           </div>
 
           {/* RIGHT SIDE - Form Section */}
-          <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center bg-white">
+          <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center bg-blue-50">
             <div className="w-full max-w-md mx-auto">
               {/* Header */}
               <div className="mb-6">
@@ -287,7 +287,7 @@ const Signin = () => {
                       autoComplete="username"
                       required
                       disabled={isLoading}
-                      className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
                       placeholder="Enter your username"
                     />
                   </div>
@@ -324,7 +324,7 @@ const Signin = () => {
                       autoComplete="current-password"
                       required
                       disabled={isLoading}
-                      className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      className="w-full pl-10 pr-3 py-2.5 text-sm border-2  border-gray-500  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-white disabled:cursor-not-allowed"
                       placeholder="Enter your password"
                     />
                   </div>
