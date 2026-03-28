@@ -562,6 +562,16 @@ const Inbox = () => {
                           Cancel
                         </button>
                       )}
+                      {activeTab === "sent" && msg.status === "cancelled" && (
+                        <button
+                          onClick={() =>
+                            handleUpdateMessageStatus(msg._id, "pending")
+                          }
+                          className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg text-[11px] font-semibold border border-amber-200 transition-colors"
+                        >
+                          Resend
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
