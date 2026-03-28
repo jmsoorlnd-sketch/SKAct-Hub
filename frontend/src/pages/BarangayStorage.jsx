@@ -256,11 +256,11 @@ const BarangayStorage = () => {
 
   /* ---- Fetch documents and folders when barangay is selected ---- */
   useEffect(() => {
-    if (selectedBarangay) {
+    if (selectedBarangay && user) {
       fetchStorageDocuments(selectedBarangay, user);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBarangay]);
+  }, [selectedBarangay, user]);
 
   /* ---- Auto-refresh for admin approvals (poll every 10 seconds) ---- */
   useEffect(() => {
@@ -339,11 +339,10 @@ const BarangayStorage = () => {
           },
         );
         setStorage(res.data.storage || []);
-        // Fetch folders for officials too
         if (barangayId) {
           await fetchFolders(barangayId);
         }
-      } else {
+      } else if (currentUser && currentUser.role === "Admin") {
         const res = await axios.get(
           `http://localhost:5000/api/barangays/${barangayId}/storage`,
           {
@@ -355,6 +354,9 @@ const BarangayStorage = () => {
         await fetchUsersInBarangay(barangayId);
         await fetchAvailableUsers();
         await fetchFolders(barangayId);
+      } else {
+        console.warn("fetchStorageDocuments called before user role is set");
+        return;
       }
     } catch (error) {
       console.error("Error fetching storage:", error);
@@ -463,23 +465,6 @@ const BarangayStorage = () => {
       } else {
         toast.error("Failed to create barangay.");
       }
-    }
-  };
-
-  const handleDeleteBarangay = async (barangayId) => {
-    if (!window.confirm("Delete this barangay?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/barangays/${barangayId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setBarangays(barangays.filter((b) => b._id !== barangayId));
-      toast.success("Barangay deleted successfully!");
-      setSelectedBarangay(null);
-      setStorage([]);
-    } catch (error) {
-      console.error("Error deleting barangay:", error);
-      toast.error("Failed to delete barangay.");
     }
   };
 
@@ -1322,18 +1307,6 @@ const BarangayStorage = () => {
                                   {b.city}, {b.province}
                                 </p>
                               </div>
-                              {user?.role === "Admin" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteBarangay(b._id);
-                                  }}
-                                  className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Delete barangay"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
                             </div>
                           </div>
                         );

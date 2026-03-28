@@ -110,20 +110,6 @@ const RowActions = ({ official, onEdit, onView, onToggleStatus, onDelete }) => {
                     </p>
                   </div>
                 </button>
-
-                {/* Delete Button */}
-                <button
-                  onClick={() => handleAction(onDelete)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 text-left transition-colors border border-transparent hover:border-red-200 group"
-                >
-                  <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                    <Trash2 size={18} className="text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-900">Delete</p>
-                    <p className="text-xs text-slate-500">Remove permanently</p>
-                  </div>
-                </button>
               </div>
 
               {/* Footer */}

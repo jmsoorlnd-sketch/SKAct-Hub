@@ -31,6 +31,10 @@ const folderSchema = new mongoose.Schema({
     ],
     default: null,
   },
+  isShared: {
+    type: Boolean,
+    default: false,
+  },
   isDeleted: {
     type: Boolean,
     default: false,
