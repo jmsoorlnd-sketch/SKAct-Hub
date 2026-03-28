@@ -183,6 +183,7 @@ const BarangayStorage = () => {
   const [search, setSearch] = useState("");
   const [docSearch, setDocSearch] = useState("");
   const [docStatusFilter, setDocStatusFilter] = useState("");
+  const [docTypeFilter, setDocTypeFilter] = useState("");
   const [filterProvince, setFilterProvince] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -1116,11 +1117,19 @@ const BarangayStorage = () => {
     );
   };
 
+  const matchesFolderDocType = (folder) => {
+    if (!docTypeFilter) return true;
+    return (
+      (folder.documentType || "").toLowerCase() === docTypeFilter.toLowerCase()
+    );
+  };
+
   const filteredFolders = folders.filter(
     (folder) =>
       !folder.isDeleted &&
       matchesFolderSearch(folder) &&
-      matchesFolderStatus(folder),
+      matchesFolderStatus(folder) &&
+      matchesFolderDocType(folder),
   );
 
   const matchesDocSearch = (item) => {
@@ -1383,6 +1392,25 @@ const BarangayStorage = () => {
                               <option value="pending">Pending</option>
                               <option value="ongoing">Ongoing</option>
                               <option value="completed">Completed</option>
+                            </select>
+                          </div>
+
+                          <div className="relative">
+                            <Filter
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                              size={18}
+                            />
+                            <select
+                              value={docTypeFilter}
+                              onChange={(e) => setDocTypeFilter(e.target.value)}
+                              className="pl-10 pr-8 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all appearance-none cursor-pointer"
+                            >
+                              <option value="">All Document Types</option>
+                              {DOCUMENT_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
