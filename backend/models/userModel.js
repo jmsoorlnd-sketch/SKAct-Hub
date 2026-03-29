@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   // email is optional - no unique constraint to allow multiple empty/null values
   // Uniqueness is enforced at the application level in AdminController
-  email: { type: String, sparse: true },
+  email: { type: String, unique: true, sparse: true },
 
   // MAIN ROLE FIELD
   role: {

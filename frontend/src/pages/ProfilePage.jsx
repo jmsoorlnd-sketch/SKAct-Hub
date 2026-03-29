@@ -33,6 +33,8 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const isSetupMode = searchParams.get("setup") === "true";
 
+  const [emailError, setEmailError] = useState("");
+
   const [isEditing, setIsEditing] = useState(isSetupMode);
   const [showSetupBanner, setShowSetupBanner] = useState(isSetupMode);
   const [formData, setFormData] = useState({
@@ -121,8 +123,11 @@ const ProfilePage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
+    if (name === "email") {
+      setEmailError("");
+    }
+  };
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -189,10 +194,18 @@ const ProfilePage = () => {
         navigate("/official/inbox");
       }
     } catch (error) {
-      showMessage(
-        error.response?.data?.message || "Failed to save profile.",
-        "error",
-      );
+      const backendMessage =
+        error.response?.data?.message || "Failed to save profile.";
+
+      if (
+        backendMessage.toLowerCase().includes("email already exists") ||
+        backendMessage.toLowerCase().includes("email already in use")
+      ) {
+        setEmailError(backendMessage);
+        return;
+      }
+
+      showMessage(backendMessage, "error");
     }
   };
 
@@ -474,7 +487,12 @@ const ProfilePage = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      error={emailError}
                     />
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      Note: Use valid email, your email is required to recover
+                      your account if you forget your password.
+                    </p>
                   </div>
                   <InputField
                     icon={<Lock className="w-4 h-4" />}
@@ -637,17 +655,24 @@ const InputField = ({
   readOnly,
   disabled,
   required,
+  error,
 }) => (
   <div>
     <label className="block text-xs font-bold text-slate-900 mb-1.5">
       {label}
     </label>
+
     <div className="relative">
       {icon && (
-        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+        <div
+          className={`absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none ${
+            error ? "text-red-400" : "text-slate-400"
+          }`}
+        >
           {icon}
         </div>
       )}
+
       <input
         type={type}
         name={name}
@@ -657,32 +682,40 @@ const InputField = ({
         readOnly={readOnly}
         disabled={disabled}
         required={required}
-        className={`w-full ${icon ? "pl-9" : "pl-3"} pr-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${disabled ? "bg-slate-100 text-slate-600 cursor-not-allowed" : "bg-white"}`}
+        className={`w-full ${icon ? "pl-9" : "pl-3"} pr-3 py-2 text-sm border-2 rounded-lg transition-all
+        ${
+          error
+            ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        }
+        ${disabled ? "bg-slate-100 text-slate-600 cursor-not-allowed" : "bg-white"}
+      `}
       />
     </div>
+
+    {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
   </div>
 );
-
 {
   /* Fade-in Animation */
 }
 <style>
   {`
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
     }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-    .animate-fadeIn {
-      animation: fadeIn 0.2s ease-out;
-    }
-  `}
+  .animate-fadeIn {
+    animation: fadeIn 0.2s ease-out;
+  }
+`}
 </style>;
 
 export default ProfilePage;

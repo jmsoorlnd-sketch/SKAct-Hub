@@ -50,7 +50,7 @@ export const validateEmail = async (email) => {
   if (!ALLOWED_DOMAINS.includes(domain)) {
     return {
       valid: false,
-      reason: `Only emails from these providers are allowed: Gmail, Yahoo, Outlook, Hotmail, iCloud, ProtonMail`,
+      reason: `Invalid Email format`,
     };
   }
 
