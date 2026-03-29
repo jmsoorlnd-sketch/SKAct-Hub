@@ -9,6 +9,8 @@ import {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  sendEmailOtp,
+  verifyEmailOtp,
 } from "../controllers/UserController.js";
 import express from "express";
 import { requireAuth, adminOnly } from "../middleware/auth.js";
@@ -102,4 +104,6 @@ router.post("/forgot-password", forgotPassword); // Step 1
 router.post("/verify-otp", verifyOtp); // Step 2
 router.post("/reset-password", resetPassword); // Step 3
 
+router.post("/send-email-otp", requireAuth, sendEmailOtp);
+router.post("/verify-email-otp", requireAuth, verifyEmailOtp);
 export default router;

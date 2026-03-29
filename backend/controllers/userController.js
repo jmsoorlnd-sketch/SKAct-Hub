@@ -632,6 +632,111 @@ const resetPassword = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+// ─────────────────────────────────────────
+// Send OTP to verify new email before saving
+// ─────────────────────────────────────────
+const sendEmailOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const userId = req.user._id;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Validate format + provider + MX
+    const emailCheck = await validateEmail(email.trim());
+    if (!emailCheck.valid) {
+      return res.status(400).json({ message: emailCheck.reason });
+    }
+
+    // Check if email is already used by another account
+    const existing = await User.findOne({ email: email.trim() });
+    if (existing && String(existing._id) !== String(userId)) {
+      return res
+        .status(400)
+        .json({ message: "Email is already in use by another account" });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store hashed OTP on the user
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.emailOtp = crypto.createHash("sha256").update(otp).digest("hex");
+    user.emailOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    await user.save();
+
+    await sendEmail({
+      to: email.trim(),
+      subject: "SKActHub — Verify Your Email",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #2563eb, #4f46e5); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">SKActHub</h1>
+            <p style="color: #bfdbfe; margin: 4px 0 0;">Email Verification</p>
+          </div>
+          <div style="background: #f8fafc; padding: 32px; border-radius: 0 0 12px 12px; border: 2px solid #e2e8f0;">
+            <p style="color: #1e293b; font-size: 15px;">Hi <strong>${user.firstname || user.username}</strong>,</p>
+            <p style="color: #475569; font-size: 14px;">Use this OTP to verify your email address. It expires in <strong>10 minutes</strong>.</p>
+            <div style="background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+              <p style="margin: 0 0 8px; color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Your Verification Code</p>
+              <p style="font-size: 42px; font-weight: bold; letter-spacing: 12px; color: #2563eb; margin: 0;">${otp}</p>
+            </div>
+            <p style="color: #94a3b8; font-size: 13px; text-align: center;">If you didn't request this, you can safely ignore this email.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({ message: "OTP sent to your email" });
+  } catch (error) {
+    console.error("Send email OTP error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// ─────────────────────────────────────────
+// Verify OTP — marks email as verified in session
+// (actual save happens in createProfile)
+// ─────────────────────────────────────────
+const verifyEmailOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const userId = req.user._id;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+    const user = await User.findOne({
+      _id: userId,
+      emailOtp: hashedOtp,
+      emailOtpExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Clear OTP — one time use
+    user.emailOtp = null;
+    user.emailOtpExpires = null;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Email verified successfully",
+      verifiedEmail: email, // frontend stores this to know which email was verified
+    });
+  } catch (error) {
+    console.error("Verify email OTP error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+};
 
 export {
   signupUser,
@@ -645,4 +750,6 @@ export {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  sendEmailOtp,
+  verifyEmailOtp,
 };
