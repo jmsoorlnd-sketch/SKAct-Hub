@@ -6,9 +6,10 @@ const API_BASE = "http://localhost:5000/api";
 const Signin = () => {
   /* ===================== STATE ===================== */
   const [formData, setFormData] = useState({
-    username: "",
+    username: "", // This can now be either username or email
     password: "",
   });
+  const [loginType, setLoginType] = useState("username"); // Track login method
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -19,6 +20,7 @@ const Signin = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("");
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
+
   // Add this state at the top of Signin component
   const [resetStep, setResetStep] = useState(1); // 1=email, 2=otp, 3=newpassword
   const [resetEmail, setResetEmail] = useState("");
@@ -35,6 +37,15 @@ const Signin = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
+
+    // Auto-detect login type based on input (if it contains @ it's email)
+    if (name === "username") {
+      if (value.includes("@")) {
+        setLoginType("email");
+      } else {
+        setLoginType("username");
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -43,10 +54,13 @@ const Signin = () => {
     setError("");
 
     try {
-      const res = await axios.post(`${API_BASE}/users/signin`, {
-        username: formData.username,
-        password: formData.password,
-      });
+      // Prepare request body based on login type
+      const requestBody =
+        loginType === "email"
+          ? { email: formData.username, password: formData.password }
+          : { username: formData.username, password: formData.password };
+
+      const res = await axios.post(`${API_BASE}/users/signin`, requestBody);
 
       // Reset failed attempts on successful login
       setFailedAttempts(0);
@@ -92,9 +106,6 @@ const Signin = () => {
   };
 
   // Handle Forgot Password
-  // Replace handleForgotPassword with these 3 handlers:
-
-  // Step 1 — submit email
   const handleSubmitEmail = async (e) => {
     e.preventDefault();
     setIsForgotPasswordLoading(true);
@@ -169,7 +180,8 @@ const Signin = () => {
       setIsForgotPasswordLoading(false);
     }
   };
-  // Reset failed attempts when username changes
+
+  // Reset failed attempts when username/email changes
   useEffect(() => {
     setFailedAttempts(0);
     setShowForgotPassword(false);
@@ -184,6 +196,13 @@ const Signin = () => {
         username: prev.username || u,
         password: prev.password || p,
       }));
+
+      // Auto-detect login type
+      if (u.includes("@")) {
+        setLoginType("email");
+      } else {
+        setLoginType("username");
+      }
     };
 
     syncAutofill();
@@ -283,7 +302,7 @@ const Signin = () => {
                   Sign In
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Enter your credentials to access your account
+                  Enter your username or email to access your account
                 </p>
                 {failedAttempts > 0 && (
                   <p className="text-xs text-orange-600 mt-2"></p>
@@ -310,12 +329,22 @@ const Signin = () => {
                 </div>
               )}
 
+              {/* Login Type Indicator */}
+              {formData.username && (
+                <div className="mb-3 text-right">
+                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                    Logging in with:{" "}
+                    {loginType === "email" ? "Email" : "Username"}
+                  </span>
+                </div>
+              )}
+
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Username Field */}
+                {/* Username/Email Field */}
                 <div>
                   <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                    Username
+                    Username or Email
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -344,9 +373,12 @@ const Signin = () => {
                       required
                       disabled={isLoading}
                       className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
-                      placeholder="Enter your username"
+                      placeholder="Enter your username or email"
                     />
                   </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Use your username or registered email address
+                  </p>
                 </div>
 
                 {/* Password Field */}

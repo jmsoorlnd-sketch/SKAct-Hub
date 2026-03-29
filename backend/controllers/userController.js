@@ -100,14 +100,27 @@ const signupUser = async (req, res) => {
 };
 
 //login user
+//login user - updated to support username OR email
 const signinUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, email, password } = req.body;
 
-    const user = await User.findOne({ username });
+    // Build query to find user by either username or email
+    let query = {};
+    if (username) {
+      query.username = username;
+    } else if (email) {
+      query.email = email;
+    } else {
+      return res.status(400).json({ message: "Username or email is required" });
+    }
+
+    const user = await User.findOne(query);
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid username or password" });
+      return res
+        .status(400)
+        .json({ message: "Invalid username/email or password" });
     }
 
     if (user.status === "Inactive") {
@@ -152,7 +165,7 @@ const signinUser = async (req, res) => {
       return res.status(400).json({
         message:
           attemptsLeft > 0
-            ? `Invalid username or password. ${attemptsLeft} attempt(s) remaining.`
+            ? `Invalid username/email or password. ${attemptsLeft} attempt(s) remaining.`
             : "Too many failed login attempts. Account locked for 15 minutes.",
       });
     }
@@ -203,8 +216,7 @@ const signinUser = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-};
-// create or update  user profile
+}; // create or update  user profile
 const createProfile = async (req, res) => {
   try {
     // get the user ID from the verified JWT token (middleware adds this)
