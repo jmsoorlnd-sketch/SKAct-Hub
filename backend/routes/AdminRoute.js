@@ -1,5 +1,5 @@
 import express from "express";
-import { adminOnly, requireAuth } from "../middleware/Auth.js";
+import { adminOnly, requireAuth } from "../middleware/auth.js";
 import {
   createOfficial,
   getAllOfficials,

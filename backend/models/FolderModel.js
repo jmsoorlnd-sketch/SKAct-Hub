@@ -35,6 +35,16 @@ const folderSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  sharedWithRoles: {
+    type: [String],
+    enum: ["Secretary", "Treasurer", "Chairman"],
+    default: [],
+  },
+  sharedBy: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: "User",
+    default: [],
+  },
   isDeleted: {
     type: Boolean,
     default: false,

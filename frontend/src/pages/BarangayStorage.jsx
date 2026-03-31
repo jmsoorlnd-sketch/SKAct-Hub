@@ -774,6 +774,45 @@ const BarangayStorage = () => {
     closeConfirmationModal();
   };
 
+  const handleToggleShareFolder = async (folder) => {
+    if (!selectedBarangay || !folder || !user) return;
+
+    let targetRole;
+    if (user.position === "Secretary") targetRole = "Treasurer";
+    else if (user.position === "Treasurer") targetRole = "Secretary";
+    else if (user.position === "Chairman") targetRole = "Secretary"; // Chairman shares as full access by default
+
+    if (!targetRole) {
+      toast.error("You cannot share this folder.");
+      return;
+    }
+
+    const isCurrentlyShared = Array.isArray(folder.sharedWithRoles)
+      ? folder.sharedWithRoles.includes(targetRole) || folder.isShared
+      : folder.isShared;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.put(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folder._id}/share`,
+        {
+          isShared: !isCurrentlyShared,
+          shareWithRole: targetRole,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      toast.success(res.data.message || "Folder share status updated");
+      fetchFolders(selectedBarangay);
+    } catch (err) {
+      console.error("Error sharing folder:", err?.response || err);
+      toast.error(
+        err?.response?.data?.message || "Failed to update folder sharing",
+      );
+    }
+  };
+
   const handleDeleteFolder = (folderId, folderName) => {
     const documentsInFolder = storage.filter(
       (item) => item.folder && item.folder._id === folderId,
@@ -1478,19 +1517,39 @@ const BarangayStorage = () => {
                                           >
                                             <Plus size={14} />
                                           </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeleteFolder(
-                                                folder._id,
-                                                folder.name,
-                                              );
-                                            }}
-                                            className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
-                                            title="Delete folder"
-                                          >
-                                            <Trash2 size={14} />
-                                          </button>
+                                          {(user.position === "Secretary" ||
+                                            user.position === "Treasurer" ||
+                                            user.position === "Chairman") && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleToggleShareFolder(folder);
+                                              }}
+                                              className="p-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                                              title={
+                                                folder.isShared
+                                                  ? "Unshare folder"
+                                                  : "Share folder"
+                                              }
+                                            >
+                                              <Send size={14} />
+                                            </button>
+                                          )}
+                                          {user.position !== "Treasurer" && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteFolder(
+                                                  folder._id,
+                                                  folder.name,
+                                                );
+                                              }}
+                                              className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
+                                              title="Delete folder"
+                                            >
+                                              <Trash2 size={14} />
+                                            </button>
+                                          )}
                                         </div>
                                       )}
 
@@ -1520,6 +1579,14 @@ const BarangayStorage = () => {
                                             folder.status.slice(1)
                                           : "Pending"}
                                       </div>
+                                      {/* Shared info */}
+                                      {folder.isShared && (
+                                        <div className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 mt-1">
+                                          Shared with:{" "}
+                                          {folder.sharedWithRoles?.join(", ") ||
+                                            "Official"}
+                                        </div>
+                                      )}
                                       {/* Status change buttons for officials */}
                                       {user?.role === "Official" && (
                                         <div className="flex gap-2 mt-1">

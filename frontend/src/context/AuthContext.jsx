@@ -93,6 +93,50 @@ const AuthProvider = ({ children }) => {
     };
   }, [resetInactivityTimer]);
 
+  // Universal axios auth interceptors for expired/invalid tokens
+  useEffect(() => {
+    const requestInterceptor = axios.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem("token");
+        if (token) {
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error),
+    );
+
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const status = error?.response?.status;
+        const message = error?.response?.data?.message;
+
+        if (
+          status === 401 &&
+          (message === "Token expired" ||
+            message === "Invalid token" ||
+            !message)
+        ) {
+          console.warn(
+            "Session invalid or expired, performing local logout.",
+            message,
+          );
+          await logout();
+          window.location.replace("/signin");
+        }
+
+        return Promise.reject(error);
+      },
+    );
+
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, [logout]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {

@@ -675,6 +675,12 @@ export const detachMessageFromBarangay = async (req, res) => {
         .json({ message: "Not authorized to detach this message" });
     }
 
+    if (req.user.position === "Treasurer") {
+      return res
+        .status(403)
+        .json({ message: "Treasurer is not permitted to remove documents" });
+    }
+
     // remove the storage entry
     await storage.deleteOne();
 
@@ -696,12 +702,18 @@ export const detachMessageFromBarangay = async (req, res) => {
 export const createFolder = async (req, res) => {
   try {
     const { barangayId } = req.params;
-    const { name, documentType, isShared } = req.body;
+    const { name, documentType, isShared, sharedWithRoles = [] } = req.body;
     const createdBy = req.user._id;
 
     if (!name) {
       return res.status(400).json({ message: "Folder name is required" });
     }
+
+    const validatedSharedWithRoles = Array.isArray(sharedWithRoles)
+      ? sharedWithRoles.filter((r) =>
+          ["Secretary", "Treasurer", "Chairman"].includes(r),
+        )
+      : [];
 
     const folder = new Folder({
       name,
@@ -709,7 +721,7 @@ export const createFolder = async (req, res) => {
       createdBy,
       documentType: documentType || null,
       isShared: !!isShared,
-      sharedWith: Array.isArray(sharedWith) ? sharedWith : [],
+      sharedWithRoles: validatedSharedWithRoles,
     });
 
     await folder.save();
@@ -749,25 +761,28 @@ export const getFolders = async (req, res) => {
     const q = { barangay: barangayId, isDeleted: false };
 
     // Secretaries and treasurers can see folders they created and shared folders in the barangay
-    if (
-      req.user &&
-      (req.user.position === "Secretary" || req.user.position === "Treasurer")
-    ) {
+    if (req.user && req.user.position === "Secretary") {
       q.$or = [
         { createdBy: userId },
+        { sharedBy: userId },
+        { sharedWithRoles: "Secretary" },
+        { sharedWithRoles: "Treasurer" },
         { isShared: true },
-        { sharedWith: userId },
+      ];
+    } else if (req.user && req.user.position === "Treasurer") {
+      q.$or = [
+        { createdBy: userId },
+        { sharedBy: userId },
+        { sharedWithRoles: "Treasurer" },
+        { sharedWithRoles: "Secretary" },
+        { isShared: true },
       ];
     } else if (req.user && req.user.position === "Chairman") {
       // Chairman can see all folders in the barangay
       // no additional filters required
     } else if (req.user && req.user.role !== "Admin") {
-      // Other users can see their own folders, shared by all, or explicitly shared with them
-      q.$or = [
-        { createdBy: userId },
-        { isShared: true },
-        { sharedWith: userId },
-      ];
+      // Other users can see their own, shared-by-them, and shared folders
+      q.$or = [{ createdBy: userId }, { sharedBy: userId }, { isShared: true }];
     }
 
     const folders = await Folder.find(q).populate(
@@ -829,6 +844,23 @@ export const moveDocumentToFolder = async (req, res) => {
       return res.status(404).json({ message: "Document not found" });
     }
 
+    const folder = await Folder.findById(folderId);
+    if (!folder) {
+      return res.status(404).json({ message: "Folder not found" });
+    }
+
+    // Only folder owner, chairman, or shared role can add files to folder.
+    const userPosition = req.user.position;
+    const isOwner = String(folder.createdBy) === String(req.user._id);
+    const isChairman = userPosition === "Chairman";
+    const isSharedToUserRole = folder.sharedWithRoles.includes(userPosition);
+
+    if (!isOwner && !isChairman && !isSharedToUserRole) {
+      return res.status(403).json({
+        message: "You are not authorized to move documents into this folder",
+      });
+    }
+
     storage.folder = folderId || null;
     await storage.save();
 
@@ -855,6 +887,13 @@ export const deleteFolder = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Folder does not belong to this barangay" });
+    }
+
+    // Treasurer cannot delete folders (only Secretary & Chairman may delete)
+    if (req.user.position === "Treasurer") {
+      return res
+        .status(403)
+        .json({ message: "Treasurer is not permitted to delete folders" });
     }
 
     // Find all documents in this folder
@@ -1001,7 +1040,7 @@ export const updateFolderStatus = async (req, res) => {
 export const shareFolder = async (req, res) => {
   try {
     const { barangayId, folderId } = req.params;
-    const { isShared } = req.body;
+    const { isShared, shareWithRole } = req.body;
 
     const folder = await Folder.findById(folderId);
     if (!folder) {
@@ -1027,13 +1066,62 @@ export const shareFolder = async (req, res) => {
       });
     }
 
-    folder.isShared = !!isShared;
-    folder.sharedWith = isShared
-      ? []
-      : Array.isArray(sharedWith)
-      ? sharedWith
-      : [];
+    const VALID_ROLES = ["Secretary", "Treasurer", "Chairman"];
+    if (isShared && shareWithRole && !VALID_ROLES.includes(shareWithRole)) {
+      return res.status(400).json({ message: "Invalid shareWithRole" });
+    }
 
+    // Determine sharing policy:
+    // Secretary <-> Treasurer sharing.
+    // Chairman can share to both.
+    if (req.user.position === "Secretary") {
+      if (shareWithRole !== "Treasurer") {
+        return res.status(400).json({
+          message: "Secretary can only share folders with Treasurer",
+        });
+      }
+      const roles = new Set(folder.sharedWithRoles);
+      if (isShared) {
+        roles.add("Treasurer");
+        roles.add("Secretary");
+      } else {
+        roles.delete("Treasurer");
+        roles.add("Secretary");
+      }
+      folder.sharedWithRoles = Array.from(roles);
+    } else if (req.user.position === "Treasurer") {
+      if (shareWithRole !== "Secretary") {
+        return res.status(400).json({
+          message: "Treasurer can only share folders with Secretary",
+        });
+      }
+      const roles = new Set(folder.sharedWithRoles);
+      if (isShared) {
+        roles.add("Secretary");
+        roles.add("Treasurer");
+      } else {
+        roles.delete("Secretary");
+        roles.add("Treasurer");
+      }
+      folder.sharedWithRoles = Array.from(roles);
+    } else if (req.user.position === "Chairman") {
+      const roles = new Set(folder.sharedWithRoles);
+      if (isShared) {
+        roles.add("Secretary");
+        roles.add("Treasurer");
+        roles.add("Chairman");
+      } else {
+        roles.delete("Secretary");
+        roles.delete("Treasurer");
+        roles.add("Chairman");
+      }
+      folder.sharedWithRoles = Array.from(roles);
+    }
+
+    folder.isShared = !!isShared;
+    if (!folder.sharedBy.includes(req.user._id)) {
+      folder.sharedBy.push(req.user._id);
+    }
     await folder.save();
 
     res.status(200).json({

@@ -1,5 +1,5 @@
 import express from "express";
-import { requireAuth } from "../middleware/Auth.js";
+import { requireAuth } from "../middleware/auth.js";
 import {
   markNotificationAsSeen,
   markNotificationAsUnseen,
