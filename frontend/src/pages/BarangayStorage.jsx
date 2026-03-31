@@ -238,6 +238,30 @@ const BarangayStorage = () => {
   const [folderSearchQuery, setFolderSearchQuery] = useState("");
   const fileInputRef = useRef(null);
 
+  const getAttachmentsFromDoc = (docItem) => {
+    const source = docItem?.document || docItem;
+    if (!source) return [];
+
+    const urls = source.attachmentUrls?.length
+      ? source.attachmentUrls
+      : source.attachmentUrl
+        ? [source.attachmentUrl]
+        : [];
+
+    const names = source.attachmentNames?.length
+      ? source.attachmentNames
+      : source.attachmentName
+        ? [source.attachmentName]
+        : [];
+
+    return urls.map((url, idx) => ({
+      url,
+      name: names[idx] || `Attachment ${idx + 1}`,
+    }));
+  };
+
+  const folderModalAttachments = getAttachmentsFromDoc(folderModalSelectedDoc);
+
   useEffect(() => {
     let userData = null;
     try {
@@ -3112,52 +3136,54 @@ const BarangayStorage = () => {
                             </div>
                           </div>
 
-                          {folderModalSelectedDoc.document?.attachmentUrl && (
+                          {folderModalAttachments.length > 0 && (
                             <div>
                               <p className="text-xs font-bold text-slate-600 mb-2">
                                 Attachment
+                                {folderModalAttachments.length > 1 ? "s" : ""}
                               </p>
-                              <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-                                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <FileText size={24} className="text-white" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-bold text-slate-900 truncate">
-                                    {folderModalSelectedDoc.document
-                                      .attachmentName ||
-                                      folderModalSelectedDoc.document.attachment
-                                        ?.originalName ||
-                                      "Attachment"}
-                                  </p>
-                                  <p className="text-xs text-slate-600">
-                                    Click to view or download
-                                  </p>
-                                </div>
-                                <div className="flex gap-2 flex-shrink-0">
-                                  <button
-                                    onClick={() => {
-                                      setPreviewUrl(
-                                        `http://localhost:5000${folderModalSelectedDoc.document.attachmentUrl}`,
-                                      );
-                                      setShowPreviewModal(true);
-                                    }}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                              <div className="space-y-3">
+                                {folderModalAttachments.map((att, idx) => (
+                                  <div
+                                    className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border-2 border-blue-200"
+                                    key={idx}
                                   >
-                                    View
-                                  </button>
-                                  <a
-                                    href={`http://localhost:5000${folderModalSelectedDoc.document.attachmentUrl}`}
-                                    download={
-                                      folderModalSelectedDoc.document
-                                        .attachmentName ||
-                                      folderModalSelectedDoc.document.attachment
-                                        ?.originalName
-                                    }
-                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
-                                  >
-                                    Download
-                                  </a>
-                                </div>
+                                    <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <FileText
+                                        size={24}
+                                        className="text-white"
+                                      />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-bold text-slate-900 truncate">
+                                        {att.name}
+                                      </p>
+                                      <p className="text-xs text-slate-600">
+                                        Click to view or download
+                                      </p>
+                                    </div>
+                                    <div className="flex gap-2 flex-shrink-0">
+                                      <button
+                                        onClick={() => {
+                                          setPreviewUrl(
+                                            `http://localhost:5000${att.url}`,
+                                          );
+                                          setShowPreviewModal(true);
+                                        }}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                      <a
+                                        href={`http://localhost:5000${att.url}`}
+                                        download={att.name}
+                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                                      >
+                                        Download
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}

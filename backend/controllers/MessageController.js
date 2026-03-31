@@ -333,6 +333,17 @@ export const getActivities = async (req, res) => {
 
     let query;
 
+    // Auto-complete past events (for all users): approved/ongoing events whose endDate is in the past
+    const now = new Date();
+    await Message.updateMany(
+      {
+        endDate: { $lt: now },
+        status: { $in: ["approved", "ongoing"] },
+        isDeleted: false,
+      },
+      { status: "completed" },
+    );
+
     if (user?.role === "Admin") {
       // Admins see all events with a startDate
       if (includeCancelled) {

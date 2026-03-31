@@ -96,6 +96,25 @@ const DocumentItem = ({
     }
   };
 
+  const document = item.document || item;
+  const documentAttachments = [];
+  if (document?.attachmentUrls?.length > 0) {
+    document.attachmentUrls.forEach((url, idx) => {
+      documentAttachments.push({
+        url,
+        name:
+          document.attachmentNames?.[idx] ||
+          document.attachmentName ||
+          `Attachment ${idx + 1}`,
+      });
+    });
+  } else if (document?.attachmentUrl) {
+    documentAttachments.push({
+      url: document.attachmentUrl,
+      name: document.attachmentName || "Attachment",
+    });
+  }
+
   return (
     <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
       <div className="flex justify-between items-start mb-4">
@@ -142,28 +161,30 @@ const DocumentItem = ({
                 Activity
               </button>
             )}
-          {item.document?.attachmentUrl && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setPreviewUrl(
-                    `http://localhost:5000${item.document.attachmentUrl}`,
-                  );
-                  setShowPreviewModal(true);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-indigo-50 hover:from-indigo-200 hover:to-indigo-100 text-indigo-700 rounded-lg text-sm font-semibold border-2 border-indigo-200 transition-all"
-              >
-                View
-              </button>
-              <a
-                href={`http://localhost:5000${item.document.attachmentUrl}`}
-                download={item.document.attachmentName}
-                className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-50 hover:from-blue-200 hover:to-blue-100 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Download
-              </a>
+          {documentAttachments.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {documentAttachments.map((att, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setPreviewUrl(`http://localhost:5000${att.url}`);
+                      setShowPreviewModal(true);
+                    }}
+                    className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm font-semibold border-2 border-indigo-200 transition-all"
+                  >
+                    View
+                  </button>
+                  <a
+                    href={`http://localhost:5000${att.url}`}
+                    download={att.name}
+                    className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Download
+                  </a>
+                </div>
+              ))}
             </div>
           )}
           <div className="relative">
