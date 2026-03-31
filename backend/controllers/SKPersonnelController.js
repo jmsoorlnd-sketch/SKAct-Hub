@@ -150,6 +150,11 @@ export const updateChairman = async (req, res) => {
       if (oldChairman?.age !== age) changes.push("age");
       if (oldChairman?.status !== (status || "Active")) changes.push("status");
 
+      const details =
+        changes.length > 0
+          ? `Updated fields: ${changes.join(", ")}`
+          : "Updated action";
+
       addPersonnelHistory(skPersonnel, {
         role: "chairman",
         memberId: null,
@@ -157,7 +162,7 @@ export const updateChairman = async (req, res) => {
         status: status || "Active",
         action: "updated",
         changedBy: { userId, username },
-        details: `Updated fields: ${changes.join(", ") || "none"}`,
+        details,
       });
     }
 
@@ -263,6 +268,11 @@ export const updateSecretary = async (req, res) => {
       if (oldSecretary?.age !== age) changes.push("age");
       if (oldSecretary?.status !== (status || "Active")) changes.push("status");
 
+      const details =
+        changes.length > 0
+          ? `Updated fields: ${changes.join(", ")}`
+          : "Updated action";
+
       addPersonnelHistory(skPersonnel, {
         role: "secretary",
         memberId: null,
@@ -270,7 +280,7 @@ export const updateSecretary = async (req, res) => {
         status: status || "Active",
         action: "updated",
         changedBy: { userId, username },
-        details: `Updated fields: ${changes.join(", ") || "none"}`,
+        details,
       });
     }
 
@@ -377,6 +387,11 @@ export const updateTreasurer = async (req, res) => {
       if (oldTreasurer?.age !== age) changes.push("age");
       if (oldTreasurer?.status !== (status || "Active")) changes.push("status");
 
+      const details =
+        changes.length > 0
+          ? `Updated fields: ${changes.join(", ")}`
+          : "Updated action";
+
       addPersonnelHistory(skPersonnel, {
         role: "treasurer",
         memberId: null,
@@ -384,7 +399,7 @@ export const updateTreasurer = async (req, res) => {
         status: status || "Active",
         action: "updated",
         changedBy: { userId, username },
-        details: `Updated fields: ${changes.join(", ") || "none"}`,
+        details,
       });
     }
 
@@ -443,6 +458,17 @@ export const addKagawad = async (req, res) => {
     }
 
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
+
+    // Enforce maximum of 7 kagawad members (not counting soft deleted)
+    const activeKagawadCount = skPersonnel
+      ? skPersonnel.kagawad.filter((k) => !k.isDeleted).length
+      : 0;
+
+    if (activeKagawadCount >= 7) {
+      return res.status(400).json({
+        message: "Kagawad member limit reached (maximum 7 members)",
+      });
+    }
 
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
@@ -578,6 +604,11 @@ export const updateKagawad = async (req, res) => {
     if (prevKagawad.age !== kagawad.age) changedFields.push("age");
     if (prevKagawad.status !== kagawad.status) changedFields.push("status");
 
+    const details =
+      changedFields.length > 0
+        ? `Updated fields: ${changedFields.join(", ")}`
+        : "Updated action";
+
     addPersonnelHistory(skPersonnel, {
       role: "kagawad",
       memberId: kagawad._id,
@@ -585,7 +616,7 @@ export const updateKagawad = async (req, res) => {
       status: kagawad.status,
       action: "updated",
       changedBy: { userId, username },
-      details: `Updated fields: ${changedFields.join(", ") || "none"}`,
+      details,
     });
 
     skPersonnel.updatedAt = new Date();

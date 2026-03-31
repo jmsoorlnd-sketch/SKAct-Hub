@@ -243,6 +243,14 @@ const SKPersonnelPage = () => {
       return;
     }
 
+    const existingCount =
+      skPersonnel?.kagawad?.filter((k) => !k.isDeleted).length || 0;
+
+    if (existingCount >= 7) {
+      toast.error("Maximum of 7 kagawad members allowed");
+      return;
+    }
+
     if (!kagawadForm.firstName || !kagawadForm.surname || !kagawadForm.age) {
       toast.error("Please fill in all required fields");
       return;
