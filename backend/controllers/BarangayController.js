@@ -296,6 +296,14 @@ export const getUsersByBarangay = async (req, res) => {
   try {
     const { barangayId } = req.params;
 
+    // Admins can query any barangay; officials can only query their own barangay
+    if (
+      req.user.role !== "Admin" &&
+      (!req.user.barangay || String(req.user.barangay) !== String(barangayId))
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     const users = await User.find({ barangay: barangayId }).select(
       "username email firstname lastname role position",
     );

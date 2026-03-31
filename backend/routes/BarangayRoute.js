@@ -64,7 +64,7 @@ router.get("/me/storage", requireAuth, getMyBarangayStorage);
 router.post("/add-barangay", requireAuth, createBarangay);
 router.put("/:id", requireAuth, adminOnly, updateBarangay);
 router.delete("/:id", requireAuth, adminOnly, deleteBarangay);
-router.get("/:barangayId/users", requireAuth, adminOnly, getUsersByBarangay);
+router.get("/:barangayId/users", requireAuth, getUsersByBarangay); // admins can fetch all users of any barangay, officials can fetch own barangay users
 router.post("/assign-user", requireAuth, adminOnly, assignUserToBarangay);
 router.post("/remove-user", requireAuth, adminOnly, removeUserFromBarangay);
 router.get("/:barangayId/storage", requireAuth, getBarangayStorage);

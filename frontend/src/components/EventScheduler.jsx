@@ -6,6 +6,8 @@ const EventScheduler = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [barangays, setBarangays] = useState([]);
+  const [availableParticipants, setAvailableParticipants] = useState([]);
+  const [customParticipant, setCustomParticipant] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -53,6 +55,40 @@ const EventScheduler = () => {
       console.error("Failed to fetch events:", error);
     }
   };
+
+  const fetchParticipants = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const loggedIn = JSON.parse(localStorage.getItem("user") || "{}");
+
+      if (loggedIn?.role === "Admin") {
+        const res = await axios.get("http://localhost:5000/api/users/all", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAvailableParticipants(res.data.users || []);
+      } else {
+        const barangayId =
+          loggedIn?.barangay?._id || loggedIn?.barangay || loggedIn?.barangayId;
+        if (!barangayId) {
+          setAvailableParticipants([]);
+          return;
+        }
+        const res = await axios.get(
+          `http://localhost:5000/api/barangays/${barangayId}/users`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        setAvailableParticipants(res.data.users || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch participants:", error);
+      setAvailableParticipants([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchParticipants();
+  }, []);
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
@@ -295,17 +331,101 @@ const EventScheduler = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Participants (comma-separated)
+                Participants
               </label>
-              <input
-                type="text"
-                value={formData.participants}
-                onChange={(e) =>
-                  setFormData({ ...formData, participants: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., John Doe, Jane Smith"
-              />
+              <select
+                multiple
+                value={formData.participants
+                  .split(",")
+                  .map((p) => p.trim())
+                  .filter(Boolean)}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions).map(
+                    (option) => option.value,
+                  );
+                  setFormData({
+                    ...formData,
+                    participants: Array.from(new Set(selected)).join(", "),
+                  });
+                }}
+                className="w-full h-40 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {availableParticipants.map((u) => {
+                  const name =
+                    `${u.firstname || ""} ${u.lastname || ""}`.trim();
+                  return (
+                    <option key={u._id || name} value={name}>
+                      {name || u.username || u.email}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                Hold Ctrl/Cmd to select multiple.
+              </p>
+
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={customParticipant}
+                  onChange={(e) => setCustomParticipant(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Add custom participant"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = customParticipant.trim();
+                    if (!name) return;
+                    const current = formData.participants
+                      .split(",")
+                      .map((p) => p.trim())
+                      .filter(Boolean);
+                    const updated = Array.from(new Set([...current, name]));
+                    setFormData({
+                      ...formData,
+                      participants: updated.join(", "),
+                    });
+                    setCustomParticipant("");
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Add
+                </button>
+              </div>
+
+              {formData.participants && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {formData.participants
+                    .split(",")
+                    .map((p) => p.trim())
+                    .filter(Boolean)
+                    .map((name) => (
+                      <span
+                        key={name}
+                        className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full border border-gray-300 flex items-center gap-1"
+                      >
+                        {name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = formData.participants
+                              .split(",")
+                              .map((p) => p.trim())
+                              .filter((p) => p && p !== name);
+                            setFormData({
+                              ...formData,
+                              participants: updated.join(", "),
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <button

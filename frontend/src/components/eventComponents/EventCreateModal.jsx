@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { X, Plus, AlertCircle } from "lucide-react";
 
 const EventCreationModal = ({
@@ -7,11 +7,52 @@ const EventCreationModal = ({
   eventFormData,
   setEventFormData,
   barangays,
+  users = [],
   onSubmit,
   creatingEvent,
   createEventMessage,
   user,
 }) => {
+  const [customParticipant, setCustomParticipant] = useState("");
+
+  const selectedParticipants = eventFormData.participants
+    ? eventFormData.participants
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean)
+    : [];
+
+  const onParticipantsChange = (e) => {
+    const selected = Array.from(e.target.selectedOptions).map(
+      (opt) => opt.value,
+    );
+    const combined = Array.from(
+      new Set([...selected, ...selectedParticipants]),
+    );
+    setEventFormData({
+      ...eventFormData,
+      participants: combined.join(", "),
+    });
+  };
+
+  const addCustomParticipant = () => {
+    const name = customParticipant.trim();
+    if (!name) return;
+    const combined = Array.from(new Set([...selectedParticipants, name]));
+    setEventFormData({
+      ...eventFormData,
+      participants: combined.join(", "),
+    });
+    setCustomParticipant("");
+  };
+
+  const removeParticipant = (name) => {
+    const updated = selectedParticipants.filter((p) => p !== name);
+    setEventFormData({
+      ...eventFormData,
+      participants: updated.join(", "),
+    });
+  };
   if (!isOpen) return null;
 
   const isAdmin = user?.role === "Admin";
@@ -145,20 +186,64 @@ const EventCreationModal = ({
 
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-2">
-                Participants (comma-separated)
+                Participants
               </label>
-              <input
-                type="text"
-                value={eventFormData.participants}
-                onChange={(e) =>
-                  setEventFormData({
-                    ...eventFormData,
-                    participants: e.target.value,
-                  })
-                }
-                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="e.g., John Doe, Jane Smith"
-              />
+              <select
+                multiple
+                value={selectedParticipants}
+                onChange={onParticipantsChange}
+                className="w-full h-40 px-3 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                {users.map((u) => {
+                  const name =
+                    `${u.firstname || ""} ${u.lastname || ""}`.trim();
+                  return (
+                    <option key={u._id || name} value={name}>
+                      {name || u.username || u.email}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                Hold Ctrl/Cmd to select multiple participants.
+              </p>
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={customParticipant}
+                  onChange={(e) => setCustomParticipant(e.target.value)}
+                  className="flex-1 px-4 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  placeholder="Add custom participant"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomParticipant}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
+                >
+                  Add
+                </button>
+              </div>
+
+              {selectedParticipants.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedParticipants.map((name) => (
+                    <span
+                      key={name}
+                      className="px-2 py-1 text-xs bg-slate-100 text-slate-700 rounded-full border border-slate-300 flex items-center gap-2"
+                    >
+                      {name}
+                      <button
+                        type="button"
+                        onClick={() => removeParticipant(name)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {isAdmin ? (

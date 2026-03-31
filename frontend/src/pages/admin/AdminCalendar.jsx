@@ -88,6 +88,7 @@ const AdminCalendar = () => {
   const [showCreateEventForm, setShowCreateEventForm] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [createEventMessage, setCreateEventMessage] = useState("");
+  const [availableParticipants, setAvailableParticipants] = useState([]);
 
   // Event creation form state
   const [eventFormData, setEventFormData] = useState({
@@ -101,6 +102,8 @@ const AdminCalendar = () => {
   });
 
   /* ===================== DATA FETCHING ===================== */
+  const { user } = useContext(AuthContext);
+
   useEffect(() => {
     fetchEvents();
     fetchBarangays();
@@ -116,8 +119,6 @@ const AdminCalendar = () => {
       console.error("Failed to fetch barangays:", error);
     }
   };
-
-  const { user } = useContext(AuthContext);
 
   const fetchEvents = async () => {
     try {
@@ -140,6 +141,44 @@ const AdminCalendar = () => {
       setLoading(false);
     }
   };
+
+  const fetchParticipants = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      if (user?.role === "Admin") {
+        const res = await axios.get("http://localhost:5000/api/users/all", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const users = res.data.users || [];
+        setAvailableParticipants(users);
+      } else {
+        const barangayId =
+          user?.barangay?._id || user?.barangay || user?.barangayId;
+        if (!barangayId) {
+          setAvailableParticipants([]);
+          return;
+        }
+        const res = await axios.get(
+          `http://localhost:5000/api/barangays/${barangayId}/users`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        setAvailableParticipants(res.data.users || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch participants:", error);
+      setAvailableParticipants([]);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchParticipants();
+    }
+  }, [user, fetchParticipants]);
 
   /* ===================== CALENDAR HELPERS ===================== */
   const getDaysInMonth = (date) =>
@@ -736,6 +775,7 @@ const AdminCalendar = () => {
         {/* Event Creation Modal */}
         <EventCreationModal
           user={user}
+          users={availableParticipants}
           isOpen={showCreateEventForm}
           onClose={handleCloseCreateModal}
           eventFormData={eventFormData}
