@@ -289,13 +289,22 @@ const Archive = () => {
       // Determine if this is an event or document
       // Events have startDate or are admin scheduled
       const isEvent = msg.startDate || msg.isAdminScheduled;
+
+      const deletedByName =
+        msg.deletedBy?.username || msg.sender?.username || null;
+
+      if (!deletedByName) {
+        // Skip unknown user deletes for archive display
+        return;
+      }
+
       items.push({
         id: msg._id,
         type: isEvent ? "event" : "document",
         name: msg.subject,
         title: msg.subject,
         deletedAt: msg.deletedAt,
-        deletedBy: msg.sender?.username || "Unknown",
+        deletedBy: deletedByName,
         data: msg,
       });
     });
