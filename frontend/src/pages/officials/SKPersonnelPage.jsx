@@ -375,7 +375,7 @@ const SKPersonnelPage = () => {
     ].filter(Boolean);
 
     const total = allMembers.length;
-    const active = allMembers.filter((m) => m.status !== "Inactive").length;
+    const active = allMembers.filter((m) => m.status === "Active").length;
     const inactive = total - active;
     const activeRate = total > 0 ? ((active / total) * 100).toFixed(1) : 0;
 
@@ -645,6 +645,7 @@ const SKPersonnelPage = () => {
                           >
                             <option>Active</option>
                             <option>Inactive</option>
+                            <option>Resigned</option>
                           </select>
                         </div>
                       </div>
@@ -767,6 +768,65 @@ const SKPersonnelPage = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Personnel Change History */}
+        <div className="mt-6">
+          <h2 className="text-lg font-bold text-slate-900 mb-3">
+            Personnel Change History
+          </h2>
+          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
+            {skPersonnel?.history && skPersonnel.history.length > 0 ? (
+              <div className="space-y-3 max-h-80 overflow-y-auto">
+                {[...skPersonnel.history]
+                  .sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt))
+                  .map((entry, index) => (
+                    <div
+                      key={`${entry.role}-${entry.memberId || index}-${entry.changedAt}`}
+                      className="border rounded-lg p-3 bg-slate-50"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-700">
+                          {entry.role?.toUpperCase() || "Unknown Role"} -{" "}
+                          {entry.name || "Unknown"}
+                        </p>
+                        <span
+                          className={`text-xs font-bold px-2 py-1 rounded-full ${
+                            entry.status === "Active"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : entry.status === "Inactive"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {entry.status || "N/A"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        <span className="font-medium">Action:</span>{" "}
+                        {entry.action || "updated"}
+                        {" • "}
+                        <span className="font-medium">By:</span>{" "}
+                        {entry.changedBy?.username || "System"}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        <span className="font-medium">When:</span>{" "}
+                        {new Date(entry.changedAt).toLocaleString()}
+                      </div>
+                      {entry.details && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          {entry.details}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                No history entries yet. Changes will appear here.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -960,6 +1020,7 @@ const OfficialEditModal = ({
             >
               <option>Active</option>
               <option>Inactive</option>
+              <option>Resigned</option>
             </select>
           </div>
         </div>
@@ -1165,6 +1226,7 @@ const EditKagawadModal = ({ kagawad, onSave, onClose }) => {
             >
               <option>Active</option>
               <option>Inactive</option>
+              <option>Resigned</option>
             </select>
           </div>
           <div className="flex gap-2 pt-3">

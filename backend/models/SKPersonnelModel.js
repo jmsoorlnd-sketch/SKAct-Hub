@@ -15,7 +15,7 @@ const skPersonnelSchema = new mongoose.Schema({
     age: Number,
     status: {
       type: String,
-      enum: ["Active", "Inactive"],
+      enum: ["Active", "Inactive", "Resigned"],
       default: "Active",
     },
   },
@@ -27,7 +27,7 @@ const skPersonnelSchema = new mongoose.Schema({
     age: Number,
     status: {
       type: String,
-      enum: ["Active", "Inactive"],
+      enum: ["Active", "Inactive", "Resigned"],
       default: "Active",
     },
   },
@@ -39,7 +39,7 @@ const skPersonnelSchema = new mongoose.Schema({
     age: Number,
     status: {
       type: String,
-      enum: ["Active", "Inactive"],
+      enum: ["Active", "Inactive", "Resigned"],
       default: "Active",
     },
   },
@@ -53,7 +53,7 @@ const skPersonnelSchema = new mongoose.Schema({
       age: Number,
       status: {
         type: String,
-        enum: ["Active", "Inactive"],
+        enum: ["Active", "Inactive", "Resigned"],
         default: "Active",
       },
       isDeleted: {
@@ -69,6 +69,21 @@ const skPersonnelSchema = new mongoose.Schema({
     },
   ],
 
+  history: [
+    {
+      role: String, // 'chairman' | 'secretary' | 'treasurer' | 'kagawad'
+      memberId: mongoose.Schema.Types.ObjectId,
+      name: String,
+      status: String,
+      action: String,
+      changedBy: {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        username: String,
+      },
+      changedAt: { type: Date, default: Date.now },
+      details: String,
+    },
+  ],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

@@ -3,6 +3,14 @@ import Barangay from "../models/BarangayModel.js";
 import UserLog from "../models/UserLogModel.js";
 import mongoose from "mongoose";
 
+const addPersonnelHistory = (skPersonnel, entry) => {
+  skPersonnel.history = skPersonnel.history || [];
+  skPersonnel.history.push({
+    ...entry,
+    changedAt: new Date(),
+  });
+};
+
 // Get SK Personnel for a barangay
 export const getSKPersonnelByBarangay = async (req, res) => {
   try {
@@ -89,6 +97,8 @@ export const updateChairman = async (req, res) => {
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
     const isNewAssignment = !skPersonnel?.chairman?.firstName;
 
+    const oldChairman = skPersonnel?.chairman || null;
+
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
         barangay: barangayId,
@@ -115,6 +125,15 @@ export const updateChairman = async (req, res) => {
         },
         kagawad: [],
       });
+      addPersonnelHistory(skPersonnel, {
+        role: "chairman",
+        memberId: null,
+        name: `${firstName} ${surname}`.trim(),
+        status: status || "Active",
+        action: "assigned",
+        changedBy: { userId, username },
+        details: "Initial chairman assignment",
+      });
     } else {
       skPersonnel.chairman = {
         surname,
@@ -123,6 +142,23 @@ export const updateChairman = async (req, res) => {
         age,
         status: status || "Active",
       };
+
+      const changes = [];
+      if (oldChairman?.surname !== surname) changes.push("surname");
+      if (oldChairman?.firstName !== firstName) changes.push("firstName");
+      if (oldChairman?.middleName !== middleName) changes.push("middleName");
+      if (oldChairman?.age !== age) changes.push("age");
+      if (oldChairman?.status !== (status || "Active")) changes.push("status");
+
+      addPersonnelHistory(skPersonnel, {
+        role: "chairman",
+        memberId: null,
+        name: `${firstName} ${surname}`.trim(),
+        status: status || "Active",
+        action: "updated",
+        changedBy: { userId, username },
+        details: `Updated fields: ${changes.join(", ") || "none"}`,
+      });
     }
 
     skPersonnel.updatedAt = new Date();
@@ -174,7 +210,8 @@ export const updateSecretary = async (req, res) => {
     }
 
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
-    const isNewAssignment = !skPersonnel?.secretary?.firstName;
+    const oldSecretary = skPersonnel?.secretary || null;
+    const isNewAssignment = !oldSecretary?.firstName;
 
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
@@ -202,6 +239,15 @@ export const updateSecretary = async (req, res) => {
         },
         kagawad: [],
       });
+      addPersonnelHistory(skPersonnel, {
+        role: "secretary",
+        memberId: null,
+        name: `${firstName} ${surname}`.trim(),
+        status: status || "Active",
+        action: "assigned",
+        changedBy: { userId, username },
+        details: "Initial secretary assignment",
+      });
     } else {
       skPersonnel.secretary = {
         surname,
@@ -210,6 +256,22 @@ export const updateSecretary = async (req, res) => {
         age,
         status: status || "Active",
       };
+      const changes = [];
+      if (oldSecretary?.surname !== surname) changes.push("surname");
+      if (oldSecretary?.firstName !== firstName) changes.push("firstName");
+      if (oldSecretary?.middleName !== middleName) changes.push("middleName");
+      if (oldSecretary?.age !== age) changes.push("age");
+      if (oldSecretary?.status !== (status || "Active")) changes.push("status");
+
+      addPersonnelHistory(skPersonnel, {
+        role: "secretary",
+        memberId: null,
+        name: `${firstName} ${surname}`.trim(),
+        status: status || "Active",
+        action: "updated",
+        changedBy: { userId, username },
+        details: `Updated fields: ${changes.join(", ") || "none"}`,
+      });
     }
 
     skPersonnel.updatedAt = new Date();
@@ -261,7 +323,8 @@ export const updateTreasurer = async (req, res) => {
     }
 
     let skPersonnel = await SKPersonnel.findOne({ barangay: barangayId });
-    const isNewAssignment = !skPersonnel?.treasurer?.firstName;
+    const oldTreasurer = skPersonnel?.treasurer || null;
+    const isNewAssignment = !oldTreasurer?.firstName;
 
     if (!skPersonnel) {
       skPersonnel = new SKPersonnel({
@@ -289,6 +352,15 @@ export const updateTreasurer = async (req, res) => {
         },
         kagawad: [],
       });
+      addPersonnelHistory(skPersonnel, {
+        role: "treasurer",
+        memberId: null,
+        name: `${firstName} ${surname}`.trim(),
+        status: status || "Active",
+        action: "assigned",
+        changedBy: { userId, username },
+        details: "Initial treasurer assignment",
+      });
     } else {
       skPersonnel.treasurer = {
         surname,
@@ -297,6 +369,23 @@ export const updateTreasurer = async (req, res) => {
         age,
         status: status || "Active",
       };
+
+      const changes = [];
+      if (oldTreasurer?.surname !== surname) changes.push("surname");
+      if (oldTreasurer?.firstName !== firstName) changes.push("firstName");
+      if (oldTreasurer?.middleName !== middleName) changes.push("middleName");
+      if (oldTreasurer?.age !== age) changes.push("age");
+      if (oldTreasurer?.status !== (status || "Active")) changes.push("status");
+
+      addPersonnelHistory(skPersonnel, {
+        role: "treasurer",
+        memberId: null,
+        name: `${firstName} ${surname}`.trim(),
+        status: status || "Active",
+        action: "updated",
+        changedBy: { userId, username },
+        details: `Updated fields: ${changes.join(", ") || "none"}`,
+      });
     }
 
     skPersonnel.updatedAt = new Date();
@@ -401,6 +490,17 @@ export const addKagawad = async (req, res) => {
       });
     }
 
+    const newMember = skPersonnel.kagawad[skPersonnel.kagawad.length - 1];
+    addPersonnelHistory(skPersonnel, {
+      role: "kagawad",
+      memberId: newMember._id,
+      name: `${newMember.firstName} ${newMember.surname}`.trim(),
+      status: newMember.status,
+      action: "added",
+      changedBy: { userId, username },
+      details: "Added new kagawad member",
+    });
+
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
@@ -461,11 +561,32 @@ export const updateKagawad = async (req, res) => {
       return res.status(404).json({ message: "Kagawad not found" });
     }
 
+    const prevKagawad = { ...kagawad.toObject() };
+
     if (surname) kagawad.surname = surname;
     if (firstName) kagawad.firstName = firstName;
     if (middleName) kagawad.middleName = middleName;
     if (age) kagawad.age = age;
     if (status) kagawad.status = status;
+
+    const changedFields = [];
+    if (prevKagawad.surname !== kagawad.surname) changedFields.push("surname");
+    if (prevKagawad.firstName !== kagawad.firstName)
+      changedFields.push("firstName");
+    if (prevKagawad.middleName !== kagawad.middleName)
+      changedFields.push("middleName");
+    if (prevKagawad.age !== kagawad.age) changedFields.push("age");
+    if (prevKagawad.status !== kagawad.status) changedFields.push("status");
+
+    addPersonnelHistory(skPersonnel, {
+      role: "kagawad",
+      memberId: kagawad._id,
+      name: `${kagawad.firstName} ${kagawad.surname}`.trim(),
+      status: kagawad.status,
+      action: "updated",
+      changedBy: { userId, username },
+      details: `Updated fields: ${changedFields.join(", ") || "none"}`,
+    });
 
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
@@ -537,6 +658,16 @@ export const deleteKagawad = async (req, res) => {
       skPersonnel.kagawad[kagawadIndex].isDeleted = true;
       skPersonnel.kagawad[kagawadIndex].deletedAt = new Date();
       skPersonnel.kagawad[kagawadIndex].deletedBy = userId;
+
+      addPersonnelHistory(skPersonnel, {
+        role: "kagawad",
+        memberId: skPersonnel.kagawad[kagawadIndex]._id,
+        name: deletedName,
+        status: skPersonnel.kagawad[kagawadIndex].status,
+        action: "deleted",
+        changedBy: { userId, username },
+        details: "Soft deleted kagawad member",
+      });
     }
 
     skPersonnel.updatedAt = new Date();

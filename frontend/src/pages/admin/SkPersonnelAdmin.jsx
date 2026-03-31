@@ -106,7 +106,9 @@ const SkPersonnelAdmin = () => {
         ? `${data.surname}, ${data.firstName} ${data.middleName || ""}`.trim()
         : "Not Assigned";
 
-    const isInactive = data?.status === "Inactive";
+    const status = data?.status || "Active";
+    const isInactive = status === "Inactive";
+    const isResigned = status === "Resigned";
     const isAssigned = data?.firstName && data?.surname;
 
     const roleColors = {
@@ -168,13 +170,21 @@ const SkPersonnelAdmin = () => {
               {isAssigned ? (
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    isInactive
+                    isResigned
                       ? "bg-red-100 text-red-700 border-2 border-red-200"
-                      : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                      : isInactive
+                        ? "bg-yellow-100 text-yellow-700 border-2 border-yellow-200"
+                        : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
                   }`}
                 >
-                  {isInactive ? <UserX size={18} /> : <UserCheck size={18} />}
-                  {data?.status || "Active"}
+                  {isResigned ? (
+                    <UserX size={18} />
+                  ) : isInactive ? (
+                    <UserX size={18} />
+                  ) : (
+                    <UserCheck size={18} />
+                  )}
+                  {status}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border-2 border-amber-200">
@@ -220,13 +230,21 @@ const SkPersonnelAdmin = () => {
           {isAssigned ? (
             <span
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${
-                isInactive
+                isResigned
                   ? "bg-red-100 text-red-700 border-2 border-red-200"
-                  : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                  : isInactive
+                    ? "bg-yellow-100 text-yellow-700 border-2 border-yellow-200"
+                    : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
               }`}
             >
-              {isInactive ? <UserX size={18} /> : <UserCheck size={18} />}
-              {data?.status || "Active"}
+              {isResigned ? (
+                <UserX size={18} />
+              ) : isInactive ? (
+                <UserX size={18} />
+              ) : (
+                <UserCheck size={18} />
+              )}
+              {status}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border-2 border-amber-200">
@@ -633,11 +651,18 @@ const SkPersonnelAdmin = () => {
                         Active
                       </span>
                     </>
+                  ) : selectedPersonnel.status === "Inactive" ? (
+                    <>
+                      <UserX size={18} className="text-yellow-600" />
+                      <span className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-bold border-2 border-yellow-200">
+                        Inactive
+                      </span>
+                    </>
                   ) : (
                     <>
                       <UserX size={18} className="text-red-600" />
                       <span className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold border-2 border-red-200">
-                        Inactive
+                        Resigned
                       </span>
                     </>
                   )}
