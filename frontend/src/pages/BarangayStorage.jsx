@@ -774,42 +774,95 @@ const BarangayStorage = () => {
     closeConfirmationModal();
   };
 
-  const handleToggleShareFolder = async (folder) => {
+  const isFolderCreator = (folder) => {
+    if (!folder || !user) return false;
+    return Boolean(
+      folder.createdBy &&
+      String(folder.createdBy._id || folder.createdBy) === String(user._id),
+    );
+  };
+
+  const isFolderSharer = (folder) => {
+    if (!folder || !user) return false;
+    return Array.isArray(folder.sharedBy)
+      ? folder.sharedBy.some((id) => String(id) === String(user._id))
+      : false;
+  };
+
+  const canShareFolder = (folder) => {
+    if (!folder || !user || !user.position) return false;
+    if (folder.isShared) return false;
+    return ["Secretary", "Treasurer", "Chairman"].includes(user.position);
+  };
+
+  const canUnshareFolder = (folder) => {
+    if (!folder || !user || !user.position) return false;
+    if (!folder.isShared) return false;
+    return isFolderCreator(folder) || isFolderSharer(folder);
+  };
+
+  const getShareTargetRole = () => {
+    if (!user || !user.position) return null;
+    if (user.position === "Secretary") return "Treasurer";
+    if (user.position === "Treasurer") return "Secretary";
+    if (user.position === "Chairman") return "Chairman";
+    return null;
+  };
+
+  const handleShareFolder = async (folder) => {
     if (!selectedBarangay || !folder || !user) return;
 
-    let targetRole;
-    if (user.position === "Secretary") targetRole = "Treasurer";
-    else if (user.position === "Treasurer") targetRole = "Secretary";
-    else if (user.position === "Chairman") targetRole = "Secretary"; // Chairman shares as full access by default
-
+    const targetRole = getShareTargetRole();
     if (!targetRole) {
       toast.error("You cannot share this folder.");
       return;
     }
-
-    const isCurrentlyShared = Array.isArray(folder.sharedWithRoles)
-      ? folder.sharedWithRoles.includes(targetRole) || folder.isShared
-      : folder.isShared;
 
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
         `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folder._id}/share`,
         {
-          isShared: !isCurrentlyShared,
+          isShared: true,
           shareWithRole: targetRole,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      toast.success(res.data.message || "Folder share status updated");
+      toast.success(res.data.message || "Folder shared successfully");
       fetchFolders(selectedBarangay);
     } catch (err) {
       console.error("Error sharing folder:", err?.response || err);
-      toast.error(
-        err?.response?.data?.message || "Failed to update folder sharing",
+      toast.error(err?.response?.data?.message || "Failed to share folder");
+    }
+  };
+
+  const handleUnshareFolder = async (folder) => {
+    if (!selectedBarangay || !folder || !user) return;
+
+    if (!canUnshareFolder(folder)) {
+      toast.error("Only the creator or a sharer can unshare this folder.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.put(
+        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folder._id}/share`,
+        {
+          isShared: false,
+          shareWithRole: null,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
       );
+      toast.success(res.data.message || "Folder unshared successfully");
+      fetchFolders(selectedBarangay);
+    } catch (err) {
+      console.error("Error unsharing folder:", err?.response || err);
+      toast.error(err?.response?.data?.message || "Failed to unshare folder");
     }
   };
 
@@ -1517,22 +1570,28 @@ const BarangayStorage = () => {
                                           >
                                             <Plus size={14} />
                                           </button>
-                                          {(user.position === "Secretary" ||
-                                            user.position === "Treasurer" ||
-                                            user.position === "Chairman") && (
+                                          {canShareFolder(folder) && (
                                             <button
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleToggleShareFolder(folder);
+                                                handleShareFolder(folder);
                                               }}
-                                              className="p-1.5 bg-teal-500 hover:bg-teal-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
-                                              title={
-                                                folder.isShared
-                                                  ? "Unshare folder"
-                                                  : "Share folder"
-                                              }
+                                              className="px-2 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg transition-all hover:scale-110 text-[10px] font-bold"
+                                              title="Share folder"
                                             >
-                                              <Send size={14} />
+                                              Share
+                                            </button>
+                                          )}
+                                          {canUnshareFolder(folder) && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUnshareFolder(folder);
+                                              }}
+                                              className="px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg transition-all hover:scale-110 text-[10px] font-bold"
+                                              title="Unshare folder"
+                                            >
+                                              Unshare
                                             </button>
                                           )}
                                           {user.position !== "Treasurer" && (

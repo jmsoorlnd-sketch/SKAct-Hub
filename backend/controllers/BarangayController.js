@@ -450,17 +450,50 @@ export const getMyBarangayStorage = async (req, res) => {
     console.log("getMyBarangayStorage: user", userId, "barangayId", barangayId);
 
     // Build base query for this barangay
-    const query = { barangay: barangayId };
+    const baseQuery = { barangay: barangayId, isDeleted: false };
 
-    // secretaries and treasurers may only see documents *they* uploaded
-    if (user.position === "Secretary" || user.position === "Treasurer") {
-      query.uploadedBy = userId;
+    // By default, admin sees everything (if /me/storage is used for admin)
+    if (user.role === "Admin") {
+      const storage = await BarangayStorage.find(baseQuery)
+        .populate("uploadedBy", "username firstname lastname")
+        .populate("folder", "name")
+        .populate({
+          path: "document",
+          populate: { path: "sender", select: "username firstname lastname" },
+        })
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({ storage });
     }
 
-    const storage = await BarangayStorage.find({
-      ...query,
-      isDeleted: false,
-    })
+    // Determine folders the user may access via sharing
+    let visibleFolderIds = [];
+    if (["Secretary", "Treasurer", "Chairman"].includes(user.position)) {
+      const folderQuery = {
+        barangay: barangayId,
+        isDeleted: false,
+        $or: [
+          { createdBy: userId },
+          { isShared: true },
+          { sharedBy: userId },
+          { sharedWithRoles: user.position },
+        ],
+      };
+      const folderDocs = await Folder.find(folderQuery).select("_id");
+      visibleFolderIds = folderDocs.map((f) => f._id);
+    }
+
+    const storageQuery = {
+      ...baseQuery,
+      $or: [
+        { uploadedBy: userId },
+        ...(visibleFolderIds.length > 0
+          ? [{ folder: { $in: visibleFolderIds } }]
+          : []),
+      ],
+    };
+
+    const storage = await BarangayStorage.find(storageQuery)
       .populate("uploadedBy", "username firstname lastname")
       .populate("folder", "name")
       .populate({
@@ -1071,11 +1104,24 @@ export const shareFolder = async (req, res) => {
       return res.status(400).json({ message: "Invalid shareWithRole" });
     }
 
+    // Only creator or existing sharer can unshare
+    const isCreator = String(folder.createdBy) === String(req.user._id);
+    const isSharer = folder.sharedBy
+      .map((u) => String(u))
+      .includes(String(req.user._id));
+
+    if (!isShared && !isCreator && !isSharer) {
+      return res.status(403).json({
+        message:
+          "Only the creator or the original shared user can unshare this folder",
+      });
+    }
+
     // Determine sharing policy:
     // Secretary <-> Treasurer sharing.
-    // Chairman can share to both.
+    // Chairman can share to any.
     if (req.user.position === "Secretary") {
-      if (shareWithRole !== "Treasurer") {
+      if (isShared && shareWithRole !== "Treasurer") {
         return res.status(400).json({
           message: "Secretary can only share folders with Treasurer",
         });
@@ -1085,12 +1131,17 @@ export const shareFolder = async (req, res) => {
         roles.add("Treasurer");
         roles.add("Secretary");
       } else {
+        // Unshare by secretary
         roles.delete("Treasurer");
-        roles.add("Secretary");
+        if (isCreator) {
+          roles.clear();
+        } else {
+          roles.add("Secretary");
+        }
       }
       folder.sharedWithRoles = Array.from(roles);
     } else if (req.user.position === "Treasurer") {
-      if (shareWithRole !== "Secretary") {
+      if (isShared && shareWithRole !== "Secretary") {
         return res.status(400).json({
           message: "Treasurer can only share folders with Secretary",
         });
@@ -1100,28 +1151,61 @@ export const shareFolder = async (req, res) => {
         roles.add("Secretary");
         roles.add("Treasurer");
       } else {
+        // Unshare by treasurer
         roles.delete("Secretary");
-        roles.add("Treasurer");
+        if (isCreator) {
+          roles.clear();
+        } else {
+          roles.add("Treasurer");
+        }
       }
       folder.sharedWithRoles = Array.from(roles);
     } else if (req.user.position === "Chairman") {
+      if (
+        isShared &&
+        shareWithRole &&
+        !["Secretary", "Treasurer", "Chairman"].includes(shareWithRole)
+      ) {
+        return res.status(400).json({
+          message: "Invalid shareWithRole",
+        });
+      }
       const roles = new Set(folder.sharedWithRoles);
       if (isShared) {
         roles.add("Secretary");
         roles.add("Treasurer");
         roles.add("Chairman");
       } else {
-        roles.delete("Secretary");
-        roles.delete("Treasurer");
-        roles.add("Chairman");
+        // Unshare by chairman (partial reset for non-creator)
+        if (isCreator) {
+          roles.clear();
+        } else {
+          roles.delete("Secretary");
+          roles.delete("Treasurer");
+          roles.add("Chairman");
+        }
       }
       folder.sharedWithRoles = Array.from(roles);
     }
 
     folder.isShared = !!isShared;
-    if (!folder.sharedBy.includes(req.user._id)) {
+
+    if (isShared && !isSharer) {
       folder.sharedBy.push(req.user._id);
     }
+    if (!isShared && !isCreator) {
+      folder.sharedBy = folder.sharedBy.filter(
+        (id) => String(id) !== String(req.user._id),
+      );
+    }
+
+    if (!folder.isShared && !isCreator) {
+      // if nothing is shared to others and not creator, keep folder not shared
+      folder.sharedBy = folder.sharedBy.filter(
+        (id) => String(id) === String(folder.createdBy),
+      );
+    }
+
     await folder.save();
 
     res.status(200).json({
