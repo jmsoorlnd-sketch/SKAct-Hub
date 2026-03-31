@@ -329,15 +329,23 @@ export const getActivities = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await User.findById(userId).select("barangay role");
+    const includeCancelled = req.query.includeCancelled === "true";
 
     let query;
 
     if (user?.role === "Admin") {
-      // Admins see all events with a startDate (including admin-scheduled events)
-      query = {
-        startDate: { $exists: true, $ne: null },
-        isDeleted: false,
-      };
+      // Admins see all events with a startDate
+      if (includeCancelled) {
+        query = {
+          startDate: { $exists: true, $ne: null },
+        };
+      } else {
+        query = {
+          startDate: { $exists: true, $ne: null },
+          isDeleted: false,
+          status: { $ne: "cancelled" },
+        };
+      }
     } else {
       // Non-admins see:
       // 1. Events for their specific barangay (admin or official events)
@@ -366,6 +374,18 @@ export const getActivities = async (req, res) => {
           status: { $in: ["pending", "approved", "ongoing", "completed"] },
           isDeleted: false,
         });
+
+        if (includeCancelled) {
+          // include cancelled and deleted events in barangay scope
+          orConditions.push({
+            attachedToBarangay: user.barangay,
+            status: "cancelled",
+          });
+          orConditions.push({
+            attachedToBarangay: user.barangay,
+            isDeleted: true,
+          });
+        }
       }
 
       // Events created by the user (sender), regardless of attachedToBarangay (useful for draft/resubmitted)
@@ -374,11 +394,33 @@ export const getActivities = async (req, res) => {
         isDeleted: false,
       });
 
-      query = {
-        startDate: { $exists: true, $ne: null },
-        isDeleted: false,
-        $or: orConditions,
-      };
+      if (includeCancelled) {
+        orConditions.push({ sender: userId, status: "cancelled" });
+        orConditions.push({ sender: userId, isDeleted: true });
+        if (user?.barangay) {
+          orConditions.push({
+            attachedToBarangay: user.barangay,
+            status: "cancelled",
+          });
+          orConditions.push({
+            attachedToBarangay: user.barangay,
+            isDeleted: true,
+          });
+        }
+      }
+
+      if (includeCancelled) {
+        query = {
+          startDate: { $exists: true, $ne: null },
+          $or: orConditions,
+        };
+      } else {
+        query = {
+          startDate: { $exists: true, $ne: null },
+          isDeleted: false,
+          $or: orConditions,
+        };
+      }
     }
 
     const activities = await Message.find(query)

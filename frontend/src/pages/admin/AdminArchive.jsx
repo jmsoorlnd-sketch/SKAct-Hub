@@ -19,9 +19,10 @@ const API_BASE = "http://localhost:5000/api";
 const StatCard = React.memo(function StatCard({
   label,
   value,
-  icon: Icon,
+  icon,
   iconClass,
 }) {
+  const Icon = icon;
   return (
     <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between">
       <div>
@@ -30,7 +31,7 @@ const StatCard = React.memo(function StatCard({
         </p>
         <p className="text-2xl font-semibold text-gray-900 mt-0.5">{value}</p>
       </div>
-      <Icon size={22} className={iconClass} />
+      {Icon && <Icon size={22} className={iconClass} />}
     </div>
   );
 });
@@ -157,8 +158,10 @@ const AdminArchive = () => {
 
   const [deletedUsers, setDeletedUsers] = useState([]);
   const [deletedBarangays, setDeletedBarangays] = useState([]);
+  const [canceledEvents, setCanceledEvents] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingBarangays, setLoadingBarangays] = useState(true);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
@@ -191,12 +194,37 @@ const AdminArchive = () => {
     [getAuthHeaders, toast],
   );
 
+  const fetchCanceledEvents = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      const res = await axios.get(
+        `${API_BASE}/messages/activities?includeCancelled=true`,
+        {
+          headers: getAuthHeaders(),
+        },
+      );
+      const events = (res.data.activities || []).filter(
+        (ev) => ev.status === "cancelled" || ev.isDeleted === true,
+      );
+      setCanceledEvents(events);
+    } catch (err) {
+      console.error("Error fetching canceled events:", err);
+      toast.error("Failed to fetch canceled events");
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [getAuthHeaders, toast]);
+
   useEffect(() => {
     const fetchAll = async () => {
-      await Promise.all([fetchArchive("users"), fetchArchive("barangays")]);
+      await Promise.all([
+        fetchArchive("users"),
+        fetchArchive("barangays"),
+        fetchCanceledEvents(),
+      ]);
     };
     fetchAll();
-  }, [fetchArchive]);
+  }, [fetchArchive, fetchCanceledEvents]);
 
   const handleRestore = async (type, id) => {
     try {
@@ -212,6 +240,37 @@ const AdminArchive = () => {
     } catch (err) {
       console.error(`Error restoring ${type}:`, err);
       toast.error(`Failed to restore ${type}`);
+    }
+  };
+
+  const handleRestoreEvent = async (eventId, eventData) => {
+    if (!eventId) return;
+    if (!window.confirm("Restore this canceled event?")) return;
+
+    try {
+      if (eventData?.isDeleted) {
+        await axios.post(`${API_BASE}/messages/${eventId}/restore`, {
+          headers: getAuthHeaders(),
+        });
+      } else if (eventData?.status === "cancelled") {
+        await axios.put(
+          `${API_BASE}/messages/${eventId}/status`,
+          { status: "ongoing" },
+          { headers: getAuthHeaders() },
+        );
+      } else {
+        await axios.post(`${API_BASE}/messages/${eventId}/restore`, {
+          headers: getAuthHeaders(),
+        });
+      }
+
+      toast.success("Event restored successfully");
+      fetchCanceledEvents();
+      fetchArchive("users");
+      fetchArchive("barangays");
+    } catch (err) {
+      console.error("Error restoring event:", err);
+      toast.error("Failed to restore event");
     }
   };
 
@@ -272,13 +331,25 @@ const AdminArchive = () => {
       });
     });
 
+    // Add canceled events
+    canceledEvents.forEach((evt) => {
+      items.push({
+        id: evt._id,
+        type: "event",
+        name: evt.subject || "Untitled Event",
+        title: evt.subject || "Untitled Event",
+        deletedAt: evt.deletedAt || evt.updatedAt || null,
+        data: evt,
+      });
+    });
+
     // Sort by deletion date (newest first)
     return items.sort((a, b) => {
       const dateA = new Date(a.deletedAt || 0);
       const dateB = new Date(b.deletedAt || 0);
       return dateB - dateA;
     });
-  }, [deletedUsers, deletedBarangays]);
+  }, [deletedUsers, deletedBarangays, canceledEvents]);
 
   /* ===================== RENDER HELPERS ===================== */
   const getTypeIcon = (type) => {
@@ -287,6 +358,8 @@ const AdminArchive = () => {
         return <Users size={16} />;
       case "barangay":
         return <Building2 size={16} />;
+      case "event":
+        return <Calendar size={16} />;
       default:
         return <ArchiveIcon size={16} />;
     }
@@ -298,6 +371,8 @@ const AdminArchive = () => {
         return "bg-blue-100 text-blue-700 border-blue-200";
       case "barangay":
         return "bg-purple-100 text-purple-700 border-purple-200";
+      case "event":
+        return "bg-red-100 text-red-700 border-red-200";
       default:
         return "bg-slate-100 text-slate-700 border-slate-200";
     }
@@ -309,6 +384,8 @@ const AdminArchive = () => {
         return "User";
       case "barangay":
         return "Barangay";
+      case "event":
+        return "Event";
       default:
         return "Item";
     }
@@ -344,9 +421,10 @@ const AdminArchive = () => {
   const stats = {
     deletedUsers: deletedUsers.length,
     deletedBarangays: deletedBarangays.length,
+    cancelledEvents: canceledEvents.length,
   };
 
-  const isLoading = loadingUsers || loadingBarangays;
+  const isLoading = loadingUsers || loadingBarangays || loadingEvents;
 
   return (
     <div className="min-h-screen bg-blue-50 p-6">
@@ -375,6 +453,12 @@ const AdminArchive = () => {
             value={stats.deletedBarangays}
             icon={Building2}
             iconClass="text-purple-400"
+          />
+          <StatCard
+            label="Cancelled Events"
+            value={stats.cancelledEvents}
+            icon={Calendar}
+            iconClass="text-red-400"
           />
         </div>
 
@@ -434,7 +518,7 @@ const AdminArchive = () => {
               <p className="text-sm text-gray-500 mt-1">
                 {searchQuery
                   ? "Try adjusting your search terms"
-                  : "Deleted users and barangays will appear here."}
+                  : "Deleted users, barangays, and cancelled events will appear here."}
               </p>
             </div>
           ) : (
@@ -497,24 +581,48 @@ const AdminArchive = () => {
                     {/* Right: Actions */}
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() =>
-                          handleRestore(
-                            item.type === "user" ? "users" : "barangays",
-                            item.id,
-                          )
-                        }
+                        onClick={() => {
+                          if (item.type === "event") {
+                            handleRestoreEvent(item.id, item.data);
+                          } else {
+                            handleRestore(
+                              item.type === "user" ? "users" : "barangays",
+                              item.id,
+                            );
+                          }
+                        }}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
                       >
                         <RotateCcw size={14} />
                         Restore
                       </button>
                       <button
-                        onClick={() =>
-                          handleDelete(
-                            item.type === "user" ? "users" : "barangays",
-                            item.data,
-                          )
-                        }
+                        onClick={() => {
+                          if (item.type === "event") {
+                            if (
+                              window.confirm("Permanently delete this event?")
+                            ) {
+                              axios
+                                .delete(
+                                  `${API_BASE}/messages/${item.id}/hard-event`,
+                                  { headers: getAuthHeaders() },
+                                )
+                                .then(() => {
+                                  toast.success("Event permanently deleted");
+                                  fetchCanceledEvents();
+                                })
+                                .catch((err) => {
+                                  console.error("Failed to delete event:", err);
+                                  toast.error("Failed to delete event");
+                                });
+                            }
+                          } else {
+                            handleDelete(
+                              item.type === "user" ? "users" : "barangays",
+                              item.data,
+                            );
+                          }
+                        }}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                       >
                         <Trash2 size={14} />
