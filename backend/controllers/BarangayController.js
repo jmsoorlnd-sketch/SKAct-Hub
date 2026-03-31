@@ -851,13 +851,29 @@ export const getArchive = async (req, res) => {
     );
 
     // Archived messages (deleted) for this barangay
-    const messages = await Message.find({
+    const messageQuery = {
       attachedToBarangay: barangayId,
       isDeleted: true,
-    })
+    };
+
+    // For officials, exclude admin-scheduled events and admin deletions
+    if (req.user && req.user.role !== "Admin") {
+      messageQuery.isAdminScheduled = false;
+    }
+
+    let messages = await Message.find(messageQuery)
       .populate("sender", "username email role")
       .populate("recipient", "username email role")
+      .populate("deletedBy", "username role")
       .sort({ deletedAt: -1 });
+
+    if (req.user && req.user.role !== "Admin") {
+      messages = messages.filter(
+        (msg) =>
+          !msg.isAdminScheduled &&
+          !(msg.deletedBy && msg.deletedBy.role === "Admin"),
+      );
+    }
 
     res.status(200).json({ folders, messages });
   } catch (error) {

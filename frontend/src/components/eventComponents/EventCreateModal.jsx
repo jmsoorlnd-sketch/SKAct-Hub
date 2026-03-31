@@ -10,8 +10,13 @@ const EventCreationModal = ({
   onSubmit,
   creatingEvent,
   createEventMessage,
+  user,
 }) => {
   if (!isOpen) return null;
+
+  const isAdmin = user?.role === "Admin";
+  const userBarangayName =
+    user?.barangay?.barangayName || user?.barangayName || "Your barangay";
 
   const now = new Date();
   now.setSeconds(0, 0);
@@ -21,7 +26,7 @@ const EventCreationModal = ({
     <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
+        <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-5">
           <div className="flex justify-between items-center">
             <div className="text-white">
               <h3 className="text-2xl font-bold flex items-center gap-2">
@@ -29,7 +34,9 @@ const EventCreationModal = ({
                 Add New Event
               </h3>
               <p className="text-blue-100 mt-2 text-sm">
-                Schedule an event for all or specific barangays
+                {isAdmin
+                  ? "Schedule an event for all or specific barangays"
+                  : "Schedule an event for your barangay"}
               </p>
             </div>
             <button
@@ -154,85 +161,99 @@ const EventCreationModal = ({
               />
             </div>
 
-            {/* Event Visibility */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-2">
-                Event Visibility
-              </label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl hover:bg-blue-50 cursor-pointer transition-colors">
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="all"
-                    checked={eventFormData.visibility === "all"}
-                    onChange={(e) =>
-                      setEventFormData({
-                        ...eventFormData,
-                        visibility: e.target.value,
-                        barangayId: "",
-                      })
-                    }
-                    className="w-4 h-4 accent-blue-600"
-                  />
-                  <div className="flex-1">
-                    <span className="font-bold text-slate-900 block">
-                      All Barangays
-                    </span>
-                    <span className="text-xs text-slate-600">
-                      Everyone can see this event
-                    </span>
+            {isAdmin ? (
+              <>
+                {/* Event Visibility */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 mb-2">
+                    Event Visibility
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl hover:bg-blue-50 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="all"
+                        checked={eventFormData.visibility === "all"}
+                        onChange={(e) =>
+                          setEventFormData({
+                            ...eventFormData,
+                            visibility: e.target.value,
+                            barangayId: "",
+                          })
+                        }
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <div className="flex-1">
+                        <span className="font-bold text-slate-900 block">
+                          All Barangays
+                        </span>
+                        <span className="text-xs text-slate-600">
+                          Everyone can see this event
+                        </span>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl hover:bg-blue-50 cursor-pointer transition-colors">
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="specific"
+                        checked={eventFormData.visibility === "specific"}
+                        onChange={(e) =>
+                          setEventFormData({
+                            ...eventFormData,
+                            visibility: e.target.value,
+                            barangayId: "",
+                          })
+                        }
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <div className="flex-1">
+                        <span className="font-bold text-slate-900 block">
+                          Specific Barangay
+                        </span>
+                        <span className="text-xs text-slate-600">
+                          Only selected barangay can see this event
+                        </span>
+                      </div>
+                    </label>
                   </div>
-                </label>
-                <label className="flex items-center gap-3 p-3 border-2 border-slate-200 rounded-xl hover:bg-blue-50 cursor-pointer transition-colors">
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="specific"
-                    checked={eventFormData.visibility === "specific"}
-                    onChange={(e) =>
-                      setEventFormData({
-                        ...eventFormData,
-                        visibility: e.target.value,
-                      })
-                    }
-                    className="w-4 h-4 accent-blue-600"
-                  />
-                  <div className="flex-1">
-                    <span className="font-bold text-slate-900 block">
-                      Specific Barangay
-                    </span>
-                    <span className="text-xs text-slate-600">
-                      Only selected barangay can see this event
-                    </span>
-                  </div>
-                </label>
-              </div>
-            </div>
+                </div>
 
-            {/* Barangay Selection */}
-            {eventFormData.visibility === "specific" && (
-              <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2">
-                  Select Barangay <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={eventFormData.barangayId}
-                  onChange={(e) =>
-                    setEventFormData({
-                      ...eventFormData,
-                      barangayId: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                >
-                  <option value="">Choose a barangay...</option>
-                  {barangays.map((barangay) => (
-                    <option key={barangay._id} value={barangay._id}>
-                      {barangay.barangayName}
-                    </option>
-                  ))}
-                </select>
+                {/* Barangay Selection */}
+                {eventFormData.visibility === "specific" && (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-900 mb-2">
+                      Select Barangay <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={eventFormData.barangayId}
+                      onChange={(e) =>
+                        setEventFormData({
+                          ...eventFormData,
+                          barangayId: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    >
+                      <option value="">Choose a barangay...</option>
+                      {barangays.map((barangay) => (
+                        <option key={barangay._id} value={barangay._id}>
+                          {barangay.barangayName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700">
+                Events you create are for your barangay only: {userBarangayName}
+              </div>
+            )}
+            {eventFormData.visibility === "specific" && !isAdmin && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700">
+                This event will be created for your barangay: {userBarangayName}
               </div>
             )}
           </form>
@@ -243,7 +264,7 @@ const EventCreationModal = ({
           <button
             onClick={onSubmit}
             disabled={creatingEvent}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
           >
             {creatingEvent ? (
               <>

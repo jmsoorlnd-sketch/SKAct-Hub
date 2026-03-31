@@ -300,6 +300,13 @@ const AdminCalendar = () => {
     try {
       const token = localStorage.getItem("token");
 
+      const effectiveBarangayId =
+        user?.role === "Admin"
+          ? eventFormData.visibility === "specific"
+            ? eventFormData.barangayId
+            : null
+          : user?.barangay?._id || user?.barangay || user?.barangayId || null;
+
       const payload = {
         subject: eventFormData.subject,
         body: eventFormData.body,
@@ -307,10 +314,7 @@ const AdminCalendar = () => {
         endDate: eventFormData.endDate,
         recipient: "admin",
         status: "ongoing",
-        barangayId:
-          eventFormData.visibility === "specific"
-            ? eventFormData.barangayId
-            : null,
+        barangayId: effectiveBarangayId,
         participants: eventFormData.participants
           .split(",")
           .map((p) => p.trim())
@@ -577,7 +581,7 @@ const AdminCalendar = () => {
                 {/* Today's Events - 1 column */}
                 <div className="lg:col-span-1">
                   <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden sticky top-6 max-h-[600px] flex flex-col">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-slate-200">
+                    <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-slate-200">
                       <h3 className="text-lg font-bold text-slate-900">
                         Today's Events
                       </h3>
@@ -625,7 +629,7 @@ const AdminCalendar = () => {
                               return (
                                 <div
                                   key={evt._id}
-                                  className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
+                                  className="p-3 bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
                                 >
                                   <div className="flex items-start justify-between gap-2 mb-1">
                                     <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
