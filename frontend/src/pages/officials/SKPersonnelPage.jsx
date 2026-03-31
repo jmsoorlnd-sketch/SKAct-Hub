@@ -384,10 +384,11 @@ const SKPersonnelPage = () => {
 
     const total = allMembers.length;
     const active = allMembers.filter((m) => m.status === "Active").length;
-    const inactive = total - active;
+    const inactive = allMembers.filter((m) => m.status === "Inactive").length;
+    const resigned = allMembers.filter((m) => m.status === "Resigned").length;
     const activeRate = total > 0 ? ((active / total) * 100).toFixed(1) : 0;
 
-    return { total, active, inactive, activeRate };
+    return { total, active, inactive, resigned, activeRate };
   }, [skPersonnel]);
 
   /* ===================== LOADING STATE ===================== */
@@ -424,7 +425,7 @@ const SKPersonnelPage = () => {
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <StatCard
               icon={Users}
               title="Total Members"
@@ -443,10 +444,21 @@ const SKPersonnelPage = () => {
               icon={UserX}
               title="Inactive Members"
               value={statistics.inactive}
-              color="red"
+              color="yellow"
               percentage={
                 statistics.total > 0
                   ? ((statistics.inactive / statistics.total) * 100).toFixed(1)
+                  : 0
+              }
+            />
+            <StatCard
+              icon={UserX}
+              title="Resigned Members"
+              value={statistics.resigned}
+              color="red"
+              percentage={
+                statistics.total > 0
+                  ? ((statistics.resigned / statistics.total) * 100).toFixed(1)
                   : 0
               }
             />
@@ -792,20 +804,24 @@ const SKPersonnelPage = () => {
                   .map((entry, index) => (
                     <div
                       key={`${entry.role}-${entry.memberId || index}-${entry.changedAt}`}
-                      className="border rounded-lg p-3 bg-slate-50"
+                      className="border-l-4 border-blue-500 rounded-lg p-4 bg-white shadow-sm"
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-slate-700">
-                          {entry.role?.toUpperCase() || "Unknown Role"} -{" "}
-                          {entry.name || "Unknown"}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm uppercase font-bold tracking-wider text-blue-700">
+                            {entry.role || "Role"}
+                          </p>
+                          <h3 className="text-lg font-bold text-slate-900">
+                            {entry.name || "Unknown"}
+                          </h3>
+                        </div>
                         <span
-                          className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          className={`text-xs font-bold px-3 py-1.5 rounded-full ${
                             entry.status === "Active"
-                              ? "bg-emerald-100 text-emerald-700"
+                              ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                               : entry.status === "Inactive"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-red-100 text-red-700"
+                                ? "bg-amber-100 text-amber-700 border border-amber-200"
+                                : "bg-red-100 text-red-700 border border-red-200"
                           }`}
                         >
                           {entry.status || "N/A"}
@@ -823,7 +839,8 @@ const SKPersonnelPage = () => {
                         {new Date(entry.changedAt).toLocaleString()}
                       </div>
                       {entry.details && (
-                        <p className="text-xs text-slate-500 mt-2">
+                        <p className="text-xs text-slate-500 mt-3 border-t border-slate-200 pt-2">
+                          <span className="font-semibold">Details:</span>{" "}
                           {entry.details}
                         </p>
                       )}
@@ -884,9 +901,14 @@ const StatCard = ({
       badge: "bg-purple-100 text-purple-700",
       bar: "from-purple-500 to-purple-600",
     },
+    yellow: {
+      bg: "from-amber-500 to-amber-600",
+      badge: "bg-amber-100 text-amber-700",
+      bar: "from-amber-500 to-amber-600",
+    },
   };
 
-  const c = colors[color];
+  const c = colors[color] || colors.blue;
 
   return (
     <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
