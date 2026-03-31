@@ -183,6 +183,20 @@ const DateModal = ({
                           : `Barangay: ${barangayName}`}
                       </span>
                     </div>
+
+                    {/* Participants Information */}
+                    {evt.participants && evt.participants.length > 0 && (
+                      <div className="mt-2 p-3 bg-white rounded-lg border border-slate-200">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                          Participants
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          {Array.isArray(evt.participants)
+                            ? evt.participants.join(", ")
+                            : String(evt.participants)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   {user &&
                     evt.sender &&

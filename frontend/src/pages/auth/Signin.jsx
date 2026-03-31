@@ -15,7 +15,7 @@ const Signin = () => {
 
   // New state for failed attempts and forgot password
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(true); // always show link for accessibility
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState("");
@@ -64,7 +64,7 @@ const Signin = () => {
 
       // Reset failed attempts on successful login
       setFailedAttempts(0);
-      setShowForgotPassword(false);
+      setShowForgotPassword(true); // keep forgot password visible for quick recovery
 
       const { user, token } = res.data;
 

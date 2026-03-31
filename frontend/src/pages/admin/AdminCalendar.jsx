@@ -667,6 +667,20 @@ const AdminCalendar = () => {
                                     </div>
                                   )}
 
+                                  {evt.participants &&
+                                    evt.participants.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 text-xs text-slate-700 mb-1">
+                                        <span className="font-semibold">
+                                          Participants:
+                                        </span>
+                                        <span className="italic">
+                                          {Array.isArray(evt.participants)
+                                            ? evt.participants.join(", ")
+                                            : String(evt.participants)}
+                                        </span>
+                                      </div>
+                                    )}
+
                                   {isOwner && (
                                     <div className="mt-2">
                                       <label className="text-xs font-semibold text-slate-700 mr-2">
