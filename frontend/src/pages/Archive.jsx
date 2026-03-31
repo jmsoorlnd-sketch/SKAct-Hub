@@ -198,6 +198,32 @@ const Archive = () => {
     [apiCall, fetchArchive, toast],
   );
 
+  const handleRestoreEvent = useCallback(
+    async (messageId, eventData) => {
+      if (!messageId) return;
+      if (!confirmAction("Restore this event?")) return;
+
+      try {
+        if (eventData?.isDeleted) {
+          await apiCall("post", `${API_BASE}/messages/${messageId}/restore`);
+        } else if (eventData?.status === "cancelled") {
+          await apiCall("put", `${API_BASE}/messages/${messageId}/status`, {
+            status: "ongoing",
+          });
+        } else {
+          // fallback to simple restore
+          await apiCall("post", `${API_BASE}/messages/${messageId}/restore`);
+        }
+
+        toast.success("Event restored successfully");
+        fetchArchive();
+      } catch {
+        // Error already handled in apiCall
+      }
+    },
+    [apiCall, fetchArchive, toast],
+  );
+
   const handleRestoreKagawad = useCallback(
     async (kagawadId) => {
       if (!kagawadId || !barangayId) return;
@@ -473,9 +499,22 @@ const Archive = () => {
                             {getTypeLabel(item.type)}
                           </span>
                         </div>
-                        <p className="font-semibold text-slate-900 truncate">
-                          {item.title}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-900 truncate">
+                            {item.title}
+                          </p>
+                          {item.type === "event" && item.data?.status && (
+                            <span
+                              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                item.data.status === "cancelled"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {item.data.status}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 mt-1">
                           Deleted by {item.deletedBy} on{" "}
                           {item.deletedAt
@@ -506,6 +545,8 @@ const Archive = () => {
                           onClick={() => {
                             if (item.type === "folder") {
                               handleRestoreFolder(item.id);
+                            } else if (item.type === "event") {
+                              handleRestoreEvent(item.id, item.data);
                             } else if (item.type === "document") {
                               handleRestoreMessage(item.id);
                             } else if (item.type === "personnel") {

@@ -850,10 +850,12 @@ export const getArchive = async (req, res) => {
       "firstname lastname username",
     );
 
-    // Archived messages (deleted) for this barangay
+    // Archived messages for this barangay:
+    // - soft-deleted items (isDeleted=true)
+    // - canceled events (status=cancelled)
     const messageQuery = {
       attachedToBarangay: barangayId,
-      isDeleted: true,
+      $or: [{ isDeleted: true }, { status: "cancelled" }],
     };
 
     // For officials, exclude admin-scheduled events and admin deletions
