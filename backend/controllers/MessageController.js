@@ -65,26 +65,72 @@ export const sendMessage = async (req, res) => {
         .json({ message: "End date/time cannot be before start date/time" });
     }
 
+    const normalizedParticipants = Array.isArray(participants)
+      ? participants.map((p) => p.trim()).filter(Boolean)
+      : typeof participants === "string"
+        ? participants
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean)
+        : [];
+
     if (s) {
-      const conflictingEvent = await Message.findOne({
+      // Find overlapping events in time
+      const overlappingEvents = await Message.find({
         isDeleted: false,
         startDate: { $lte: e || s },
         $or: [
-          { endDate: null },
           { endDate: { $exists: false } },
+          { endDate: null },
           { endDate: { $gte: s } },
         ],
       });
 
-      if (conflictingEvent) {
-        const overlapping =
-          s &&
-          (!conflictingEvent.endDate || conflictingEvent.endDate >= s) &&
-          (!e || conflictingEvent.startDate <= e);
+      const overlappingEvent = overlappingEvents.find((event) => {
+        const existingStart = new Date(event.startDate);
+        const existingEnd = event.endDate ? new Date(event.endDate) : null;
+        const exactStart = existingStart.getTime() === s.getTime();
+        const overlap =
+          e && existingEnd
+            ? existingStart <= e && existingEnd >= s
+            : exactStart || (existingEnd && s <= existingEnd);
+        return exactStart || overlap;
+      });
 
-        if (overlapping && (!participants || participants.length === 0)) {
-          return res.status(400).json({
-            message: "Event conflict detected; please add participant names.",
+      if (overlappingEvent && normalizedParticipants.length === 0) {
+        return res.status(400).json({
+          message: "Event conflict detected; please add participant names.",
+        });
+      }
+
+      if (normalizedParticipants.length > 0) {
+        const busyParticipants = new Set();
+
+        overlappingEvents.forEach((event) => {
+          const existingParticipants = Array.isArray(event.participants)
+            ? event.participants
+            : typeof event.participants === "string"
+              ? event.participants.split(",").map((p) => p.trim())
+              : [];
+
+          existingParticipants.forEach((name) => {
+            const trimmed = name.trim();
+            if (
+              trimmed &&
+              normalizedParticipants.some(
+                (p) => p.toLowerCase() === trimmed.toLowerCase(),
+              )
+            ) {
+              busyParticipants.add(trimmed);
+            }
+          });
+        });
+
+        if (busyParticipants.size > 0) {
+          return res.status(409).json({
+            message: `Participant(s) ${Array.from(busyParticipants).join(
+              ", ",
+            )} already have an event at this time. Please select different participants.`,
           });
         }
       }
