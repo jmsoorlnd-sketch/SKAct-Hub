@@ -119,9 +119,16 @@ const Inbox = () => {
 
   /* ===================== DERIVED DATA ===================== */
   const messages = useMemo(() => {
-    if (activeTab === "sent") return sentMessages;
-    if (activeTab === "received") return receivedMessages;
-    return [...receivedMessages, ...sentMessages].sort(
+    const sentWithSource = sentMessages.map((m) => ({ ...m, _source: "sent" }));
+    const receivedWithSource = receivedMessages.map((m) => ({
+      ...m,
+      _source: "received",
+    }));
+
+    if (activeTab === "sent") return sentWithSource;
+    if (activeTab === "received") return receivedWithSource;
+
+    return [...receivedWithSource, ...sentWithSource].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
   }, [activeTab, sentMessages, receivedMessages]);
@@ -200,6 +207,19 @@ const Inbox = () => {
     (status) => STATUS_CONFIG[status] || DEFAULT_STATUS,
     [],
   );
+
+  const getDisplayName = useCallback((user, fallback = "Unknown") => {
+    if (!user) return fallback;
+
+    const fullName =
+      user.firstname || user.lastname
+        ? `${user.firstname || ""} ${user.lastname || ""}`.trim()
+        : "";
+
+    // Prefer the actual human name first, then username/email
+    return fullName || user.username || user.email || fallback;
+  }, []);
+
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -461,14 +481,20 @@ const Inbox = () => {
                                 </span>
                               )}
                           </div>
-                          <p className="text-[11px] text-slate-500">
-                            {activeTab === "sent" ? "To:" : "From:"}{" "}
-                            <span className="font-semibold text-slate-700">
-                              {activeTab === "sent"
-                                ? msg.recipient?.username || "Admin"
-                                : msg.sender?.username || "Unknown"}
-                            </span>
-                          </p>
+                          <div className="space-y-0.5 text-[11px] text-slate-500">
+                            <p>
+                              To:{" "}
+                              <span className="font-semibold text-slate-700">
+                                {getDisplayName(msg.recipient, "Admin")}
+                              </span>
+                            </p>
+                            <p>
+                              From:{" "}
+                              <span className="font-semibold text-slate-700">
+                                {getDisplayName(msg.sender)}
+                              </span>
+                            </p>
+                          </div>
                         </div>
                       </div>
 
@@ -634,12 +660,16 @@ const Inbox = () => {
                 <p className="text-sm text-slate-600">
                   <strong>Status:</strong> {selectedMessage.status}
                 </p>
-                <p className="text-sm text-slate-600">
-                  <strong>{activeTab === "sent" ? "To" : "From"}:</strong>{" "}
-                  {activeTab === "sent"
-                    ? selectedMessage.recipient?.username || "Admin"
-                    : selectedMessage.sender?.username || "Unknown"}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-sm text-slate-600">
+                    <strong>To:</strong>{" "}
+                    {getDisplayName(selectedMessage.recipient, "Admin")}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    <strong>From:</strong>{" "}
+                    {getDisplayName(selectedMessage.sender)}
+                  </p>
+                </div>
                 <p className="text-sm text-slate-600">
                   <strong>Body:</strong>
                 </p>

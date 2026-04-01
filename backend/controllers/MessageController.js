@@ -245,7 +245,7 @@ export const getInbox = async (req, res) => {
     }
 
     const messages = await Message.find(query)
-      .populate("sender", "username email role")
+      .populate("sender", "username email role firstname lastname")
       .populate("intendedFolder", "name")
       .sort({ createdAt: -1 });
 
@@ -452,7 +452,8 @@ export const getSentMessages = async (req, res) => {
     const userId = req.user._id;
 
     const messages = await Message.find({ sender: userId, isDeleted: false })
-      .populate("recipient", "username email role")
+      .populate("recipient", "username email role firstname lastname")
+      .populate("sender", "username email role firstname lastname")
       .populate("attachedToBarangay", "barangayName city province")
       .sort({ createdAt: -1 });
 
@@ -468,8 +469,8 @@ export const getMessagesByUser = async (req, res) => {
     const { userId } = req.params;
 
     const messages = await Message.find({ sender: userId, isDeleted: false })
-      .populate("recipient", "username email role")
-      .populate("sender", "username email role")
+      .populate("recipient", "username email role firstname lastname")
+      .populate("sender", "username email role firstname lastname")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ messages, total: messages.length });
