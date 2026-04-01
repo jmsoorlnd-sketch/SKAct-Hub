@@ -10,6 +10,9 @@ import {
   MessageSquare,
   BarChart3,
   Clock,
+  Database,
+  Download,
+  Shield,
 } from "lucide-react";
 
 const AdminSettings = () => {
@@ -80,6 +83,27 @@ const AdminSettings = () => {
       name: "Real-time Notifications",
       description: "Manage and send system notifications",
       icon: Zap,
+      status: "Active",
+    },
+    {
+      id: 9,
+      name: "System Backup & Recovery",
+      description: "Manage system backups and data recovery options",
+      icon: Database,
+      status: "Active",
+    },
+    {
+      id: 10,
+      name: "Reports & Export",
+      description: "Generate and export system reports and data",
+      icon: Download,
+      status: "Active",
+    },
+    {
+      id: 11,
+      name: "Data Privacy & Security",
+      description: "Manage data retention and security policies",
+      icon: Shield,
       status: "Active",
     },
   ];
@@ -175,6 +199,9 @@ const AdminSettings = () => {
               return (
                 <div
                   key={feature.id}
+                  id={
+                    feature.name === "Reports & Export" ? "reports" : undefined
+                  }
                   className="bg-slate-50 rounded-lg p-4 border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-start gap-4">

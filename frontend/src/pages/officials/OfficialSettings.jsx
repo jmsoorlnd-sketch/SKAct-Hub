@@ -8,6 +8,10 @@ import {
   Calendar,
   Archive,
   MessageSquare,
+  History,
+  CheckCircle,
+  MapPin,
+  HelpCircle,
 } from "lucide-react";
 
 const OfficialSettings = () => {
@@ -63,6 +67,34 @@ const OfficialSettings = () => {
       name: "Activity Updates",
       description: "Track activity progress and updates",
       icon: Package,
+      status: "Active",
+    },
+    {
+      id: 7,
+      name: "Activity History",
+      description: "View your personal activity and document submissions",
+      icon: History,
+      status: "Active",
+    },
+    {
+      id: 8,
+      name: "Approval Status Tracker",
+      description: "Track approval status of submitted documents",
+      icon: CheckCircle,
+      status: "Active",
+    },
+    {
+      id: 9,
+      name: "Barangay Information",
+      description: "View your barangay details and resources",
+      icon: MapPin,
+      status: "Active",
+    },
+    {
+      id: 10,
+      name: "Help / Support",
+      description: "Access help documentation and contact support",
+      icon: HelpCircle,
       status: "Active",
     },
   ];
