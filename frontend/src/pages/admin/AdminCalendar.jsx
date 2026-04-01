@@ -352,7 +352,6 @@ const AdminCalendar = () => {
         startDate: eventFormData.startDate,
         endDate: eventFormData.endDate,
         recipient: "admin",
-        status: "ongoing",
         barangayId: effectiveBarangayId,
         participants: eventFormData.participants
           .split(",")

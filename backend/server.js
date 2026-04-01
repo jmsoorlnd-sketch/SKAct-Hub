@@ -1,10 +1,11 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 
 //dotenv config
 dotenv.config();
+
+import express from "express";
+import cors from "cors";
 const app = express();
 
 //middleware
@@ -34,6 +35,14 @@ app.use("/api/posts", (req, res) => {
   res.send("Posts route is under construction.");
 });
 
+// validate required env variables
+if (!process.env.JWT_SECRET) {
+  console.error(
+    "Missing JWT_SECRET in environment configuration. Set JWT_SECRET in backend/.env",
+  );
+  process.exit(1);
+}
+
 //port setup
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
@@ -47,7 +56,12 @@ app.get("/", (req, res) => {
 
 // MongoDB connection
 import connectDB from "./configDB.js";
+dotenv.config();
 connectDB();
+
+// Start event status scheduler
+import eventStatusScheduler from "./services/eventStatusScheduler.js";
+eventStatusScheduler.start();
 
 // serve uploaded files
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
