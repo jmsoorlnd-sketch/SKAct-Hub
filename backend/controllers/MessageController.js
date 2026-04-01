@@ -141,8 +141,8 @@ export const sendMessage = async (req, res) => {
     const senderUser = await User.findById(senderId);
     const isAdminEvent = senderUser?.role === "Admin";
 
-    // Admin-scheduled events are automatically approved
-    const messageStatus = isAdminEvent ? "approved" : status || "pending";
+    // Admin-scheduled events should remain pending for approval by default
+    const messageStatus = status || "pending";
 
     const message = await Message.create({
       sender: senderId,
