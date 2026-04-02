@@ -65,26 +65,72 @@ export const sendMessage = async (req, res) => {
         .json({ message: "End date/time cannot be before start date/time" });
     }
 
+    const normalizedParticipants = Array.isArray(participants)
+      ? participants.map((p) => p.trim()).filter(Boolean)
+      : typeof participants === "string"
+        ? participants
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean)
+        : [];
+
     if (s) {
-      const conflictingEvent = await Message.findOne({
+      // Find overlapping events in time
+      const overlappingEvents = await Message.find({
         isDeleted: false,
         startDate: { $lte: e || s },
         $or: [
-          { endDate: null },
           { endDate: { $exists: false } },
+          { endDate: null },
           { endDate: { $gte: s } },
         ],
       });
 
-      if (conflictingEvent) {
-        const overlapping =
-          s &&
-          (!conflictingEvent.endDate || conflictingEvent.endDate >= s) &&
-          (!e || conflictingEvent.startDate <= e);
+      const overlappingEvent = overlappingEvents.find((event) => {
+        const existingStart = new Date(event.startDate);
+        const existingEnd = event.endDate ? new Date(event.endDate) : null;
+        const exactStart = existingStart.getTime() === s.getTime();
+        const overlap =
+          e && existingEnd
+            ? existingStart <= e && existingEnd >= s
+            : exactStart || (existingEnd && s <= existingEnd);
+        return exactStart || overlap;
+      });
 
-        if (overlapping && (!participants || participants.length === 0)) {
-          return res.status(400).json({
-            message: "Event conflict detected; please add participant names.",
+      if (overlappingEvent && normalizedParticipants.length === 0) {
+        return res.status(400).json({
+          message: "Event conflict detected; please add participant names.",
+        });
+      }
+
+      if (normalizedParticipants.length > 0) {
+        const busyParticipants = new Set();
+
+        overlappingEvents.forEach((event) => {
+          const existingParticipants = Array.isArray(event.participants)
+            ? event.participants
+            : typeof event.participants === "string"
+              ? event.participants.split(",").map((p) => p.trim())
+              : [];
+
+          existingParticipants.forEach((name) => {
+            const trimmed = name.trim();
+            if (
+              trimmed &&
+              normalizedParticipants.some(
+                (p) => p.toLowerCase() === trimmed.toLowerCase(),
+              )
+            ) {
+              busyParticipants.add(trimmed);
+            }
+          });
+        });
+
+        if (busyParticipants.size > 0) {
+          return res.status(409).json({
+            message: `Participant(s) ${Array.from(busyParticipants).join(
+              ", ",
+            )} already have an event at this time. Please select different participants.`,
           });
         }
       }
@@ -95,8 +141,8 @@ export const sendMessage = async (req, res) => {
     const senderUser = await User.findById(senderId);
     const isAdminEvent = senderUser?.role === "Admin";
 
-    // Admin-scheduled events are automatically approved
-    const messageStatus = isAdminEvent ? "approved" : status || "pending";
+    // Admin-scheduled events should remain pending for approval by default
+    const messageStatus = status || "pending";
 
     const message = await Message.create({
       sender: senderId,
@@ -245,7 +291,7 @@ export const getInbox = async (req, res) => {
     }
 
     const messages = await Message.find(query)
-      .populate("sender", "username email role")
+      .populate("sender", "username email role firstname lastname")
       .populate("intendedFolder", "name")
       .sort({ createdAt: -1 });
 
@@ -452,7 +498,8 @@ export const getSentMessages = async (req, res) => {
     const userId = req.user._id;
 
     const messages = await Message.find({ sender: userId, isDeleted: false })
-      .populate("recipient", "username email role")
+      .populate("recipient", "username email role firstname lastname")
+      .populate("sender", "username email role firstname lastname")
       .populate("attachedToBarangay", "barangayName city province")
       .sort({ createdAt: -1 });
 
@@ -468,8 +515,8 @@ export const getMessagesByUser = async (req, res) => {
     const { userId } = req.params;
 
     const messages = await Message.find({ sender: userId, isDeleted: false })
-      .populate("recipient", "username email role")
-      .populate("sender", "username email role")
+      .populate("recipient", "username email role firstname lastname")
+      .populate("sender", "username email role firstname lastname")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ messages, total: messages.length });

@@ -16,6 +16,13 @@ const requireAuth = async (req, res, next) => {
   }
 
   try {
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET not configured for token verification");
+      return res
+        .status(500)
+        .json({ message: "Authentication configuration error" });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     // load full user record (excluding password)
     const user = await User.findById(decoded._id).select("-password");

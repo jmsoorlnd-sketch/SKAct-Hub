@@ -182,10 +182,10 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
-                  Messages for Approval
+                  Documents Need Approval
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  Review pending messages from officials
+                  Review pending documents from officials
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -213,7 +213,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between text-white flex-col sm:flex-row gap-2">
                   <div>
                     <h2 className="text-sm sm:text-base font-bold">
-                      Pending Messages
+                      Pending Documents
                     </h2>
                     <p className="text-xs text-blue-100 mt-0.5">
                       From Officials
@@ -242,10 +242,10 @@ const AdminDashboard = () => {
                     <Mail className="w-8 h-8 text-slate-400" />
                   </div>
                   <p className="text-sm font-bold text-slate-900 mb-1">
-                    No pending messages
+                    No pending documents
                   </p>
                   <p className="text-xs text-slate-500">
-                    All messages have been processed
+                    All documents have been processed
                   </p>
                 </div>
               ) : (
@@ -328,7 +328,7 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between text-white">
                   <div>
                     <h2 className="text-sm sm:text-base font-bold">
-                      Rejected Messages
+                      Rejected Documents
                     </h2>
                     <p className="text-xs text-orange-100 mt-0.5">
                       Send back to pending
@@ -352,10 +352,10 @@ const AdminDashboard = () => {
               ) : rejectedMessages.length === 0 ? (
                 <div className="p-8 text-center">
                   <p className="text-sm font-bold text-slate-900 mb-1">
-                    No rejected messages
+                    No rejected documents
                   </p>
                   <p className="text-xs text-slate-500">
-                    Rejected messages will appear here.
+                    Rejected documents will appear here.
                   </p>
                 </div>
               ) : (
@@ -742,10 +742,10 @@ const AdminDashboard = () => {
                       <Mail className="w-10 h-10 text-slate-400" />
                     </div>
                     <p className="text-base font-bold text-slate-900 mb-1">
-                      Select a message
+                      Select a document
                     </p>
                     <p className="text-sm text-slate-500">
-                      Choose from the pending messages
+                      Choose from the pending documents
                     </p>
                   </div>
                 </div>

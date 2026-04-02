@@ -311,7 +311,12 @@ const AdminCalendar = () => {
       return;
     }
 
-    const isConflict = events.some((event) => {
+    const selectedParticipantNames = eventFormData.participants
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const overlappingEvents = events.filter((event) => {
       if (!event.startDate) return false;
       const existingStart = new Date(event.startDate);
       const existingEnd = event.endDate ? new Date(event.endDate) : null;
@@ -326,11 +331,42 @@ const AdminCalendar = () => {
       return overlap;
     });
 
-    if (isConflict && !eventFormData.participants.trim()) {
+    if (overlappingEvents.length > 0 && selectedParticipantNames.length === 0) {
       setCreateEventMessage(
         "Conflicting event exists. Provide participant names to continue.",
       );
       return;
+    }
+
+    if (overlappingEvents.length > 0 && selectedParticipantNames.length > 0) {
+      const busy = new Set();
+
+      overlappingEvents.forEach((event) => {
+        const existingParticipants = Array.isArray(event.participants)
+          ? event.participants
+          : typeof event.participants === "string"
+            ? event.participants.split(",").map((p) => p.trim())
+            : [];
+
+        existingParticipants.forEach((p) => {
+          const normalized = p.trim().toLowerCase();
+          if (
+            normalized &&
+            selectedParticipantNames.some(
+              (sel) => sel.toLowerCase() === normalized,
+            )
+          ) {
+            busy.add(p.trim());
+          }
+        });
+      });
+
+      if (busy.size > 0) {
+        setCreateEventMessage(
+          `Participant(s) ${Array.from(busy).join(", ")} already have a meeting at this time. Please select different participants.`,
+        );
+        return;
+      }
     }
 
     setCreatingEvent(true);
@@ -352,7 +388,6 @@ const AdminCalendar = () => {
         startDate: eventFormData.startDate,
         endDate: eventFormData.endDate,
         recipient: "admin",
-        status: "ongoing",
         barangayId: effectiveBarangayId,
         participants: eventFormData.participants
           .split(",")

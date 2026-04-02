@@ -114,23 +114,61 @@ const EventScheduler = () => {
       return;
     }
 
-    const conflict = events.some((event) => {
+    const selectedParticipantNames = formData.participants
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const overlappingEvents = events.filter((event) => {
       if (!event.startDate) return false;
       const existingStart = new Date(event.startDate);
       const existingEnd = event.endDate ? new Date(event.endDate) : null;
+
       const exactStart = existingStart.getTime() === start.getTime();
       const overlap =
         end && existingEnd
           ? existingStart <= end && existingEnd >= start
           : exactStart;
+
       return exactStart || overlap;
     });
 
-    if (conflict && !formData.participants.trim()) {
+    if (overlappingEvents.length > 0 && selectedParticipantNames.length === 0) {
       alert(
         "Conflict detected with another event. Please specify participants to continue.",
       );
       return;
+    }
+
+    if (overlappingEvents.length > 0 && selectedParticipantNames.length > 0) {
+      const busy = new Set();
+
+      overlappingEvents.forEach((event) => {
+        const existingParticipants = Array.isArray(event.participants)
+          ? event.participants
+          : typeof event.participants === "string"
+            ? event.participants.split(",").map((p) => p.trim())
+            : [];
+
+        existingParticipants.forEach((p) => {
+          const normalized = p.trim().toLowerCase();
+          if (
+            normalized &&
+            selectedParticipantNames.some(
+              (sel) => sel.toLowerCase() === normalized,
+            )
+          ) {
+            busy.add(p.trim());
+          }
+        });
+      });
+
+      if (busy.size > 0) {
+        alert(
+          `Participant(s) ${Array.from(busy).join(", ")} already have a meeting at this time. Please select different participants.`,
+        );
+        return;
+      }
     }
 
     try {

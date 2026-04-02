@@ -176,6 +176,13 @@ const signinUser = async (req, res) => {
     user.lastLoginAttempt = null;
     await user.save();
 
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET not configured for token generation");
+      return res
+        .status(500)
+        .json({ message: "Authentication configuration error" });
+    }
+
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,

@@ -1,5 +1,3 @@
-import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import http from "http";
@@ -7,6 +5,9 @@ import { Server } from "socket.io";
 
 //dotenv config
 dotenv.config();
+
+import express from "express";
+import cors from "cors";
 const app = express();
 
 // Create HTTP server
@@ -80,13 +81,12 @@ app.get("/", (req, res) => {
 
 // MongoDB connection
 import connectDB from "./configDB.js";
+dotenv.config();
 connectDB();
+
+// Start event status scheduler
+import eventStatusScheduler from "./services/eventStatusScheduler.js";
+eventStatusScheduler.start();
 
 // serve uploaded files
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-//port setup
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});

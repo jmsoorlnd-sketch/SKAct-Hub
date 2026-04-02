@@ -13,6 +13,9 @@ import {
   BarChart2,
   Inbox,
   Clock,
+  Database,
+  Download,
+  Shield,
 } from "lucide-react";
 
 /* ===================== CONSTANTS ===================== */
@@ -214,6 +217,12 @@ const Sidebar = ({ onClose = () => {} }) => {
         },
         { name: "User Logs", icon: Clock, path: "/admin/user-logs" },
         { name: "Archive", icon: Archive, path: "/admin/archive" },
+        {
+          name: "Reports & Export",
+          icon: Download,
+          path: "/admin/settings#reports",
+        },
+        { name: "Settings", icon: Settings, path: "/admin/settings" },
       ],
       Official: [
         { name: "Inbox", icon: Inbox, path: "/official/inbox" },
@@ -225,6 +234,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Your Barangay", icon: Home, path: "/barangay-storage" },
         { name: "Archive", icon: Archive, path: "/archive" },
         { name: "SK Personnel Status", icon: Users, path: "/sk-personnel" },
+        { name: "Settings", icon: Settings, path: "/official/settings" },
       ],
       Guest: [{ name: "Home", icon: Home, path: "/" }],
     };
