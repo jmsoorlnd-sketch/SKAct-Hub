@@ -1,5 +1,10 @@
 import Notification from "../models/NotificationModel.js";
 
+// Helper function to emit notification to user
+const emitNotification = (io, userId, notification) => {
+  io.to(`user-${userId}`).emit("new-notification", notification);
+};
+
 // Mark a notification as seen
 export const markNotificationAsSeen = async (req, res) => {
   try {
@@ -11,6 +16,13 @@ export const markNotificationAsSeen = async (req, res) => {
       { seen: true },
       { new: true, upsert: true },
     );
+
+    // Emit update to user
+    const io = req.app.get("io");
+    io.to(`user-${userId}`).emit("notification-status-updated", {
+      notificationId,
+      seen: true,
+    });
 
     res.status(200).json({
       message: "Notification marked as seen",
@@ -33,6 +45,13 @@ export const markNotificationAsUnseen = async (req, res) => {
       { new: true, upsert: true },
     );
 
+    // Emit update to user
+    const io = req.app.get("io");
+    io.to(`user-${userId}`).emit("notification-status-updated", {
+      notificationId,
+      seen: false,
+    });
+
     res.status(200).json({
       message: "Notification marked as unseen",
       data: notification,
@@ -51,6 +70,10 @@ export const markAllNotificationsAsSeen = async (req, res) => {
       { user: userId },
       { seen: true },
     );
+
+    // Emit update to user
+    const io = req.app.get("io");
+    io.to(`user-${userId}`).emit("all-notifications-seen");
 
     res.status(200).json({
       message: "All notifications marked as seen",
@@ -101,11 +124,62 @@ export const batchMarkNotificationsAsSeen = async (req, res) => {
       { seen: true },
     );
 
+    // Emit update for each notification
+    const io = req.app.get("io");
+    notificationIds.forEach((notificationId) => {
+      io.to(`user-${userId}`).emit("notification-status-updated", {
+        notificationId,
+        seen: true,
+      });
+    });
+
     res.status(200).json({
       message: "Notifications marked as seen",
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Create and emit notification (utility function)
+// In NotificationController.js - ensure this function exists and is exported
+export const createAndEmitNotification = async (
+  io,
+  userId,
+  notificationId,
+  type,
+  title,
+  subtitle,
+  metadata = {},
+) => {
+  try {
+    // Create/update notification in database
+    const notification = await Notification.findOneAndUpdate(
+      { user: userId, notificationId },
+      {
+        type,
+        seen: false,
+        createdAt: new Date(),
+        metadata,
+      },
+      { upsert: true, new: true },
+    );
+
+    // Emit real-time notification to user's room
+    io.to(`user-${userId}`).emit("new-notification", {
+      id: notificationId,
+      type,
+      title,
+      subtitle,
+      time: new Date(),
+      seen: false,
+      meta: metadata,
+    });
+
+    return notification;
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    return null;
   }
 };

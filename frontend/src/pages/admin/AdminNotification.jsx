@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "../../context/SocketContext";
 import {
   Clock,
   CheckCircle,
@@ -27,6 +28,7 @@ const AdminNotification = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const tokenRef = useRef(localStorage.getItem("token"));
+  const { socket, isConnected } = useSocket();
 
   /* ===================== FETCH FUNCTIONS ===================== */
   const fetchPendingMessages = async () => {
@@ -169,44 +171,119 @@ const AdminNotification = () => {
     }
   };
 
-  /* ===================== MAIN FETCH ===================== */
-  useEffect(() => {
-    const fetchAll = async () => {
-      if (!tokenRef.current) return setError("No auth token");
-      setLoading(true);
-      setError(null);
+  const loadNotifications = useCallback(async () => {
+    if (!tokenRef.current) return setError("No auth token");
+    setLoading(true);
+    setError(null);
 
-      try {
-        const [messages, barangays, activities] = await Promise.all([
-          fetchPendingMessages(),
-          fetchBarangayUpdates(),
-          fetchActivities(),
-        ]);
+    try {
+      const [messages, barangays, activities] = await Promise.all([
+        fetchPendingMessages(),
+        fetchBarangayUpdates(),
+        fetchActivities(),
+      ]);
 
-        // Load seen statuses
-        const res = await axios.get(`${API_BASE}/notifications/status`, {
-          headers: getAuthHeaders(),
-        });
-        const seenMap = res.data.seenStatuses || {};
+      // Load seen statuses
+      const res = await axios.get(`${API_BASE}/notifications/status`, {
+        headers: getAuthHeaders(),
+      });
+      const seenMap = res.data.seenStatuses || {};
 
-        setNotifications(
-          [...messages, ...barangays, ...activities]
-            .filter((n) => n.id) // ✅ prevent undefined IDs
-            .map((n) => ({
-              ...n,
-              seen: seenMap[n.id] || false,
-            })),
-        );
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load notifications");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAll();
+      setNotifications(
+        [...messages, ...barangays, ...activities]
+          .filter((n) => n.id)
+          .map((n) => ({
+            ...n,
+            seen: seenMap[n.id] || false,
+          })),
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  /* ===================== SOCKET EVENT HANDLERS ===================== */
+  const handleNewNotification = useCallback(
+    (notification) => {
+      console.log("🔔 New notification received via socket:", notification);
+      // Immediately refresh all notifications
+      loadNotifications();
+
+      // Optional: Show browser notification
+      if (Notification.permission === "granted") {
+        new Notification("New Notification", {
+          body: notification.title || "You have a new notification",
+          icon: "/favicon.ico",
+        });
+      }
+    },
+    [loadNotifications],
+  );
+
+  const handleStatusUpdate = useCallback(({ notificationId, seen }) => {
+    console.log("📢 Notification status updated:", notificationId, seen);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, seen } : n)),
+    );
+  }, []);
+
+  const handleAllSeen = useCallback(() => {
+    console.log("✅ All notifications marked as seen");
+    setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
+  }, []);
+
+  /* ===================== INITIAL LOAD & SOCKET SETUP ===================== */
+  useEffect(() => {
+    loadNotifications();
+
+    // Request notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    // Polling fallback: refresh every 30 seconds if socket is not connected
+    const interval = setInterval(() => {
+      if (!isConnected) {
+        console.log("⚠️ Socket not connected, polling for updates...");
+        loadNotifications();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [loadNotifications, isConnected]);
+
+  useEffect(() => {
+    if (socket && isConnected) {
+      console.log("✅ Setting up socket listeners for notifications...");
+
+      // Listen for socket events
+      socket.on("new-notification", handleNewNotification);
+      socket.on("notification-status-updated", handleStatusUpdate);
+      socket.on("all-notifications-seen", handleAllSeen);
+
+      // Cleanup
+      return () => {
+        console.log("🧹 Cleaning up socket listeners...");
+        socket.off("new-notification", handleNewNotification);
+        socket.off("notification-status-updated", handleStatusUpdate);
+        socket.off("all-notifications-seen", handleAllSeen);
+      };
+    } else {
+      console.log("⚠️ Socket not available or not connected:", {
+        socket: !!socket,
+        isConnected,
+      });
+    }
+  }, [
+    socket,
+    isConnected,
+    handleNewNotification,
+    handleStatusUpdate,
+    handleAllSeen,
+  ]);
 
   /* ==================== SEEN/UNSEEN ==================== */
   const markAsSeen = async (notificationId) => {
@@ -217,10 +294,7 @@ const AdminNotification = () => {
         {},
         { headers: getAuthHeaders() },
       );
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, seen: true } : n)),
-      );
-      window.dispatchEvent(new Event("notificationMarkedAsSeen"));
+      // Socket will handle the UI update
     } catch (err) {
       console.error(err);
     }
@@ -234,8 +308,7 @@ const AdminNotification = () => {
         {},
         { headers: getAuthHeaders() },
       );
-      setNotifications((prev) => prev.map((n) => ({ ...n, seen: true })));
-      window.dispatchEvent(new Event("allNotificationsMarkedAsSeen"));
+      // Socket will handle the UI update
     } catch (err) {
       console.error(err);
     }
@@ -269,6 +342,7 @@ const AdminNotification = () => {
   };
 
   const unseenCount = notifications.filter((n) => !n.seen).length;
+
   const getNotificationIcon = (iconType) => {
     const configs = {
       activity: { icon: Clock, color: "from-purple-500 to-purple-600" },
@@ -289,6 +363,20 @@ const AdminNotification = () => {
   return (
     <div className="min-h-screen bg-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Connection Status */}
+        {!isConnected && (
+          <div className="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Connecting to real-time updates...</span>
+          </div>
+        )}
+
+        {isConnected && (
+          <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg text-sm">
+            ✅ Connected to real-time updates
+          </div>
+        )}
+
         {/* Page Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-4">
@@ -346,7 +434,7 @@ const AdminNotification = () => {
           </div>
         </div>
 
-        {/* List */}
+        {/* Notifications List */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="text-center">

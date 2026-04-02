@@ -5,6 +5,7 @@ import BarangayStorage from "../models/BarangayStorageModel.js";
 import Message from "../models/MessageModel.js";
 import Folder from "../models/FolderModel.js";
 import mongoose from "mongoose";
+import { createAndEmitNotification } from "./NotificationController.js";
 
 // GET /api/admins/officials/:barangayId
 export const getOfficialsByBarangay = async (req, res) => {
@@ -607,6 +608,59 @@ export const createBarangayMessage = async (req, res) => {
 
     await message.populate("sender", "username firstname lastname");
 
+    // Get io instance
+    const io = req.app.get("io");
+
+    // ===== REAL-TIME NOTIFICATION TO ADMIN =====
+    // Create notification for the admin recipient
+    await createAndEmitNotification(
+      io,
+      recipientId, // Admin user ID
+      message._id.toString(), // Notification ID
+      "message_pending", // Notification type
+      `📄 New Document Pending: ${subject}`, // Title
+      `From: ${sender.firstname} ${sender.lastname} (${sender.position || "Official"}) - ${barangay.barangayName}`, // Subtitle
+      {
+        messageId: message._id,
+        senderId: senderId,
+        barangayId: barangayId,
+        folderId: folderId,
+      },
+    );
+
+    // Also emit to role-based room for any admin listening
+    io.to("role-Admin").emit("new-notification", {
+      id: message._id.toString(),
+      type: "message_pending",
+      title: `📄 New Document Pending: ${subject}`,
+      subtitle: `From: ${sender.firstname} ${sender.lastname} - ${barangay.barangayName}`,
+      time: new Date(),
+      seen: false,
+      meta: {
+        messageId: message._id,
+        barangayId: barangayId,
+        folderId: folderId,
+      },
+    });
+
+    // Log the action
+    try {
+      await UserLog.create({
+        userId: req.user._id,
+        username: req.user.username,
+        firstname: req.user.firstname,
+        lastname: req.user.lastname,
+        barangayId: barangayId,
+        role: req.user.role,
+        actionType: "create_message",
+        description: `Created message: "${subject}" for approval in ${barangay.barangayName}`,
+        ipAddress: req.ip || "Unknown",
+        userAgent: req.get("user-agent") || "Unknown",
+      });
+    } catch (logError) {
+      console.error("Error logging create message action:", logError);
+    }
+
     res.status(201).json({
       message: "Message sent to admin for approval",
       data: message,
@@ -615,9 +669,7 @@ export const createBarangayMessage = async (req, res) => {
     console.error("Error creating barangay message:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
-};
-
-// Get all messages/documents for a barangay (admin view)
+}; // Get all messages/documents for a barangay (admin view)
 export const getBarangayMessages = async (req, res) => {
   try {
     const { barangayId } = req.params;

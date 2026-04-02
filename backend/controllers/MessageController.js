@@ -6,7 +6,14 @@ import Barangay from "../models/BarangayModel.js";
 import Folder from "../models/FolderModel.js";
 import ActivityUpdate from "../models/ActivityUpdateModel.js";
 import Notification from "../models/NotificationModel.js";
-// Send a message
+import { createAndEmitNotification } from "./NotificationController.js";
+
+// Helper function to get io instance
+const getIO = (req) => {
+  return req.app.get("io");
+};
+
+// Update sendMessage function
 export const sendMessage = async (req, res) => {
   try {
     const senderId = req.user._id;
@@ -65,84 +72,35 @@ export const sendMessage = async (req, res) => {
         .json({ message: "End date/time cannot be before start date/time" });
     }
 
-    const normalizedParticipants = Array.isArray(participants)
-      ? participants.map((p) => p.trim()).filter(Boolean)
-      : typeof participants === "string"
-        ? participants
-            .split(",")
-            .map((p) => p.trim())
-            .filter(Boolean)
-        : [];
-
     if (s) {
-      // Find overlapping events in time
-      const overlappingEvents = await Message.find({
+      const conflictingEvent = await Message.findOne({
         isDeleted: false,
         startDate: { $lte: e || s },
         $or: [
-          { endDate: { $exists: false } },
           { endDate: null },
+          { endDate: { $exists: false } },
           { endDate: { $gte: s } },
         ],
       });
 
-      const overlappingEvent = overlappingEvents.find((event) => {
-        const existingStart = new Date(event.startDate);
-        const existingEnd = event.endDate ? new Date(event.endDate) : null;
-        const exactStart = existingStart.getTime() === s.getTime();
-        const overlap =
-          e && existingEnd
-            ? existingStart <= e && existingEnd >= s
-            : exactStart || (existingEnd && s <= existingEnd);
-        return exactStart || overlap;
-      });
+      if (conflictingEvent) {
+        const overlapping =
+          s &&
+          (!conflictingEvent.endDate || conflictingEvent.endDate >= s) &&
+          (!e || conflictingEvent.startDate <= e);
 
-      if (overlappingEvent && normalizedParticipants.length === 0) {
-        return res.status(400).json({
-          message: "Event conflict detected; please add participant names.",
-        });
-      }
-
-      if (normalizedParticipants.length > 0) {
-        const busyParticipants = new Set();
-
-        overlappingEvents.forEach((event) => {
-          const existingParticipants = Array.isArray(event.participants)
-            ? event.participants
-            : typeof event.participants === "string"
-              ? event.participants.split(",").map((p) => p.trim())
-              : [];
-
-          existingParticipants.forEach((name) => {
-            const trimmed = name.trim();
-            if (
-              trimmed &&
-              normalizedParticipants.some(
-                (p) => p.toLowerCase() === trimmed.toLowerCase(),
-              )
-            ) {
-              busyParticipants.add(trimmed);
-            }
-          });
-        });
-
-        if (busyParticipants.size > 0) {
-          return res.status(409).json({
-            message: `Participant(s) ${Array.from(busyParticipants).join(
-              ", ",
-            )} already have an event at this time. Please select different participants.`,
+        if (overlapping && (!participants || participants.length === 0)) {
+          return res.status(400).json({
+            message: "Event conflict detected; please add participant names.",
           });
         }
       }
     }
 
     // Create message
-    // Mark as admin-scheduled if the sender is an admin and recipient is also an admin
     const senderUser = await User.findById(senderId);
     const isAdminEvent = senderUser?.role === "Admin";
-
-    // Admin-scheduled events should remain pending for approval by default
-    const messageStatus = status || "pending";
+    const messageStatus = isAdminEvent ? "approved" : status || "pending";
 
     const message = await Message.create({
       sender: senderId,
@@ -169,42 +127,59 @@ export const sendMessage = async (req, res) => {
     await message.populate("sender", "username email role");
     await message.populate("recipient", "username email role");
 
-    // Send notifications to users if this is an admin-scheduled event
+    // Get io instance and emit real-time events
+    const io = getIO(req);
+
+    // Emit to recipient if it's a direct message
+    if (!isAdminEvent) {
+      io.to(`user-${finalRecipientId}`).emit("new-message", {
+        message: "You have a new message",
+        data: message,
+        type: "direct",
+      });
+    }
+
+    // If it's an admin event, notify all relevant users with real-time notifications
     if (isAdminEvent && message.startDate) {
       try {
         let targetUsers;
-
         if (barangayId) {
-          // Only notify users in the specific barangay
           targetUsers = await User.find({
             barangay: barangayId,
-            role: { $in: ["Youth", "Official"] }, // Only notify non-admin users
+            role: { $in: ["Youth", "Official"] },
+          });
+          // Emit to barangay room
+          io.to(`barangay-${barangayId}`).emit("new-activity", {
+            message: "New activity scheduled for your barangay",
+            data: message,
+            type: "barangay-activity",
           });
         } else {
-          // Notify all users
           targetUsers = await User.find({
-            role: { $in: ["Youth", "Official"] }, // Only notify non-admin users
+            role: { $in: ["Youth", "Official"] },
+          });
+          // Broadcast to all users
+          io.emit("new-activity", {
+            message: "New activity scheduled",
+            data: message,
+            type: "global-activity",
           });
         }
 
-        // Create notification records for each user
-        const notificationPromises = targetUsers.map((user) =>
-          Notification.updateOne(
-            { user: user._id, notificationId: message._id.toString() },
-            {
-              user: user._id,
-              notificationId: message._id.toString(),
-              type: "activity",
-              seen: false,
-            },
-            { upsert: true },
-          ),
-        );
-
-        await Promise.all(notificationPromises);
+        // Create real-time notifications for each user
+        for (const user of targetUsers) {
+          await createAndEmitNotification(
+            io,
+            user._id,
+            message._id.toString(),
+            "activity",
+            `New Activity: ${message.subject}`,
+            `Scheduled for ${new Date(message.startDate).toLocaleDateString()}`,
+            { activityId: message._id },
+          );
+        }
       } catch (notificationError) {
         console.error("Error creating notifications:", notificationError);
-        // Don't fail the entire operation if notifications fail
       }
     }
 
@@ -214,6 +189,275 @@ export const sendMessage = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Update updateStatus function with real-time events
+// Add this function to MessageController.js
+export const updateStatus = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { status, reason } = req.body;
+
+    if (
+      ![
+        "pending",
+        "approved",
+        "ongoing",
+        "rejected",
+        "completed",
+        "cancelled",
+      ].includes(status)
+    ) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) return res.status(404).json({ message: "Message not found" });
+
+    if (
+      String(msg.sender) !== String(req.user._id) &&
+      req.user.role !== "Admin"
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Only the sender or an admin can update status" });
+    }
+
+    const oldStatus = msg.status;
+    msg.status = status;
+
+    // Add rejection reason if provided
+    if (status === "rejected" && reason) {
+      msg.rejectionReason = reason;
+    }
+
+    await msg.save();
+    await msg.populate("sender", "username email role firstname lastname");
+    await msg.populate("recipient", "username email role");
+
+    const io = req.app.get("io");
+
+    const statusUpdateData = {
+      messageId: msg._id,
+      status: status,
+      oldStatus: oldStatus,
+      rejectionReason: msg.rejectionReason || null,
+      message: `Your message "${msg.subject}" status changed from ${oldStatus} to ${status}`,
+      data: msg,
+    };
+
+    // Emit to sender
+    io.to(`user-${msg.sender._id}`).emit(
+      "message-status-updated",
+      statusUpdateData,
+    );
+
+    // Emit to recipient if different
+    if (msg.recipient && String(msg.recipient._id) !== String(msg.sender._id)) {
+      io.to(`user-${msg.recipient._id}`).emit(
+        "message-status-updated",
+        statusUpdateData,
+      );
+    }
+
+    // Create notification for the sender
+    await createAndEmitNotification(
+      io,
+      msg.sender._id,
+      msg._id.toString(),
+      status === "approved"
+        ? "message_approved"
+        : status === "rejected"
+          ? "message_rejected"
+          : "message_updated",
+      `Message ${status}: ${msg.subject}`,
+      `Your message has been ${status}${status === "rejected" && msg.rejectionReason ? `: ${msg.rejectionReason}` : ""}`,
+      { messageId: msg._id, status: status },
+    );
+
+    res.status(200).json({ message: "Status updated", data: msg });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+// Update the approveMessageForBarangay function (already in your MessageController.js)
+// Make sure it's emitting to the sender
+export const approveMessageForBarangay = async (req, res) => {
+  try {
+    const { messageId } = req.body;
+
+    if (!messageId) {
+      return res.status(400).json({ message: "messageId is required" });
+    }
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    let barangayId = message.attachedToBarangay;
+
+    if (!barangayId && message.sender) {
+      const sender = await User.findById(message.sender);
+      if (sender && sender.barangay) {
+        barangayId = sender.barangay;
+      }
+    }
+
+    if (!barangayId) {
+      return res
+        .status(400)
+        .json({ message: "No target barangay specified for this message" });
+    }
+
+    message.status = "approved";
+    message.isAttached = true;
+    message.attachedToBarangay = barangayId;
+    await message.save();
+
+    const io = req.app.get("io");
+    const barangay = await Barangay.findById(barangayId);
+
+    // ===== NOTIFY THE ORIGINAL SENDER THAT THEIR DOCUMENT WAS APPROVED =====
+    await createAndEmitNotification(
+      io,
+      message.sender,
+      messageId,
+      "message_approved",
+      `✅ Document Approved: ${message.subject}`,
+      `Your document has been approved and stored in ${barangay.barangayName}`,
+      { messageId: messageId, barangayId: barangayId },
+    );
+
+    // Notify all barangay members about new document
+    const barangayUsers = await User.find({ barangay: barangayId });
+    for (const user of barangayUsers) {
+      // Skip the sender if they're already notified above
+      if (String(user._id) !== String(message.sender)) {
+        await createAndEmitNotification(
+          io,
+          user._id,
+          messageId,
+          "barangay_ongoing",
+          `📄 New Document: ${message.subject}`,
+          `Added to ${barangay.barangayName}`,
+          { barangayId: barangayId, messageId: messageId },
+        );
+      }
+    }
+
+    // Also emit to barangay room
+    io.to(`barangay-${barangayId}`).emit("document-approved", {
+      message: `New document "${message.subject}" has been added`,
+      document: message,
+    });
+
+    // ... rest of your existing code (storage creation, logging, etc.)
+
+    const storageData = {
+      barangay: barangayId,
+      document: messageId,
+      uploadedBy: message.sender,
+      documentName: message.subject,
+      description: message.body,
+    };
+
+    if (message.intendedFolder) {
+      storageData.folder = message.intendedFolder;
+    }
+
+    const storage = await BarangayStorage.create(storageData);
+
+    if (storage.folder) {
+      try {
+        const folder = await Folder.findById(storage.folder);
+        if (folder && folder.status === "pending") {
+          folder.status = "ongoing";
+          await folder.save();
+
+          // Notify about folder status update
+          io.to(`barangay-${barangayId}`).emit("folder-updated", {
+            message: `Folder "${folder.name}" status updated to ongoing`,
+            folder: folder,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to auto-update folder status:", err);
+      }
+    }
+
+    await storage.populate("barangay");
+    await storage.populate("document");
+    await storage.populate("uploadedBy", "username email");
+
+    res.status(201).json({
+      message:
+        "Message approved and stored to barangay" +
+        (message.intendedFolder ? " in designated folder" : ""),
+      data: storage,
+    });
+  } catch (error) {
+    console.error("Error approving message:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+export const uploadActivityUpdate = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const { barangayId, caption } = req.body;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    if (userRole !== "Official") {
+      return res
+        .status(403)
+        .json({ message: "Only officials can upload activity photos" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Photo file is required" });
+    }
+
+    const document = await Message.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    const barangay = await Barangay.findById(barangayId);
+    if (!barangay) {
+      return res.status(404).json({ message: "Barangay not found" });
+    }
+
+    const activityUpdate = new ActivityUpdate({
+      document: documentId,
+      barangay: barangayId,
+      uploadedBy: userId,
+      photoUrl: `/uploads/${req.file.filename}`,
+      photoName: req.file.originalname,
+      caption: caption || "",
+    });
+
+    await activityUpdate.save();
+    await activityUpdate.populate("uploadedBy", "firstname lastname username");
+
+    const io = getIO(req);
+
+    // Notify barangay members about new activity update
+    io.to(`barangay-${barangayId}`).emit("new-activity-update", {
+      message: `New activity update for "${document.subject}"`,
+      data: activityUpdate,
+      document: document,
+    });
+
+    res.status(201).json({
+      message: "Activity photo uploaded successfully",
+      activityUpdate,
+    });
+  } catch (error) {
+    console.error("Error uploading activity update:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
@@ -291,7 +535,7 @@ export const getInbox = async (req, res) => {
     }
 
     const messages = await Message.find(query)
-      .populate("sender", "username email role firstname lastname")
+      .populate("sender", "username email role")
       .populate("intendedFolder", "name")
       .sort({ createdAt: -1 });
 
@@ -305,72 +549,22 @@ export const getInbox = async (req, res) => {
 };
 
 // Update message status (approve / ongoing / rejected)
-export const updateStatus = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    const { status } = req.body;
-
-    if (
-      ![
-        "pending",
-        "approved",
-        "ongoing",
-        "rejected",
-        "completed",
-        "cancelled",
-      ].includes(status)
-    ) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
-    const msg = await Message.findById(messageId);
-    if (!msg) return res.status(404).json({ message: "Message not found" });
-
-    // Original sender or admin can change status
-    if (
-      String(msg.sender) !== String(req.user._id) &&
-      req.user.role !== "Admin"
-    ) {
-      return res
-        .status(403)
-        .json({ message: "Only the sender or an admin can update status" });
-    }
-
-    msg.status = status;
-    await msg.save();
-    await msg.populate("sender", "username email role");
-
-    // Log user action for cancellations (and other status changes if desired)
-    try {
-      const actionType = status === "cancelled" ? "cancel_message" : "other";
-      await UserLog.create({
-        userId: req.user._id,
-        username: req.user.username,
-        firstname: req.user.firstname,
-        lastname: req.user.lastname,
-        barangayId: req.user.barangay,
-        barangayName: req.user.barangayName,
-        role: req.user.role,
-        actionType,
-        description:
-          status === "cancelled"
-            ? `User canceled message: "${msg.subject}"`
-            : `User updated message status to ${status}: "${msg.subject}"`,
-        ipAddress: req.ip || "Unknown",
-        userAgent: req.get("user-agent") || "Unknown",
-      });
-    } catch (logError) {
-      console.warn("Failed to log status update action:", logError);
-    }
-
-    res.status(200).json({ message: "Status updated", data: msg });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 // Get activities that are approved or ongoing (for calendar)
 // Get activities (filter by user's barangay for non-admins, show all for admins)
+// Add this function to MessageController.js
+export const getAdmins = async (req, res) => {
+  try {
+    const admins = await User.find({ role: "Admin" }).select(
+      "_id username email firstname lastname",
+    );
+
+    res.status(200).json({ admins });
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
 export const getActivities = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -498,8 +692,7 @@ export const getSentMessages = async (req, res) => {
     const userId = req.user._id;
 
     const messages = await Message.find({ sender: userId, isDeleted: false })
-      .populate("recipient", "username email role firstname lastname")
-      .populate("sender", "username email role firstname lastname")
+      .populate("recipient", "username email role")
       .populate("attachedToBarangay", "barangayName city province")
       .sort({ createdAt: -1 });
 
@@ -515,8 +708,8 @@ export const getMessagesByUser = async (req, res) => {
     const { userId } = req.params;
 
     const messages = await Message.find({ sender: userId, isDeleted: false })
-      .populate("recipient", "username email role firstname lastname")
-      .populate("sender", "username email role firstname lastname")
+      .populate("recipient", "username email role")
+      .populate("sender", "username email role")
       .sort({ createdAt: -1 });
 
     res.status(200).json({ messages, total: messages.length });
@@ -675,7 +868,7 @@ export const hardDeleteMessage = async (req, res) => {
   }
 };
 
-// Permanent deletion of events with cascading removal from all barangay storage
+// Permanent deletion of events with cascading removal from all barangay storaged
 export const hardDeleteEvent = async (req, res) => {
   try {
     const { messageId } = req.params;
@@ -739,109 +932,9 @@ export const hardDeleteEvent = async (req, res) => {
 };
 
 // Admin approves a message from an official and stores it to barangay storage
-export const approveMessageForBarangay = async (req, res) => {
-  try {
-    const { messageId } = req.body;
-
-    if (!messageId) {
-      return res.status(400).json({ message: "messageId is required" });
-    }
-
-    // Get the message
-    const message = await Message.findById(messageId);
-    if (!message) {
-      return res.status(404).json({ message: "Message not found" });
-    }
-
-    // Get the target barangay from the message
-    let barangayId = message.attachedToBarangay;
-
-    // Fallback: if no attachedToBarangay, try to get from sender's barangay
-    if (!barangayId && message.sender) {
-      const sender = await User.findById(message.sender);
-      if (sender && sender.barangay) {
-        barangayId = sender.barangay;
-      }
-    }
-
-    if (!barangayId) {
-      return res
-        .status(400)
-        .json({ message: "No target barangay specified for this message" });
-    }
-
-    // Update message status to approved
-    message.status = "approved";
-    message.isAttached = true;
-    message.attachedToBarangay = barangayId;
-    await message.save();
-
-    // Log the approval action
-    const adminUser = await User.findById(req.user._id);
-    const barangay = await Barangay.findById(barangayId);
-    try {
-      await UserLog.create({
-        userId: req.user._id,
-        username: adminUser?.username,
-        firstname: adminUser?.firstname,
-        lastname: adminUser?.lastname,
-        barangayId: barangayId,
-        barangayName: barangay?.barangayName,
-        role: adminUser?.role,
-        actionType: "approve_message",
-        description: `Admin approved message: "${message.subject}" from ${adminUser?.username}`,
-        ipAddress: req.ip,
-        userAgent: req.get("user-agent"),
-      });
-    } catch (logError) {
-      console.warn("Failed to log message approval:", logError);
-    }
-
-    // Store the message to BarangayStorage
-    const storageData = {
-      barangay: barangayId,
-      document: messageId,
-      uploadedBy: message.sender,
-      documentName: message.subject,
-      description: message.body,
-    };
-
-    // If message has an intended folder, add it to storage
-    if (message.intendedFolder) {
-      storageData.folder = message.intendedFolder;
-    }
-
-    const storage = await BarangayStorage.create(storageData);
-
-    // automatically move folder to ongoing if this is the first document stored
-    if (storage.folder) {
-      try {
-        const folder = await Folder.findById(storage.folder);
-        if (folder && folder.status === "pending") {
-          folder.status = "ongoing";
-          await folder.save();
-        }
-      } catch (err) {
-        console.warn("Failed to auto-update folder status:", err);
-      }
-    }
-
-    await storage.populate("barangay");
-    await storage.populate("document");
-    await storage.populate("uploadedBy", "username email");
-
-    res.status(201).json({
-      message:
-        "Message approved and stored to barangay" +
-        (message.intendedFolder ? " in designated folder" : ""),
-      data: storage,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
 
 // Admin rejects a message from an official
+// Update the rejectMessage function
 export const rejectMessage = async (req, res) => {
   try {
     const { messageId, reason } = req.body;
@@ -855,7 +948,7 @@ export const rejectMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    // Reject only with non-empty reason (recommended to avoid unhelpful feedback)
+    // Reject only with non-empty reason
     const trimmedReason = reason ? reason.trim() : "";
     if (!trimmedReason) {
       return res.status(400).json({ message: "Rejection reason is required" });
@@ -864,7 +957,20 @@ export const rejectMessage = async (req, res) => {
     message.status = "rejected";
     message.rejectionReason = trimmedReason;
     await message.save();
-    await message.populate("sender", "username email role");
+    await message.populate("sender", "username email role firstname lastname");
+
+    const io = req.app.get("io");
+
+    // ===== NOTIFY THE SENDER THAT THEIR DOCUMENT WAS REJECTED =====
+    await createAndEmitNotification(
+      io,
+      message.sender._id,
+      messageId,
+      "message_rejected",
+      `❌ Document Rejected: ${message.subject}`,
+      `Reason: ${trimmedReason}`,
+      { messageId: messageId, rejectionReason: trimmedReason },
+    );
 
     // Log the rejection action
     const adminUser = await User.findById(req.user._id);
@@ -894,76 +1000,7 @@ export const rejectMessage = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// Get all admin users (for sending messages to)
-export const getAdmins = async (req, res) => {
-  try {
-    const admins = await User.find({ role: "Admin" }).select(
-      "_id username email",
-    );
-
-    res.status(200).json({ admins });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Upload activity photo update (Officials only)
-export const uploadActivityUpdate = async (req, res) => {
-  try {
-    const { documentId } = req.params;
-    const { barangayId, caption } = req.body;
-    const userId = req.user._id;
-    const userRole = req.user.role;
-
-    // Only officials can upload activity photos
-    if (userRole !== "Official") {
-      return res
-        .status(403)
-        .json({ message: "Only officials can upload activity photos" });
-    }
-
-    // Check if file exists
-    if (!req.file) {
-      return res.status(400).json({ message: "Photo file is required" });
-    }
-
-    // Verify document exists
-    const document = await Message.findById(documentId);
-    if (!document) {
-      return res.status(404).json({ message: "Document not found" });
-    }
-
-    // Verify barangay exists
-    const barangay = await Barangay.findById(barangayId);
-    if (!barangay) {
-      return res.status(404).json({ message: "Barangay not found" });
-    }
-
-    // Create activity update
-    const activityUpdate = new ActivityUpdate({
-      document: documentId,
-      barangay: barangayId,
-      uploadedBy: userId,
-      photoUrl: `/uploads/${req.file.filename}`,
-      photoName: req.file.originalname,
-      caption: caption || "",
-    });
-
-    await activityUpdate.save();
-    await activityUpdate.populate("uploadedBy", "firstname lastname username");
-
-    res.status(201).json({
-      message: "Activity photo uploaded successfully",
-      activityUpdate,
-    });
-  } catch (error) {
-    console.error("Error uploading activity update:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-// Get activity updates for a document
+// Delete activity update (Official who uploaded it only)
 export const getActivityUpdates = async (req, res) => {
   try {
     const { documentId } = req.params;
@@ -979,7 +1016,6 @@ export const getActivityUpdates = async (req, res) => {
   }
 };
 
-// Delete activity update (Official who uploaded it only)
 export const deleteActivityUpdate = async (req, res) => {
   try {
     const { updateId } = req.params;

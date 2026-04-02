@@ -4,13 +4,16 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/Toast";
+import { SocketProvider } from "./context/SocketContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
+      <SocketProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </SocketProvider>
     </AuthProvider>
   </StrictMode>,
 );

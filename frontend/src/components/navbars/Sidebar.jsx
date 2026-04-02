@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
 import axios from "axios";
+import { useSocket } from "../../context/SocketContext"; // Adjust path
 import SideProfile from "./SideProfile";
 import {
   Archive,
@@ -33,62 +34,10 @@ const Sidebar = ({ onClose = () => {} }) => {
   const [unseenCount, setUnseenCount] = useState(0);
   const location = useLocation();
   const currentPath = location.pathname;
+  const { socket, isConnected } = useSocket();
 
-  /* ==================== USER & NOTIFICATIONS ==================== */
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchUnseenCount();
-
-      // Refresh count every 10 seconds for real-time updates
-      const interval = setInterval(fetchUnseenCount, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [user?.role]);
-
-  // Listen for custom event when notification is marked as seen
-  useEffect(() => {
-    const handleNotificationUpdate = () => {
-      console.log("Notification update event received, refreshing count...");
-      fetchUnseenCount();
-    };
-
-    window.addEventListener(
-      "notificationMarkedAsSeen",
-      handleNotificationUpdate,
-    );
-    window.addEventListener(
-      "allNotificationsMarkedAsSeen",
-      handleNotificationUpdate,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "notificationMarkedAsSeen",
-        handleNotificationUpdate,
-      );
-      window.removeEventListener(
-        "allNotificationsMarkedAsSeen",
-        handleNotificationUpdate,
-      );
-    };
-  }, [user]);
-
-  const loadUser = () => {
-    try {
-      const userData = localStorage.getItem("user");
-      if (userData && userData !== "undefined" && userData !== "null") {
-        setUser(JSON.parse(userData));
-      }
-    } catch (err) {
-      console.error("Failed to parse user:", err);
-    }
-  };
-
-  const fetchUnseenCount = async () => {
+  /* ==================== FETCH UNSEEN COUNT ==================== */
+  const fetchUnseenCount = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -114,7 +63,7 @@ const Sidebar = ({ onClose = () => {} }) => {
           .forEach((m) => allNotifs.push({ id: m._id }));
       } catch {}
 
-      /* ================== 2. BARANGAY (MATCH UI LOGIC) ================== */
+      /* ================== 2. BARANGAY ================== */
       try {
         const res = await axios.get(`${API_BASE}/barangays/all-barangays`, {
           headers: getAuthHeaders(),
@@ -148,7 +97,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         );
       } catch {}
 
-      /* ================== 3. ACTIVITIES (MATCH UI LOGIC) ================== */
+      /* ================== 3. ACTIVITIES ================== */
       try {
         const res = await axios.get(`${API_BASE}/messages/activities`, {
           headers: getAuthHeaders(),
@@ -156,7 +105,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         const activities = res.data?.activities || [];
         const now = Date.now();
 
-        // Upcoming (same as UI)
+        // Upcoming
         activities
           .filter((a) => a.startDate)
           .map((a) => {
@@ -168,7 +117,7 @@ const Sidebar = ({ onClose = () => {} }) => {
           .slice(0, 10)
           .forEach(({ a }) => allNotifs.push({ id: a._id }));
 
-        // Updates (same as UI)
+        // Updates
         await Promise.all(
           activities.map(async (a) => {
             try {
@@ -188,12 +137,73 @@ const Sidebar = ({ onClose = () => {} }) => {
 
       /* ================== COUNT ================== */
       const unseen = allNotifs.filter((n) => !seenMap[n.id]).length;
-
       setUnseenCount(unseen);
     } catch (err) {
       console.error("Failed to fetch unseen count:", err);
     }
-  };
+  }, []);
+
+  /* ==================== SOCKET EVENT HANDLERS ==================== */
+  const handleNewNotification = useCallback(() => {
+    console.log("New notification received, refreshing count...");
+    fetchUnseenCount();
+  }, [fetchUnseenCount]);
+
+  const handleStatusUpdate = useCallback(() => {
+    console.log("Notification status updated, refreshing count...");
+    fetchUnseenCount();
+  }, [fetchUnseenCount]);
+
+  const handleAllSeen = useCallback(() => {
+    console.log("All notifications marked as seen");
+    setUnseenCount(0);
+  }, []);
+
+  /* ==================== USER & NOTIFICATIONS ==================== */
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const userData = localStorage.getItem("user");
+        if (userData && userData !== "undefined" && userData !== "null") {
+          setUser(JSON.parse(userData));
+        }
+      } catch (err) {
+        console.error("Failed to parse user:", err);
+      }
+    };
+    loadUser();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchUnseenCount();
+
+      // Refresh count every 30 seconds as fallback
+      const interval = setInterval(fetchUnseenCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchUnseenCount]);
+
+  useEffect(() => {
+    if (socket && isConnected) {
+      socket.on("new-notification", handleNewNotification);
+      socket.on("notification-status-updated", handleStatusUpdate);
+      socket.on("all-notifications-seen", handleAllSeen);
+
+      return () => {
+        socket.off("new-notification", handleNewNotification);
+        socket.off("notification-status-updated", handleStatusUpdate);
+        socket.off("all-notifications-seen", handleAllSeen);
+      };
+    }
+  }, [
+    socket,
+    isConnected,
+    handleNewNotification,
+    handleStatusUpdate,
+    handleAllSeen,
+  ]);
+
   /* ==================== MENU CONFIGURATION ==================== */
   const role = user?.role || "Guest";
 
@@ -300,7 +310,6 @@ const Sidebar = ({ onClose = () => {} }) => {
 
       {/* Profile Footer */}
       <div className="pb-5 p-3 border-t-2 border-slate-200 bg-blue-50">
-        {" "}
         <SideProfile user={user} />
       </div>
     </div>
