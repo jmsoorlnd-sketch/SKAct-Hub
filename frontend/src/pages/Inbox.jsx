@@ -388,6 +388,43 @@ const Inbox = () => {
     return fullName || user.username || user.email || fallback;
   }, []);
 
+  const getAttachments = useCallback((message) => {
+    if (!message) return [];
+
+    const attachments = [];
+
+    // Newer format: array of URLs/names
+    if (message.attachmentUrls?.length > 0) {
+      message.attachmentUrls.forEach((url, index) => {
+        attachments.push({
+          url,
+          name: message.attachmentNames?.[index] || `Attachment ${index + 1}`,
+        });
+      });
+      return attachments;
+    }
+
+    // Legacy single attachment fields
+    if (message.attachmentUrl) {
+      attachments.push({
+        url: message.attachmentUrl,
+        name: message.attachmentName || "Attachment",
+      });
+      return attachments;
+    }
+
+    // Possible old style attachment field
+    if (message.attachment) {
+      attachments.push({
+        url: message.attachment.url || message.attachmentUrl || null,
+        name: message.attachment.name || message.attachmentName || "Attachment",
+      });
+      return attachments;
+    }
+
+    return attachments;
+  }, []);
+
   /* ==================== RENDER ==================== */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -724,53 +761,37 @@ const Inbox = () => {
                       </div>
                     )}
 
-                    {(msg.attachmentUrls?.length > 0 ||
-                      msg.attachmentUrl ||
-                      msg.attachmentName) && (
-                      <div className="mb-3 p-2.5 bg-blue-50 rounded-lg border-2 border-blue-200">
-                        <div className="space-y-2">
-                          {(msg.attachmentUrls?.length > 0
-                            ? msg.attachmentUrls.map((url, index) => ({
-                                url,
-                                name:
-                                  msg.attachmentNames?.[index] ||
-                                  `Attachment ${index + 1}`,
-                              }))
-                            : msg.attachmentUrl
-                              ? [
-                                  {
-                                    url: msg.attachmentUrl,
-                                    name: msg.attachmentName || "Attachment",
-                                  },
-                                ]
-                              : [
-                                  {
-                                    url: null,
-                                    name: msg.attachmentName || "Attachment",
-                                  },
-                                ]
-                          ).map((att, i) => (
-                            <div key={i} className="flex items-center gap-1.5">
-                              <Paperclip className="w-3.5 h-3.5 text-blue-600" />
-                              {att.url ? (
-                                <a
-                                  href={`http://localhost:5000${att.url}`}
-                                  download
-                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {att.name}
-                                </a>
-                              ) : (
-                                <span className="text-xs font-semibold text-blue-600 truncate">
-                                  {att.name}
-                                </span>
-                              )}
-                            </div>
-                          ))}
+                    {(() => {
+                      const msgAttachments = getAttachments(msg);
+                      return msgAttachments.length > 0 ? (
+                        <div className="mb-3 p-2.5 bg-blue-50 rounded-lg border-2 border-blue-200">
+                          <div className="space-y-2">
+                            {msgAttachments.map((att, i) => (
+                              <div
+                                key={`att-${i}`}
+                                className="flex items-center gap-1.5"
+                              >
+                                <Paperclip className="w-3.5 h-3.5 text-blue-600" />
+                                {att.url ? (
+                                  <a
+                                    href={`http://localhost:5000${att.url}`}
+                                    download
+                                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {att.name}
+                                  </a>
+                                ) : (
+                                  <span className="text-xs font-semibold text-blue-600 truncate">
+                                    {att.name}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : null;
+                    })()}
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div className="flex items-center gap-1 text-[11px] text-slate-500">
@@ -879,56 +900,37 @@ const Inbox = () => {
                       </p>
                     </div>
                   )}
-                {(selectedMessage.attachmentUrls?.length > 0 ||
-                  selectedMessage.attachmentUrl ||
-                  selectedMessage.attachmentName) && (
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm font-semibold text-blue-800 mb-2">
-                      Attachments:
-                    </p>
-                    {(selectedMessage.attachmentUrls?.length > 0
-                      ? selectedMessage.attachmentUrls.map((url, index) => ({
-                          url,
-                          name:
-                            selectedMessage.attachmentNames?.[index] ||
-                            `Attachment ${index + 1}`,
-                        }))
-                      : selectedMessage.attachmentUrl
-                        ? [
-                            {
-                              url: selectedMessage.attachmentUrl,
-                              name:
-                                selectedMessage.attachmentName || "Attachment",
-                            },
-                          ]
-                        : [
-                            {
-                              url: null,
-                              name:
-                                selectedMessage.attachmentName || "Attachment",
-                            },
-                          ]
-                    ).map((att, index) => (
-                      <div key={`attachment-${index}`} className="mb-2">
-                        {att.url ? (
-                          <a
-                            href={`http://localhost:5000${att.url}`}
-                            download
-                            className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-2"
-                          >
-                            <Paperclip size={14} />
-                            {att.name}
-                          </a>
-                        ) : (
-                          <span className="text-sm font-semibold text-blue-600 flex items-center gap-2">
-                            <Paperclip size={14} />
-                            {att.name}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  const selectedAttachments = getAttachments(selectedMessage);
+                  return selectedAttachments.length > 0 ? (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm font-semibold text-blue-800 mb-2">
+                        Attachments:
+                      </p>
+                      {selectedAttachments.map((att, index) => (
+                        <div key={`attachment-${index}`} className="mb-2">
+                          {att.url ? (
+                            <a
+                              href={`http://localhost:5000${att.url}`}
+                              download
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-2"
+                            >
+                              <Paperclip size={14} />
+                              {att.name}
+                            </a>
+                          ) : (
+                            <span className="text-sm font-semibold text-blue-600 flex items-center gap-2">
+                              <Paperclip size={14} />
+                              {att.name}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
                 <p className="text-sm text-slate-500">
                   <strong>Created:</strong>{" "}
                   {new Date(selectedMessage.createdAt).toLocaleString("en-US", {

@@ -55,7 +55,7 @@ router.post("/signup", signupUser);
 //route for user login
 router.post("/signin", signinUser);
 //route for user logout
-router.post("/logout", requireAuth, logoutUser);
+router.post("/logout", logoutUser);
 //route for profile update
 router.post("/create", requireAuth, createProfile);
 //route for get user Profile

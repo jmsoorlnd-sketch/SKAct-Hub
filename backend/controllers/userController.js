@@ -435,27 +435,26 @@ const logoutUser = async (req, res) => {
   try {
     const user = req.user;
 
-    if (!user) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    // Log the logout action
-    try {
-      await UserLog.create({
-        userId: user._id,
-        username: user.username,
-        firstname: user.firstname,
-        lastname: user.lastname,
-        barangayId: user.barangay,
-        role: user.role,
-        actionType: "logout",
-        description: `${user.firstname} ${user.lastname} logged out`,
-        ipAddress: req.ip || "Unknown",
-        userAgent: req.get("user-agent") || "Unknown",
-      });
-    } catch (logError) {
-      console.error("Error logging logout action:", logError);
-      // Don't fail the logout if logging fails
+    // If user is not authenticated (e.g., token expired), still allow logout
+    if (user) {
+      // Log the logout action
+      try {
+        await UserLog.create({
+          userId: user._id,
+          username: user.username,
+          firstname: user.firstname,
+          lastname: user.lastname,
+          barangayId: user.barangay,
+          role: user.role,
+          actionType: "logout",
+          description: `${user.firstname} ${user.lastname} logged out`,
+          ipAddress: req.ip || "Unknown",
+          userAgent: req.get("user-agent") || "Unknown",
+        });
+      } catch (logError) {
+        console.error("Error logging logout action:", logError);
+        // Don't fail the logout if logging fails
+      }
     }
 
     res.status(200).json({ message: "Logged out successfully" });

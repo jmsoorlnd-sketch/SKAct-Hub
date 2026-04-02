@@ -217,7 +217,7 @@ const Sidebar = ({ onClose = () => {} }) => {
           badge: unseenCount,
         },
         { name: "Barangays", icon: Home, path: "/barangay-storage" },
-        { name: "Youth Profiles", icon: Users, path: "/admin/sk-officials" },
+        { name: "Official Profiles", icon: Users, path: "/admin/sk-officials" },
         { name: "SK Personnel", icon: Users, path: "/admin/sk-personnel" },
         { name: "Event Scheduling", icon: CalendarDays, path: "/admin/events" },
         {
@@ -244,6 +244,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Your Barangay", icon: Home, path: "/barangay-storage" },
         { name: "Archive", icon: Archive, path: "/archive" },
         { name: "SK Personnel Status", icon: Users, path: "/sk-personnel" },
+        { name: "Youth Profiles", icon: Users, path: "/" },
         { name: "Settings", icon: Settings, path: "/official/settings" },
       ],
       Guest: [{ name: "Home", icon: Home, path: "/" }],
