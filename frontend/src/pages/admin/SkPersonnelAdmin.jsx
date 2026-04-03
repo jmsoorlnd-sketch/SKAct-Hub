@@ -413,30 +413,32 @@ const SkPersonnelAdmin = () => {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden sticky top-6">
+                  {/* SK Kagawad below Key Officials */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <div className="lg:col-span-2">
+                      <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
                         <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-6 py-4 border-b-2 border-slate-200">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Users className="w-5 h-5 text-purple-600" />
-                                <h3 className="text-lg font-bold text-slate-900">
-                                  SK Kagawad
-                                </h3>
-                              </div>
-                              <p className="text-sm text-slate-600 mt-1">
-                                {skPersonnel.kagawad?.length || 0} member
-                                {(skPersonnel.kagawad?.length || 0) !== 1
-                                  ? "s"
-                                  : ""}
-                              </p>
+                            <div className="flex items-center gap-2">
+                              <Users className="w-5 h-5 text-purple-600" />
+                              <h3 className="text-lg font-bold text-slate-900">
+                                SK Kagawad
+                              </h3>
                             </div>
+                            <span className="text-sm text-slate-500">
+                              {skPersonnel.kagawad?.length || 0} member
+                              {(skPersonnel.kagawad?.length || 0) !== 1
+                                ? "s"
+                                : ""}
+                            </span>
                           </div>
                         </div>
-
                         <div className="p-6">
                           {skPersonnel.kagawad?.length ? (
-                            <div className="space-y-3 max-h-[360px] overflow-y-auto">
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto">
                               {skPersonnel.kagawad.map((k, index) => (
                                 <DirectoryItem
                                   key={k._id || index}
@@ -463,6 +465,7 @@ const SkPersonnelAdmin = () => {
                         </div>
                       </div>
                     </div>
+                    <div className="lg:col-span-1"></div>
                   </div>
                 </>
               ) : (
