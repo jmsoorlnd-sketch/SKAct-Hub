@@ -27,10 +27,10 @@ const StatCard = ({ icon: Icon, title, value, color, subtitle, badge }) => {
   const c = colors[color];
 
   return (
-    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4">
-      <div className="flex items-start justify-between mb-3">
+    <div className="bg-white rounded-lg shadow-sm border-2 border-slate-200 p-3">
+      <div className="flex items-start justify-between mb-2">
         <div
-          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
+          className={`w-9 h-9 bg-linear-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-sm`}
         >
           <Icon className="w-5 h-5 text-white" />
         </div>
@@ -41,8 +41,9 @@ const StatCard = ({ icon: Icon, title, value, color, subtitle, badge }) => {
         </span>
       </div>
       <h3 className="text-slate-500 text-xs font-semibold mb-0.5">{title}</h3>
-      <p className="text-2xl font-bold text-slate-900 mb-2">{value}</p>
-      <div className="flex items-center text-[11px] text-slate-500">
+      <p className="text-xl font-bold text-slate-900 mb-1">{value}</p>
+      <div className="flex items-center text-[10px] text-slate-500">
+        {" "}
         <CalendarDays className={`w-3 h-3 mr-1 ${c.icon}`} />
         <span>{subtitle}</span>
       </div>

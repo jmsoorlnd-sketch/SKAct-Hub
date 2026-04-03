@@ -51,7 +51,22 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024; // 10 MB
+const ATTACHMENT_EXTENSIONS = [".pdf", ".doc", ".docx"];
+
+const attachmentFileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (!ATTACHMENT_EXTENSIONS.includes(ext)) {
+    return cb(new Error("Only PDF, DOC, DOCX files are allowed"));
+  }
+  return cb(null, true);
+};
+
+const upload = multer({
+  storage,
+  limits: { fileSize: MAX_ATTACHMENT_SIZE },
+  fileFilter: attachmentFileFilter,
+});
 
 // Public routes
 router.get("/all-barangays", getAllBarangays);

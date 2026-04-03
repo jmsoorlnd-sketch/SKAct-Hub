@@ -586,7 +586,7 @@ const AdminCalendar = () => {
           ) : (
             <>
               {/* Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
                 <Suspense
                   fallback={
                     <div className="flex items-center justify-center py-10">

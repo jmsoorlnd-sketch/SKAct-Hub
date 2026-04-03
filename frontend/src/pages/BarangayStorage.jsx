@@ -238,6 +238,28 @@ const BarangayStorage = () => {
   const [folderSearchQuery, setFolderSearchQuery] = useState("");
   const fileInputRef = useRef(null);
 
+  const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+  const ALLOWED_ATTACHMENT_EXTENSIONS = [".pdf", ".doc", ".docx"];
+
+  const isAllowedAttachment = (file) => {
+    if (!file) return false;
+    const lowerName = (file.name || "").toLowerCase();
+    const isValidExtension = ALLOWED_ATTACHMENT_EXTENSIONS.some((ext) =>
+      lowerName.endsWith(ext),
+    );
+    if (!isValidExtension) {
+      toast.error("Invalid file type. Allowed: PDF, DOC, DOCX.");
+      return false;
+    }
+
+    if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      toast.error("File too large. Maximum size is 10 MB.");
+      return false;
+    }
+
+    return true;
+  };
+
   const getAttachmentsFromDoc = (docItem) => {
     const source = docItem?.document || docItem;
     if (!source) return [];
@@ -573,6 +595,10 @@ const BarangayStorage = () => {
     if (!selectedBarangay) return toast.warning("Select a barangay first");
     if (!composeSubject || !composeBody)
       return toast.warning("Subject and message are required");
+    if (composeFile && !isAllowedAttachment(composeFile)) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
       const fd = new FormData();
@@ -966,6 +992,16 @@ const BarangayStorage = () => {
       return;
     }
 
+    const validFiles = folderComposeFiles.filter(isAllowedAttachment);
+    if (validFiles.length !== folderComposeFiles.length) {
+      toast.error(
+        "Some files were ignored. Allowed types: PDF, DOC, DOCX up to 10MB.",
+      );
+      if (validFiles.length === 0) {
+        return;
+      }
+    }
+
     try {
       setUploadingToFolder(true);
       const token = localStorage.getItem("token");
@@ -973,7 +1009,7 @@ const BarangayStorage = () => {
       fd.append("subject", folderComposeData.subject);
       fd.append("body", folderComposeData.body);
       fd.append("folderId", folderId);
-      folderComposeFiles.forEach((file) => fd.append("attachments", file));
+      validFiles.forEach((file) => fd.append("attachments", file));
 
       // Create the message with approval required
       await axios.post(
@@ -1010,6 +1046,10 @@ const BarangayStorage = () => {
   const handleUploadToFolder = async (folderId, file) => {
     if (!selectedBarangay || !folderId || !file) {
       toast.warning("Please select a folder and file");
+      return;
+    }
+
+    if (!isAllowedAttachment(file)) {
       return;
     }
 
@@ -2227,9 +2267,20 @@ const BarangayStorage = () => {
                 <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 hover:border-indigo-400 transition-colors">
                   <input
                     type="file"
-                    onChange={(e) =>
-                      setComposeFile(e.target.files?.[0] || null)
-                    }
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (!file) {
+                        setComposeFile(null);
+                        return;
+                      }
+                      if (!isAllowedAttachment(file)) {
+                        e.target.value = "";
+                        setComposeFile(null);
+                        return;
+                      }
+                      setComposeFile(file);
+                    }}
                     className="block w-full text-sm text-slate-500
                       file:mr-4 file:py-2.5 file:px-4
                       file:rounded-lg file:border-0
@@ -2376,9 +2427,26 @@ const BarangayStorage = () => {
                   <input
                     type="file"
                     multiple
+                    accept=".pdf,.doc,.docx"
                     onChange={(e) => {
                       const newFiles = Array.from(e.target.files || []);
-                      setFolderComposeFiles((prev) => [...prev, ...newFiles]);
+                      const validFiles = [];
+                      newFiles.forEach((file) => {
+                        if (isAllowedAttachment(file)) {
+                          validFiles.push(file);
+                        }
+                      });
+                      if (validFiles.length < newFiles.length) {
+                        toast.error(
+                          "Some files were ignored. Only PDF/DOC/DOCX (<=10MB) are allowed.",
+                        );
+                      }
+                      if (validFiles.length > 0) {
+                        setFolderComposeFiles((prev) => [
+                          ...prev,
+                          ...validFiles,
+                        ]);
+                      }
                     }}
                     className="block w-full text-sm text-slate-500
                       file:mr-4 file:py-2 file:px-4
@@ -2481,13 +2549,18 @@ const BarangayStorage = () => {
         ref={fileInputRef}
         type="file"
         style={{ display: "none" }}
+        accept=".pdf,.doc,.docx"
         onChange={(e) => {
           const file = e.target.files?.[0];
+          if (!file) return;
+          if (!isAllowedAttachment(file)) {
+            e.target.value = "";
+            return;
+          }
           if (file && selectedFolderForUpload) {
             handleUploadToFolder(selectedFolderForUpload, file);
           }
         }}
-        accept="*/*"
       />
       {/* Create Folder Modal */}
       {showCreateFolderModal && (
