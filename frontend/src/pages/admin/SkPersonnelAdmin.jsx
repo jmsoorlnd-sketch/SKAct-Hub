@@ -285,45 +285,6 @@ const SkPersonnelAdmin = () => {
             </div>
           ) : (
             <>
-              {/* Barangay Selector */}
-              <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-6 mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-lg font-bold text-slate-900">
-                    Select Barangay
-                  </h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <select
-                    value={selectedBarangay}
-                    onChange={(e) => {
-                      setSelectedBarangay(e.target.value);
-                      fetchSKPersonnel(e.target.value);
-                    }}
-                    className="px-4 py-3 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
-                  >
-                    {barangays.map((b) => (
-                      <option key={b._id} value={b._id}>
-                        {b.barangayName}
-                      </option>
-                    ))}
-                  </select>
-                  {currentBarangay && (
-                    <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-                      <MapPin className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <p className="text-xs text-slate-500 font-semibold">
-                          Location
-                        </p>
-                        <p className="text-sm text-slate-900 font-bold">
-                          {currentBarangay.city}, {currentBarangay.province}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Loading State */}
               {loading ? (
                 <div className="flex items-center justify-center py-20">
@@ -336,134 +297,6 @@ const SkPersonnelAdmin = () => {
                 </div>
               ) : skPersonnel ? (
                 <>
-                  {/* Statistics Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {" "}
-                    {/* Total Members */}
-                    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 ">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                          <Users className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">
-                          Total
-                        </span>
-                      </div>
-                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                        Total Members
-                      </h3>
-                      <p className="text-2xl font-bold text-slate-900 mb-2">
-                        {statistics.total}
-                      </p>
-                      <div className="flex items-center text-xs text-slate-500">
-                        <Users className="w-3 h-3 text-blue-500 mr-1" />
-                        <span>SK Personnel</span>
-                      </div>
-                    </div>
-                    {/* Active Members */}
-                    <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 hover:shadow-xl transition-all hover:-translate-y-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
-                          <UserCheck className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">
-                          {statistics.activeRate}%
-                        </span>
-                      </div>
-                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                        Active Members
-                      </h3>
-                      <p className="text-2xl font-bold text-slate-900 mb-2">
-                        {statistics.active}
-                      </p>
-                      <div className="flex items-center text-xs text-slate-500">
-                        <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
-                          <div
-                            className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-1.5 rounded-full transition-all duration-1000"
-                            style={{ width: `${statistics.activeRate}%` }}
-                          ></div>
-                        </div>
-                        <span className="font-semibold">
-                          {statistics.activeRate}%
-                        </span>
-                      </div>
-                    </div>
-                    {/* Inactive Members */}
-                    <div className="bg-white rounded-xl shadow-lg border-2 border-slate-200 p-4 hover:shadow-xl transition-all hover:-translate-y-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-11 h-11 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
-                          <UserX className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-xs font-bold">
-                          Inactive
-                        </span>
-                      </div>
-                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                        Inactive Members
-                      </h3>
-                      <p className="text-2xl font-bold text-slate-900 mb-2">
-                        {statistics.inactive}
-                      </p>
-                      <div className="flex items-center text-xs text-slate-500">
-                        <div className="flex-1 bg-slate-200 rounded-full h-1.5 mr-2">
-                          <div
-                            className="bg-gradient-to-r from-red-500 to-red-600 h-1.5 rounded-full transition-all duration-1000"
-                            style={{
-                              width: `${statistics.total > 0 ? ((statistics.inactive / statistics.total) * 100).toFixed(1) : 0}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <span className="font-semibold">
-                          {statistics.total > 0
-                            ? (
-                                (statistics.inactive / statistics.total) *
-                                100
-                              ).toFixed(1)
-                            : 0}
-                          %
-                        </span>
-                      </div>
-                    </div>
-                    {/* Key Positions */}
-                    <div className="bg-white rounded-xl shadow-lg border-2 border-slate-200 p-4 hover:shadow-xl transition-all hover:-translate-y-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-11 h-11 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                          <Award className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-lg text-xs font-bold">
-                          Officers
-                        </span>
-                      </div>
-                      <h3 className="text-slate-500 text-xs font-semibold mb-0.5">
-                        Key Positions
-                      </h3>
-                      <p className="text-2xl font-bold text-slate-900 mb-2">
-                        3
-                      </p>
-                      <div className="flex items-center text-xs text-slate-500">
-                        <Shield className="w-3 h-3 text-purple-500 mr-1" />
-                        <span>Executive Officers</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Barangay Info Banner */}
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-6 mb-8">
-                    <div className="flex items-center justify-between text-white">
-                      <div>
-                        <h2 className="text-2xl font-bold">
-                          Barangay {currentBarangay?.barangayName}
-                        </h2>
-                        <p className="text-blue-100 mt-2">
-                          Current SK Officials Directory
-                        </p>
-                      </div>
-                      <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                        <FileText className="w-8 h-8 text-white" />
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Main Content Grid */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Key Officials - 2 columns */}
@@ -513,8 +346,74 @@ const SkPersonnelAdmin = () => {
                       </div>
                     </div>
 
-                    {/* Kagawad Members - 1 column */}
-                    <div className="lg:col-span-1">
+                    {/* Kagawad Members + Stats Sidebar */}
+                    <div className="lg:col-span-1 space-y-4">
+                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg p-4 border border-blue-200">
+                        <h3 className="text-sm font-bold mb-1">Barangay</h3>
+                        <p className="text-lg font-bold">
+                          {currentBarangay?.barangayName || "--"}
+                        </p>
+                        <p className="text-xs text-blue-100 mt-1">
+                          Current SK Officials Directory
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-4">
+                        <h3 className="text-sm font-bold text-slate-900 mb-2">
+                          Select Barangay
+                        </h3>
+                        <select
+                          value={selectedBarangay}
+                          onChange={(e) => {
+                            setSelectedBarangay(e.target.value);
+                            fetchSKPersonnel(e.target.value);
+                          }}
+                          className="w-full px-3 py-2 border-2 border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                        >
+                          {barangays.map((b) => (
+                            <option key={b._id} value={b._id}>
+                              {b.barangayName}
+                            </option>
+                          ))}
+                        </select>
+                        {currentBarangay && (
+                          <div className="mt-3 flex items-center gap-3 px-3 py-2 bg-blue-50 rounded-xl border border-blue-200">
+                            <MapPin className="w-4 h-4 text-blue-600" />
+                            <div>
+                              <p className="text-[11px] text-slate-500 uppercase tracking-wider">
+                                Location
+                              </p>
+                              <p className="text-sm text-slate-900 font-semibold">
+                                {currentBarangay.city},{" "}
+                                {currentBarangay.province}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-4">
+                        <h3 className="text-sm font-bold text-slate-900 mb-3">
+                          SK Summary
+                        </h3>
+                        <div className="space-y-2 text-sm text-slate-700">
+                          <div className="flex items-center justify-between">
+                            <span>Total</span>
+                            <strong>{statistics.total}</strong>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Active</span>
+                            <strong>{statistics.active}</strong>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Inactive</span>
+                            <strong>{statistics.inactive}</strong>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Active Rate</span>
+                            <strong>{statistics.activeRate}%</strong>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden sticky top-6">
                         <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-6 py-4 border-b-2 border-slate-200">
                           <div className="flex items-center justify-between">
@@ -537,7 +436,7 @@ const SkPersonnelAdmin = () => {
 
                         <div className="p-6">
                           {skPersonnel.kagawad?.length ? (
-                            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                            <div className="space-y-3 max-h-[360px] overflow-y-auto">
                               {skPersonnel.kagawad.map((k, index) => (
                                 <DirectoryItem
                                   key={k._id || index}

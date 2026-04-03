@@ -9,7 +9,6 @@ import {
   User,
   Calendar,
   Download,
-  Trash2,
   X,
   FileText,
 } from "lucide-react";
@@ -99,23 +98,6 @@ const AdminDashboard = () => {
   };
 
   /* ==================== HANDLERS ==================== */
-  const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm("Delete this message?")) return;
-
-    try {
-      await axios.delete(`${API_BASE}/messages/${messageId}`, {
-        headers: getAuthHeaders(),
-      });
-      setPendingMessages((prev) => prev.filter((m) => m._id !== messageId));
-      setRejectedMessages((prev) => prev.filter((m) => m._id !== messageId));
-      if (selectedMessage?._id === messageId) setSelectedMessage(null);
-      toast.success("Message deleted");
-    } catch (error) {
-      console.error("Delete failed:", error);
-      toast.error("Failed to delete message");
-    }
-  };
-
   const handleApproveMessage = async (message = selectedMessage) => {
     if (!message?._id) return;
 
@@ -485,15 +467,6 @@ const AdminDashboard = () => {
 
                       {/* Right: Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          onClick={() =>
-                            handleDeleteMessage(selectedMessage._id)
-                          }
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                         <button
                           onClick={() => setSelectedMessage(null)}
                           className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
