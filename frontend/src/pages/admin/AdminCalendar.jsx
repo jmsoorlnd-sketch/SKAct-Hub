@@ -86,6 +86,8 @@ const AdminCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
   const [showCreateEventForm, setShowCreateEventForm] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventDetailModal, setShowEventDetailModal] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [createEventMessage, setCreateEventMessage] = useState("");
   const [availableParticipants, setAvailableParticipants] = useState([]);
@@ -471,6 +473,11 @@ const AdminCalendar = () => {
     };
   }, [events, currentDate]);
 
+  const completedEvents = useMemo(
+    () => events.filter((e) => String(e.status).toLowerCase() === "completed"),
+    [events],
+  );
+
   const sortedEvents = useMemo(() => {
     return [...events].sort(
       (a, b) => new Date(a.startDate) - new Date(b.startDate),
@@ -787,6 +794,46 @@ const AdminCalendar = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Completed Events List */}
+                <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-4">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-bold text-slate-900">
+                      Completed Events
+                    </h3>
+                    <p className="text-xs text-slate-600">
+                      Events marked as completed
+                    </p>
+                  </div>
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {completedEvents.length === 0 ? (
+                      <div className="text-center py-6 text-slate-500">
+                        No completed events yet.
+                      </div>
+                    ) : (
+                      completedEvents.map((evt) => (
+                        <div
+                          key={evt._id}
+                          onClick={() => {
+                            setSelectedEvent(evt);
+                            setShowEventDetailModal(true);
+                          }}
+                          className="p-2 border border-slate-200 rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100"
+                        >
+                          <div className="flex justify-between items-center text-sm font-semibold text-slate-800">
+                            <span className="truncate">{evt.subject}</span>
+                            <span className="text-[11px] text-emerald-600 font-bold">
+                              Completed
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            {new Date(evt.startDate).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -825,6 +872,61 @@ const AdminCalendar = () => {
           onStatusUpdate={handleUpdateEventStatus}
           user={user}
         />
+      )}
+
+      {/* Event Detail Modal */}
+      {showEventDetailModal && selectedEvent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-white text-xl font-bold">
+                  {selectedEvent.subject}
+                </h2>
+                <p className="text-white text-sm">
+                  {new Date(selectedEvent.startDate).toLocaleString()}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEventDetailModal(false)}
+                className="text-white p-2 hover:bg-white/20 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <span className="font-semibold">Status:</span>{" "}
+                <span className="text-slate-700">{selectedEvent.status}</span>
+              </div>
+              {selectedEvent.body && (
+                <div>
+                  <span className="font-semibold">Description:</span>
+                  <p className="text-slate-700 mt-1">{selectedEvent.body}</p>
+                </div>
+              )}
+              <div>
+                <span className="font-semibold">Barangay:</span>{" "}
+                <span className="text-slate-700">
+                  {barangays.find(
+                    (b) => b._id === selectedEvent.attachedToBarangay,
+                  )?.barangayName || "All Barangays"}
+                </span>
+              </div>
+              <div>
+                <span className="font-semibold">Participants:</span>
+                <p className="text-slate-700 mt-1">
+                  {Array.isArray(selectedEvent.participants)
+                    ? selectedEvent.participants.join(", ")
+                    : selectedEvent.participants || "None"}
+                </p>
+              </div>
+              <div className="text-xs text-slate-500">
+                Created by: {selectedEvent.sender?.username || "Unknown"}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Confirmation Modal */}
