@@ -556,22 +556,20 @@ const AdminCalendar = () => {
       <div className="min-h-screen bg-blue-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-2xl font-bold">Event Calendar</h1>
-                <p className="text-slate-600 mt-1 text-sm">
-                  View and create events for all barangays or specific barangays
-                </p>
-              </div>
-              <button
-                onClick={() => setShowCreateEventForm(true)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
-              >
-                <Plus size={18} />
-                <span> Create Event </span>
-              </button>
+          <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold">Event Calendar</h1>
+              <p className="text-slate-600 mt-1 text-sm">
+                View and create events for all barangays or specific barangays
+              </p>
             </div>
+            <button
+              onClick={() => setShowCreateEventForm(true)}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
+            >
+              <Plus size={18} />
+              <span>Create Event</span>
+            </button>
           </div>
 
           {loading ? (
@@ -585,53 +583,6 @@ const AdminCalendar = () => {
             </div>
           ) : (
             <>
-              {/* Statistics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center py-10">
-                      <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-                    </div>
-                  }
-                >
-                  <StatCard
-                    icon={CalendarIcon}
-                    title="Total Events"
-                    value={statistics.total}
-                    color="blue"
-                    subtitle="All scheduled"
-                    badge="Total"
-                  />
-                  <StatCard
-                    icon={TrendingUp}
-                    title="Upcoming"
-                    value={statistics.upcoming}
-                    color="emerald"
-                    subtitle="Future events"
-                    badge="Active"
-                  />
-                  <StatCard
-                    icon={CalendarDays}
-                    title="This Month"
-                    value={statistics.thisMonth}
-                    color="purple"
-                    subtitle={currentDate.toLocaleString("default", {
-                      month: "long",
-                    })}
-                    badge="Current"
-                  />
-
-                  <StatCard
-                    icon={FileText}
-                    title="Past Events"
-                    value={statistics.past}
-                    color="slate"
-                    subtitle="Completed events"
-                    badge="Archive"
-                  />
-                </Suspense>
-              </div>
-
               {/* Two-Column Layout: Calendar + Today's Events */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Calendar - 2 columns */}
@@ -652,8 +603,49 @@ const AdminCalendar = () => {
                   </Suspense>
                 </div>
 
-                {/* Today's Events - 1 column */}
-                <div className="lg:col-span-1">
+                {/* Today's Events + Stats - 1 column */}
+                <div className="lg:col-span-1 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <StatCard
+                      compact
+                      icon={CalendarIcon}
+                      title="Total"
+                      value={statistics.total}
+                      color="blue"
+                      subtitle="All"
+                      badge="Total"
+                    />
+                    <StatCard
+                      compact
+                      icon={TrendingUp}
+                      title="Upcoming"
+                      value={statistics.upcoming}
+                      color="emerald"
+                      subtitle="Future"
+                      badge="Active"
+                    />
+                    <StatCard
+                      compact
+                      icon={CalendarDays}
+                      title="This Month"
+                      value={statistics.thisMonth}
+                      color="purple"
+                      subtitle={currentDate.toLocaleString("default", {
+                        month: "short",
+                      })}
+                      badge="Current"
+                    />
+                    <StatCard
+                      compact
+                      icon={FileText}
+                      title="Past"
+                      value={statistics.past}
+                      color="slate"
+                      subtitle="Completed"
+                      badge="Archive"
+                    />
+                  </div>
+
                   <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden sticky top-6 max-h-[600px] flex flex-col">
                     <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-slate-200">
                       <h3 className="text-lg font-bold text-slate-900">
