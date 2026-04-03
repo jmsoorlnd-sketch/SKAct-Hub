@@ -296,7 +296,7 @@ const SkPersonnelAdmin = () => {
                   </div>
                 </div>
               ) : skPersonnel ? (
-                <>
+                <div className="space-y-6">
                   {/* Main Content Grid */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Key Officials - 2 columns */}
@@ -467,7 +467,7 @@ const SkPersonnelAdmin = () => {
                     </div>
                     <div className="lg:col-span-1"></div>
                   </div>
-                </>
+                </div>
               ) : (
                 <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-12">
                   <div className="text-center">
