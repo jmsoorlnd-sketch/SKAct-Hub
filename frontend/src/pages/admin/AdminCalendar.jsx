@@ -478,6 +478,14 @@ const AdminCalendar = () => {
     [events],
   );
 
+  const upcomingEvents = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return events
+      .filter((e) => new Date(e.startDate) >= today)
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+  }, [events]);
+
   const sortedEvents = useMemo(() => {
     return [...events].sort(
       (a, b) => new Date(a.startDate) - new Date(b.startDate),
@@ -796,40 +804,89 @@ const AdminCalendar = () => {
                 </div>
 
                 {/* Completed Events List */}
-                <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 p-4">
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4">
                   <div className="mb-3">
-                    <h3 className="text-lg font-bold text-slate-900">
+                    <h3 className="text-xl font-bold text-slate-900">
                       Completed Events
                     </h3>
-                    <p className="text-xs text-slate-600">
-                      Events marked as completed
+                    <p className="text-sm text-slate-600">
+                      Past events that are complete.
                     </p>
                   </div>
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto">
                     {completedEvents.length === 0 ? (
-                      <div className="text-center py-6 text-slate-500">
+                      <div className="text-center py-8 text-slate-500">
                         No completed events yet.
                       </div>
                     ) : (
                       completedEvents.map((evt) => (
-                        <div
+                        <button
                           key={evt._id}
                           onClick={() => {
                             setSelectedEvent(evt);
                             setShowEventDetailModal(true);
                           }}
-                          className="p-2 border border-slate-200 rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100"
+                          className="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-start gap-2 hover:shadow-lg transition-all"
                         >
-                          <div className="flex justify-between items-center text-sm font-semibold text-slate-800">
-                            <span className="truncate">{evt.subject}</span>
-                            <span className="text-[11px] text-emerald-600 font-bold">
-                              Completed
-                            </span>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 truncate">
+                              {evt.subject}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {new Date(evt.startDate).toLocaleString()}
+                            </p>
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            {new Date(evt.startDate).toLocaleString()}
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Completed
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Upcoming Events List */}
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4">
+                  <div className="mb-3">
+                    <h3 className="text-xl font-bold text-slate-900">
+                      Upcoming Events
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      Events scheduled for today or later.
+                    </p>
+                  </div>
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto">
+                    {upcomingEvents.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500">
+                        No upcoming events.
+                      </div>
+                    ) : (
+                      upcomingEvents.map((evt) => (
+                        <button
+                          key={evt._id}
+                          onClick={() => {
+                            setSelectedEvent(evt);
+                            setShowEventDetailModal(true);
+                          }}
+                          className="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-start gap-2 hover:shadow-lg transition-all"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 truncate">
+                              {evt.subject}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {new Date(evt.startDate).toLocaleString()}
+                            </p>
                           </div>
-                        </div>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-200">
+                            <span className="w-2 h-2 rounded-full bg-blue-500" />
+                            {String(evt.status || "Scheduled")
+                              .charAt(0)
+                              .toUpperCase() +
+                              String(evt.status || "Scheduled").slice(1)}
+                          </span>
+                        </button>
                       ))
                     )}
                   </div>
@@ -878,7 +935,7 @@ const AdminCalendar = () => {
       {showEventDetailModal && selectedEvent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center">
               <div>
                 <h2 className="text-white text-xl font-bold">
                   {selectedEvent.subject}
