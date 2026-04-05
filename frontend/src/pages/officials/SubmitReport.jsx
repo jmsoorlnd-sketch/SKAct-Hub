@@ -10,6 +10,7 @@ const SubmitReport = () => {
   const [formData, setFormData] = useState({
     idNumber: "",
     pydp: "",
+    programName: "",
     objectives: "",
     startDate: "",
     budgetAllocated: "",
@@ -38,6 +39,9 @@ const SubmitReport = () => {
     }
     if (!formData.pydp) {
       errors.pydp = "PYDP is required";
+    }
+    if (!formData.programName || formData.programName.trim() === "") {
+      errors.programName = "Program/Activity/Event Name is required";
     }
     if (!formData.objectives || formData.objectives.trim() === "") {
       errors.objectives = "Objectives are required";
@@ -100,6 +104,7 @@ const SubmitReport = () => {
       setFormData({
         idNumber: "",
         pydp: "",
+        programName: "",
         objectives: "",
         startDate: "",
         budgetAllocated: "",
@@ -107,8 +112,14 @@ const SubmitReport = () => {
       });
       setFormErrors({});
       fetchMyReports();
-    } catch {
-      error("Failed to submit report");
+    } catch (err) {
+      const message = err?.response?.data?.message;
+      if (message === "ID number already taken. Please use another ID.") {
+        setFormErrors({ idNumber: "This ID is already taken" });
+        error("The ID is already taken, please use another ID");
+      } else {
+        error(message || "Failed to submit report");
+      }
     } finally {
       setLoading(false);
     }
@@ -180,6 +191,28 @@ const SubmitReport = () => {
               {formErrors.pydp && (
                 <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                   <AlertCircle size={16} /> {formErrors.pydp}
+                </p>
+              )}
+            </div>
+
+            {/* Program/Activity/Event Name */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Program/Activity/Event Name
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                name="programName"
+                value={formData.programName}
+                onChange={handleChange}
+                required
+                placeholder="Enter program, activity, or event name"
+                className={inputClass("programName")}
+              />
+              {formErrors.programName && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <AlertCircle size={16} /> {formErrors.programName}
                 </p>
               )}
             </div>
