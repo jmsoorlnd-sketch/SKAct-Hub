@@ -1,5 +1,6 @@
 import SKPersonnel from "../models/SKPersonnelModel.js";
 import Barangay from "../models/BarangayModel.js";
+import User from "../models/userModel.js";
 import UserLog from "../models/UserLogModel.js";
 import mongoose from "mongoose";
 
@@ -9,6 +10,39 @@ const addPersonnelHistory = (skPersonnel, entry) => {
     ...entry,
     changedAt: new Date(),
   });
+};
+
+const getAccountPositions = async (barangayId) => {
+  const accountUsers = await User.find({
+    barangay: barangayId,
+    role: "Official",
+    position: { $in: ["Chairman", "Secretary", "Treasurer"] },
+    isDeleted: false,
+  }).select("firstname lastname status username position");
+
+  const personFromAccount = (user) => {
+    if (!user) return null;
+    return {
+      surname: user.lastname || "",
+      firstName: user.firstname || "",
+      middleName: "",
+      age: null,
+      status: user.status || "Active",
+      username: user.username || "",
+    };
+  };
+
+  return {
+    chairman: personFromAccount(
+      accountUsers.find((user) => user.position === "Chairman"),
+    ),
+    secretary: personFromAccount(
+      accountUsers.find((user) => user.position === "Secretary"),
+    ),
+    treasurer: personFromAccount(
+      accountUsers.find((user) => user.position === "Treasurer"),
+    ),
+  };
 };
 
 // Get SK Personnel for a barangay
@@ -72,7 +106,9 @@ export const getSKPersonnelByBarangay = async (req, res) => {
       return res.status(200).json({ deletedKagawad });
     }
 
-    res.status(200).json({ skPersonnel });
+    const accountPositions = await getAccountPositions(barangayId);
+
+    res.status(200).json({ skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error fetching SK Personnel:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -169,6 +205,8 @@ export const updateChairman = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    const accountPositions = await getAccountPositions(barangayId);
+
     // Log the action
     if (userId) {
       const actionType = isNewAssignment
@@ -192,7 +230,7 @@ export const updateChairman = async (req, res) => {
       });
     }
 
-    res.status(200).json({ message: "Chairman updated", skPersonnel });
+    res.status(200).json({ message: "Chairman updated", skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error updating Chairman:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -287,6 +325,8 @@ export const updateSecretary = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    const accountPositions = await getAccountPositions(barangayId);
+
     // Log the action
     if (userId) {
       const actionType = isNewAssignment
@@ -310,7 +350,7 @@ export const updateSecretary = async (req, res) => {
       });
     }
 
-    res.status(200).json({ message: "Secretary updated", skPersonnel });
+    res.status(200).json({ message: "Secretary updated", skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error updating Secretary:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -406,6 +446,8 @@ export const updateTreasurer = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    const accountPositions = await getAccountPositions(barangayId);
+
     // Log the action
     if (userId) {
       const actionType = isNewAssignment
@@ -429,7 +471,7 @@ export const updateTreasurer = async (req, res) => {
       });
     }
 
-    res.status(200).json({ message: "Treasurer updated", skPersonnel });
+    res.status(200).json({ message: "Treasurer updated", skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error updating Treasurer:", error);
     res.status(500).json({ message: "Server error", error: error.message });

@@ -160,7 +160,10 @@ const SKPersonnelPage = () => {
 
       const data = await response.json();
       if (data.skPersonnel) {
-        setSkPersonnel(data.skPersonnel);
+        setSkPersonnel({
+          ...data.skPersonnel,
+          accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+        });
 
         // Create a helper function to populate form data
         const populateFormData = (personelData) => ({
@@ -171,12 +174,26 @@ const SKPersonnelPage = () => {
           status: personelData?.status || "Active",
         });
 
-        // Populate forms using unified object
-        // Map backend positions to form state: secretary (backend) → vicePresident (form), treasurer (backend) → secretary (form)
+        const getAuthorityData = (positionKey, fallbackKey) => {
+          return (
+            data.skPersonnel.accountPositions?.[positionKey] ||
+            data.skPersonnel[fallbackKey] ||
+            {}
+          );
+        };
+
+        // Populate forms using unified object.
+        // Use account positions automatically when available.
         setForms({
-          chairman: populateFormData(data.skPersonnel.chairman),
-          vicePresident: populateFormData(data.skPersonnel.secretary),
-          secretary: populateFormData(data.skPersonnel.treasurer),
+          chairman: populateFormData(
+            getAuthorityData("chairman", "chairman"),
+          ),
+          vicePresident: populateFormData(
+            getAuthorityData("secretary", "secretary"),
+          ),
+          secretary: populateFormData(
+            getAuthorityData("treasurer", "treasurer"),
+          ),
         });
       }
     } catch (error) {
@@ -228,7 +245,10 @@ const SKPersonnelPage = () => {
       }
 
       const data = await response.json();
-      setSkPersonnel(data.skPersonnel);
+      setSkPersonnel({
+        ...data.skPersonnel,
+        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+      });
       setEditingPosition(null);
       toast.success(`Position updated successfully`);
     } catch (error) {
@@ -285,7 +305,10 @@ const SKPersonnelPage = () => {
       }
 
       const data = await response.json();
-      setSkPersonnel(data.skPersonnel);
+      setSkPersonnel({
+        ...data.skPersonnel,
+        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+      });
       setKagawadForm({
         surname: "",
         firstName: "",
@@ -330,7 +353,10 @@ const SKPersonnelPage = () => {
       }
 
       const data = await response.json();
-      setSkPersonnel(data.skPersonnel);
+      setSkPersonnel({
+        ...data.skPersonnel,
+        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+      });
       setEditingKagawad(null);
       toast.success("Kagawad updated successfully");
     } catch (error) {
@@ -362,7 +388,10 @@ const SKPersonnelPage = () => {
       }
 
       const data = await response.json();
-      setSkPersonnel(data.skPersonnel);
+      setSkPersonnel({
+        ...data.skPersonnel,
+        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+      });
       toast.success("Kagawad deleted successfully");
     } catch (error) {
       console.error("Error deleting kagawad:", error);
@@ -376,9 +405,9 @@ const SKPersonnelPage = () => {
       return { total: 0, active: 0, inactive: 0, activeRate: 0 };
 
     const allMembers = [
-      skPersonnel.chairman,
-      skPersonnel.secretary,
-      skPersonnel.treasurer,
+      skPersonnel.accountPositions?.chairman || skPersonnel.chairman,
+      skPersonnel.accountPositions?.secretary || skPersonnel.secretary,
+      skPersonnel.accountPositions?.treasurer || skPersonnel.treasurer,
       ...(skPersonnel.kagawad?.filter((k) => !k.isDeleted) || []),
     ].filter(Boolean);
 

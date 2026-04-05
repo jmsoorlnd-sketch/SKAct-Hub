@@ -66,7 +66,14 @@ const SkPersonnelAdmin = () => {
       );
 
       const data = await res.json();
-      setSkPersonnel(data.skPersonnel || null);
+      setSkPersonnel(
+        data.skPersonnel
+          ? {
+              ...data.skPersonnel,
+              accountPositions: data.accountPositions || null,
+            }
+          : null,
+      );
     } catch {
       toast.error("Failed to load SK personnel");
       setSkPersonnel(null);
@@ -80,15 +87,29 @@ const SkPersonnelAdmin = () => {
     return barangays.find((b) => b._id === selectedBarangay);
   }, [barangays, selectedBarangay]);
 
+  const resolvedSkPersonnel = useMemo(() => {
+    if (!skPersonnel) return null;
+
+    return {
+      ...skPersonnel,
+      chairman:
+        skPersonnel.accountPositions?.chairman || skPersonnel.chairman,
+      secretary:
+        skPersonnel.accountPositions?.secretary || skPersonnel.secretary,
+      treasurer:
+        skPersonnel.accountPositions?.treasurer || skPersonnel.treasurer,
+    };
+  }, [skPersonnel]);
+
   const statistics = useMemo(() => {
-    if (!skPersonnel)
+    if (!resolvedSkPersonnel)
       return { total: 0, active: 0, inactive: 0, activeRate: 0 };
 
     const allMembers = [
-      skPersonnel.chairman,
-      skPersonnel.secretary,
-      skPersonnel.treasurer,
-      ...(skPersonnel.kagawad || []),
+      resolvedSkPersonnel.chairman,
+      resolvedSkPersonnel.secretary,
+      resolvedSkPersonnel.treasurer,
+      ...(resolvedSkPersonnel.kagawad || []),
     ].filter(Boolean);
 
     const total = allMembers.length;
@@ -97,7 +118,7 @@ const SkPersonnelAdmin = () => {
     const activeRate = total > 0 ? ((active / total) * 100).toFixed(1) : 0;
 
     return { total, active, inactive, activeRate };
-  }, [skPersonnel]);
+  }, [resolvedSkPersonnel]);
 
   /* ===================== COMPONENTS ===================== */
   const DirectoryItem = ({ role, data, isKeyOfficial = false, onView }) => {
@@ -317,7 +338,7 @@ const SkPersonnelAdmin = () => {
                         <div className="p-6 space-y-4">
                           <DirectoryItem
                             role="SK Chairman"
-                            data={skPersonnel.chairman}
+                            data={resolvedSkPersonnel?.chairman || skPersonnel?.chairman}
                             isKeyOfficial={true}
                             onView={(personnel) => {
                               setSelectedPersonnel(personnel);
@@ -326,7 +347,7 @@ const SkPersonnelAdmin = () => {
                           />
                           <DirectoryItem
                             role="SK Secretary"
-                            data={skPersonnel.secretary}
+                            data={resolvedSkPersonnel?.secretary || skPersonnel?.secretary}
                             isKeyOfficial={true}
                             onView={(personnel) => {
                               setSelectedPersonnel(personnel);
@@ -335,7 +356,7 @@ const SkPersonnelAdmin = () => {
                           />
                           <DirectoryItem
                             role="SK Treasurer"
-                            data={skPersonnel.treasurer}
+                            data={resolvedSkPersonnel?.treasurer || skPersonnel?.treasurer}
                             isKeyOfficial={true}
                             onView={(personnel) => {
                               setSelectedPersonnel(personnel);
