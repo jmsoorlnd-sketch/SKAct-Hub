@@ -162,7 +162,8 @@ const SKPersonnelPage = () => {
       if (data.skPersonnel) {
         setSkPersonnel({
           ...data.skPersonnel,
-          accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+          accountPositions:
+            data.accountPositions || skPersonnel?.accountPositions || null,
         });
 
         // Create a helper function to populate form data
@@ -185,9 +186,7 @@ const SKPersonnelPage = () => {
         // Populate forms using unified object.
         // Use account positions automatically when available.
         setForms({
-          chairman: populateFormData(
-            getAuthorityData("chairman", "chairman"),
-          ),
+          chairman: populateFormData(getAuthorityData("chairman", "chairman")),
           vicePresident: populateFormData(
             getAuthorityData("secretary", "secretary"),
           ),
@@ -247,7 +246,8 @@ const SKPersonnelPage = () => {
       const data = await response.json();
       setSkPersonnel({
         ...data.skPersonnel,
-        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+        accountPositions:
+          data.accountPositions || skPersonnel?.accountPositions || null,
       });
       setEditingPosition(null);
       toast.success(`Position updated successfully`);
@@ -307,7 +307,8 @@ const SKPersonnelPage = () => {
       const data = await response.json();
       setSkPersonnel({
         ...data.skPersonnel,
-        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+        accountPositions:
+          data.accountPositions || skPersonnel?.accountPositions || null,
       });
       setKagawadForm({
         surname: "",
@@ -355,7 +356,8 @@ const SKPersonnelPage = () => {
       const data = await response.json();
       setSkPersonnel({
         ...data.skPersonnel,
-        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+        accountPositions:
+          data.accountPositions || skPersonnel?.accountPositions || null,
       });
       setEditingKagawad(null);
       toast.success("Kagawad updated successfully");
@@ -390,7 +392,8 @@ const SKPersonnelPage = () => {
       const data = await response.json();
       setSkPersonnel({
         ...data.skPersonnel,
-        accountPositions: data.accountPositions || skPersonnel?.accountPositions || null,
+        accountPositions:
+          data.accountPositions || skPersonnel?.accountPositions || null,
       });
       toast.success("Kagawad deleted successfully");
     } catch (error) {

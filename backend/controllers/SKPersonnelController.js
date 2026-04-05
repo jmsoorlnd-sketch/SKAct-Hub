@@ -230,7 +230,9 @@ export const updateChairman = async (req, res) => {
       });
     }
 
-    res.status(200).json({ message: "Chairman updated", skPersonnel, accountPositions });
+    res
+      .status(200)
+      .json({ message: "Chairman updated", skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error updating Chairman:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -350,7 +352,9 @@ export const updateSecretary = async (req, res) => {
       });
     }
 
-    res.status(200).json({ message: "Secretary updated", skPersonnel, accountPositions });
+    res
+      .status(200)
+      .json({ message: "Secretary updated", skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error updating Secretary:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -471,7 +475,9 @@ export const updateTreasurer = async (req, res) => {
       });
     }
 
-    res.status(200).json({ message: "Treasurer updated", skPersonnel, accountPositions });
+    res
+      .status(200)
+      .json({ message: "Treasurer updated", skPersonnel, accountPositions });
   } catch (error) {
     console.error("Error updating Treasurer:", error);
     res.status(500).json({ message: "Server error", error: error.message });

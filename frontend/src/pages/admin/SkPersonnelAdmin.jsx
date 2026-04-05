@@ -92,8 +92,7 @@ const SkPersonnelAdmin = () => {
 
     return {
       ...skPersonnel,
-      chairman:
-        skPersonnel.accountPositions?.chairman || skPersonnel.chairman,
+      chairman: skPersonnel.accountPositions?.chairman || skPersonnel.chairman,
       secretary:
         skPersonnel.accountPositions?.secretary || skPersonnel.secretary,
       treasurer:
@@ -338,7 +337,10 @@ const SkPersonnelAdmin = () => {
                         <div className="p-6 space-y-4">
                           <DirectoryItem
                             role="SK Chairman"
-                            data={resolvedSkPersonnel?.chairman || skPersonnel?.chairman}
+                            data={
+                              resolvedSkPersonnel?.chairman ||
+                              skPersonnel?.chairman
+                            }
                             isKeyOfficial={true}
                             onView={(personnel) => {
                               setSelectedPersonnel(personnel);
@@ -347,7 +349,10 @@ const SkPersonnelAdmin = () => {
                           />
                           <DirectoryItem
                             role="SK Secretary"
-                            data={resolvedSkPersonnel?.secretary || skPersonnel?.secretary}
+                            data={
+                              resolvedSkPersonnel?.secretary ||
+                              skPersonnel?.secretary
+                            }
                             isKeyOfficial={true}
                             onView={(personnel) => {
                               setSelectedPersonnel(personnel);
@@ -356,7 +361,10 @@ const SkPersonnelAdmin = () => {
                           />
                           <DirectoryItem
                             role="SK Treasurer"
-                            data={resolvedSkPersonnel?.treasurer || skPersonnel?.treasurer}
+                            data={
+                              resolvedSkPersonnel?.treasurer ||
+                              skPersonnel?.treasurer
+                            }
                             isKeyOfficial={true}
                             onView={(personnel) => {
                               setSelectedPersonnel(personnel);
