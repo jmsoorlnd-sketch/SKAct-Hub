@@ -8,6 +8,7 @@ export const submitReport = async (req, res) => {
     const {
       idNumber,
       pydp,
+      programName,
       objectives,
       startDate,
       budgetAllocated,
@@ -33,6 +34,7 @@ export const submitReport = async (req, res) => {
     const report = new Report({
       idNumber,
       pydp,
+      programName,
       objectives,
       startDate,
       budgetAllocated,

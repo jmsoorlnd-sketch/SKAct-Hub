@@ -360,6 +360,9 @@ const SubmitReport = () => {
                       PYDP
                     </th>
                     <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                      Program Name
+                    </th>
+                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
                       Start Date
                     </th>
                     <th className="px-4 py-3 text-sm font-semibold text-slate-700">
@@ -387,6 +390,9 @@ const SubmitReport = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {report.pydp}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700">
+                        {report.programName || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {new Date(report.startDate).toLocaleDateString()}

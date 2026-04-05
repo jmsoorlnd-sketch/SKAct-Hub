@@ -21,6 +21,10 @@ const reportSchema = new mongoose.Schema({
       "Environment Global Mobility",
     ],
   },
+  programName: {
+    type: String,
+    required: true,
+  },
   objectives: {
     type: String,
     required: true,

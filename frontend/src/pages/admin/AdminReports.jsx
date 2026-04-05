@@ -92,37 +92,46 @@ const AdminReports = () => {
 
       {/* Search and Filter Section */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <div className="flex flex-col gap-4 md:flex-row md:gap-4">
-          <div className="flex-1 relative">
-            <Search
-              className="absolute left-3 top-3 text-slate-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search by ID, objectives, or PYDP..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
-            />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex-1 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
+            <div className="relative w-full lg:w-[calc(100%-220px)]">
+              <Search
+                className="absolute left-3 top-3 text-slate-400"
+                size={20}
+              />
+              <input
+                type="text"
+                placeholder="Search by ID, objectives, or PYDP..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+              />
+            </div>
+            <div className="md:w-48 relative flex items-center gap-2">
+              <Filter size={20} className="text-slate-400" />
+              <select
+                value={selectedBarangay}
+                onChange={(e) => setSelectedBarangay(e.target.value)}
+                className="w-full pl-2 pr-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+              >
+                <option value="">All Barangays</option>
+                {uniqueBarangays.map((barangay) => (
+                  <option key={barangay} value={barangay}>
+                    {barangay}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="md:w-48 relative flex items-center gap-2">
-            <Filter size={20} className="text-slate-400" />
-            <select
-              value={selectedBarangay}
-              onChange={(e) => setSelectedBarangay(e.target.value)}
-              className="w-full pl-2 pr-4 py-2 border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
-            >
-              <option value="">All Barangays</option>
-              {uniqueBarangays.map((barangay) => (
-                <option key={barangay} value={barangay}>
-                  {barangay}
-                </option>
-              ))}
-            </select>
-          </div>
+
+          {filteredReports.length > 0 && (
+            <button className="flex items-center gap-2 self-start bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
+              <Download size={20} />
+              Export as CSV
+            </button>
+          )}
         </div>
-        <p className="text-sm text-slate-500 mt-2">
+        <p className="text-sm text-slate-500 mt-4">
           {filteredReports.length} report
           {filteredReports.length !== 1 ? "s" : ""} found
         </p>
@@ -144,6 +153,9 @@ const AdminReports = () => {
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
                     PYDP
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Program Name
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
                     Objectives
@@ -188,6 +200,12 @@ const AdminReports = () => {
                     </td>
                     <td
                       className="px-6 py-4 text-sm text-slate-700 max-w-xs truncate"
+                      title={report.programName}
+                    >
+                      {report.programName || "-"}
+                    </td>
+                    <td
+                      className="px-6 py-4 text-sm text-slate-700 max-w-xs truncate"
                       title={report.objectives}
                     >
                       {report.objectives}
@@ -224,16 +242,6 @@ const AdminReports = () => {
         )}
       </div>
 
-      {/* Download Button */}
-      {filteredReports.length > 0 && (
-        <div className="mt-6 flex justify-end">
-          <button className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold">
-            <Download size={20} />
-            Export as CSV
-          </button>
-        </div>
-      )}
-
       {showDetailModal && selectedReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
           <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl">
@@ -262,6 +270,14 @@ const AdminReports = () => {
                   </span>
                   <p className="mt-1 text-sm text-slate-900">
                     {selectedReport.idNumber}
+                  </p>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Program/Activity/Event Name
+                  </span>
+                  <p className="mt-1 text-sm text-slate-900">
+                    {selectedReport.programName || "-"}
                   </p>
                 </div>
                 <div>
