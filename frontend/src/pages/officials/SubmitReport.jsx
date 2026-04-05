@@ -20,6 +20,7 @@ const SubmitReport = () => {
   const [formErrors, setFormErrors] = useState({});
   const [myReports, setMyReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(true);
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const pydpOptions = [
     "Health",
@@ -101,6 +102,7 @@ const SubmitReport = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       success("Report submitted successfully!");
+      setShowFormModal(false);
       setFormData({
         idNumber: "",
         pydp: "",
@@ -134,209 +136,35 @@ const SubmitReport = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="grid gap-8 lg:grid-cols-[1.7fr_1fr] items-start">
+      <div className="space-y-8">
         <div className="bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold mb-2 text-slate-800">
-            Submit Report
-          </h1>
-          <p className="text-slate-600 mb-8">
-            Fill in all the details below to submit a new report for your PYDP
-            activities.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* ID Number */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                ID Number
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="number"
-                name="idNumber"
-                value={formData.idNumber}
-                onChange={handleChange}
-                min="1"
-                required
-                placeholder="Enter ID Number"
-                className={inputClass("idNumber")}
-              />
-              {formErrors.idNumber && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle size={16} /> {formErrors.idNumber}
-                </p>
-              )}
+              <h1 className="text-3xl font-bold text-slate-800">
+                Submit Report
+              </h1>
+              <p className="text-slate-600 mt-2">
+                Click the button to open the report form in a popup.
+              </p>
             </div>
-
-            {/* Select PYDP */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Select PYDP
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <select
-                name="pydp"
-                value={formData.pydp}
-                onChange={handleChange}
-                required
-                className={inputClass("pydp")}
-              >
-                <option value="">-- Select PYDP --</option>
-                {pydpOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              {formErrors.pydp && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle size={16} /> {formErrors.pydp}
-                </p>
-              )}
-            </div>
-
-            {/* Program/Activity/Event Name */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Program/Activity/Event Name
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="text"
-                name="programName"
-                value={formData.programName}
-                onChange={handleChange}
-                required
-                placeholder="Enter program, activity, or event name"
-                className={inputClass("programName")}
-              />
-              {formErrors.programName && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle size={16} /> {formErrors.programName}
-                </p>
-              )}
-            </div>
-
-            {/* Objectives */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Objectives
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <textarea
-                name="objectives"
-                value={formData.objectives}
-                onChange={handleChange}
-                required
-                placeholder="Describe the objectives of the program or activity"
-                rows="4"
-                className={inputClass("objectives")}
-              />
-              {formErrors.objectives && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle size={16} /> {formErrors.objectives}
-                </p>
-              )}
-            </div>
-
-            {/* Start Date */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Start Date
-                <span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                required
-                className={inputClass("startDate")}
-              />
-              {formErrors.startDate && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle size={16} /> {formErrors.startDate}
-                </p>
-              )}
-            </div>
-
-            {/* Budget Fields */}
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Budget Allocated
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="budgetAllocated"
-                  value={formData.budgetAllocated}
-                  onChange={handleChange}
-                  min="0.01"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
-                  className={inputClass("budgetAllocated")}
-                />
-                {formErrors.budgetAllocated && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle size={16} /> {formErrors.budgetAllocated}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Budget Spent
-                  <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="budgetSpent"
-                  value={formData.budgetSpent}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  required
-                  placeholder="0.00"
-                  className={inputClass("budgetSpent")}
-                />
-                {formErrors.budgetSpent && (
-                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle size={16} /> {formErrors.budgetSpent}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Submit Button */}
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-8 bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => setShowFormModal(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-5 py-3 text-white font-semibold transition hover:bg-blue-600"
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <CheckCircle size={20} />
-                  Submit Report
-                </>
-              )}
+              <CheckCircle size={18} />
+              Submit New Report
             </button>
-          </form>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8 max-h-[680px] overflow-hidden lg:overflow-y-auto">
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-2 text-slate-800">
               Your Submitted Reports
             </h1>
             <p className="text-slate-600 text-sm">
-              See the reports you have submitted so far.
+              Every report shows the full details below.
             </p>
           </div>
 
@@ -346,76 +174,74 @@ const SubmitReport = () => {
             </div>
           ) : myReports.length === 0 ? (
             <div className="py-16 text-center text-slate-500">
-              No reports submitted yet. Submit your first report on the left.
+              No reports submitted yet. Submit your first report using the
+              button above.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-200">
+              <table className="min-w-full text-left text-sm text-slate-700">
+                <thead className="bg-slate-50 text-slate-600">
                   <tr>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       ID Number
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       PYDP
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       Program Name
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                      Objectives
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       Start Date
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       Budget Allocated
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       Budget Spent
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                      Status
+                    </th>
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       Barangay
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
-                      Validation
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                      Submitted By
                     </th>
-                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
                       Submitted At
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-200">
                   {myReports.map((report) => (
-                    <tr
-                      key={report._id}
-                      className="border-b border-slate-200 hover:bg-slate-50"
-                    >
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {report.idNumber}
+                    <tr key={report._id} className="hover:bg-slate-50">
+                      <td className="px-4 py-4">{report.idNumber}</td>
+                      <td className="px-4 py-4">{report.pydp}</td>
+                      <td className="px-4 py-4">{report.programName || "-"}</td>
+                      <td className="max-w-60 px-4 py-4 text-slate-700 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {report.objectives || "-"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {report.pydp}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {report.programName || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
+                      <td className="px-4 py-4">
                         {new Date(report.startDate).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        ₱{report.budgetAllocated.toLocaleString()}
+                      <td className="px-4 py-4">
+                        ₱{Number(report.budgetAllocated).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        ₱{report.budgetSpent.toLocaleString()}
+                      <td className="px-4 py-4">
+                        ₱{Number(report.budgetSpent).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {report.barangay?.barangayName || "Unknown"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
+                      <td className="px-4 py-4">
                         <span
                           className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                             report.validationStatus === "valid"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-emerald-100 text-emerald-700"
                               : report.validationStatus === "not valid"
-                                ? "bg-red-100 text-red-800"
+                                ? "bg-red-100 text-red-700"
                                 : "bg-slate-100 text-slate-700"
                           }`}
                         >
@@ -424,7 +250,14 @@ const SubmitReport = () => {
                             : "pending"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
+                      <td className="px-4 py-4">
+                        {report.barangay?.barangayName || "Unknown"}
+                      </td>
+                      <td className="px-4 py-4">
+                        {report.submittedBy?.firstname || ""}{" "}
+                        {report.submittedBy?.lastname || ""}
+                      </td>
+                      <td className="px-4 py-4">
                         {new Date(report.submittedAt).toLocaleString()}
                       </td>
                     </tr>
@@ -435,6 +268,206 @@ const SubmitReport = () => {
           )}
         </div>
       </div>
+
+      {showFormModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowFormModal(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl max-h-[90vh]">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  Submit Report
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Fill in the report details and submit them directly from this
+                  popup.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFormModal(false)}
+                className="rounded-full border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"
+              >
+                Close
+              </button>
+            </div>
+            <div className="max-h-[calc(90vh-5rem)] overflow-y-auto px-6 py-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    ID Number
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="idNumber"
+                    value={formData.idNumber}
+                    onChange={handleChange}
+                    min="1"
+                    required
+                    placeholder="Enter ID Number"
+                    className={inputClass("idNumber")}
+                  />
+                  {formErrors.idNumber && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle size={16} /> {formErrors.idNumber}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Select PYDP
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <select
+                    name="pydp"
+                    value={formData.pydp}
+                    onChange={handleChange}
+                    required
+                    className={inputClass("pydp")}
+                  >
+                    <option value="">-- Select PYDP --</option>
+                    {pydpOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  {formErrors.pydp && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle size={16} /> {formErrors.pydp}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Program/Activity/Event Name
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="programName"
+                    value={formData.programName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter program, activity, or event name"
+                    className={inputClass("programName")}
+                  />
+                  {formErrors.programName && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle size={16} /> {formErrors.programName}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Objectives
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <textarea
+                    name="objectives"
+                    value={formData.objectives}
+                    onChange={handleChange}
+                    required
+                    placeholder="Describe the objectives of the program or activity"
+                    rows="4"
+                    className={inputClass("objectives")}
+                  />
+                  {formErrors.objectives && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle size={16} /> {formErrors.objectives}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Start Date
+                    <span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                    required
+                    className={inputClass("startDate")}
+                  />
+                  {formErrors.startDate && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle size={16} /> {formErrors.startDate}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Budget Allocated
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="budgetAllocated"
+                      value={formData.budgetAllocated}
+                      onChange={handleChange}
+                      min="0.01"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      className={inputClass("budgetAllocated")}
+                    />
+                    {formErrors.budgetAllocated && (
+                      <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={16} /> {formErrors.budgetAllocated}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Budget Spent
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="budgetSpent"
+                      value={formData.budgetSpent}
+                      onChange={handleChange}
+                      min="0"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      className={inputClass("budgetSpent")}
+                    />
+                    {formErrors.budgetSpent && (
+                      <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={16} /> {formErrors.budgetSpent}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl bg-blue-500 py-3 px-4 text-white font-semibold transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading ? "Submitting..." : "Submit Report"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -97,6 +97,7 @@ export const getUserReports = async (req, res) => {
   try {
     const reports = await Report.find({ submittedBy: req.user._id })
       .populate("barangay", "barangayName")
+      .populate("submittedBy", "firstname lastname")
       .sort({ submittedAt: -1 });
 
     res.json(reports);
