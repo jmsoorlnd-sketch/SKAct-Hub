@@ -32,12 +32,14 @@ const AdminMonitoring = lazy(() => import("./pages/admin/AdminMonitoring"));
 import AdminNotification from "./pages/admin/AdminNotification";
 const AdminArchive = lazy(() => import("./pages/admin/AdminArchive"));
 const AdminUserLogs = lazy(() => import("./pages/admin/AdminUserLogs"));
+import AdminReports from "./pages/admin/AdminReports";
 
 // Official Pages
 // import OfficialDashboard from "./pages/officials/OfficialDashboard";
 
 import EventCalendar from "./pages/officials/EventCalendar";
 import SKPersonnelPage from "./pages/officials/SKPersonnelPage";
+import SubmitReport from "./pages/officials/SubmitReport";
 import OfficialSettings from "./pages/officials/OfficialSettings";
 
 // Barangay Pages
@@ -197,6 +199,14 @@ const AppRoutes = () => {
               </Suspense>
             }
           />
+          <Route
+            path="/admin/reports"
+            element={
+              <RequireRole allowedRoles={[roles.ADMIN]}>
+                <AdminReports />
+              </RequireRole>
+            }
+          />
 
           {/* OFFICIAL */}
           {/* <Route
@@ -228,6 +238,14 @@ const AppRoutes = () => {
             element={
               <RequireRole allowedRoles={[roles.OFFICIAL]}>
                 <SKPersonnelPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/submit-report"
+            element={
+              <RequireRole allowedRoles={[roles.OFFICIAL]}>
+                <SubmitReport />
               </RequireRole>
             }
           />

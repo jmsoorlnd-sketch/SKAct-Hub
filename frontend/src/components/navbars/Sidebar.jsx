@@ -230,7 +230,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         {
           name: "Reports & Export",
           icon: Download,
-          path: "/admin/settings#reports",
+          path: "/admin/reports",
         },
         { name: "Settings", icon: Settings, path: "/admin/settings" },
       ],
@@ -245,6 +245,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Archive", icon: Archive, path: "/archive" },
         { name: "SK Personnel Status", icon: Users, path: "/sk-personnel" },
         { name: "Youth Profiles", icon: Users, path: "/" },
+        { name: "Submit Reports", icon: Download, path: "/submit-report" },
         { name: "Settings", icon: Settings, path: "/official/settings" },
       ],
       Guest: [{ name: "Home", icon: Home, path: "/" }],

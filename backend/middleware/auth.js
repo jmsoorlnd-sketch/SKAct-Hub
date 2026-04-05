@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 
 // requireAuth now resolves the user document so downstream handlers
 // can inspect position, barangay, etc. Token payload only contains _id/role.

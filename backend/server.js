@@ -82,6 +82,7 @@ import SKPersonnelRoute from "./routes/SKPersonnelRoute.js";
 import NotificationRoute from "./routes/NotificationRoute.js";
 import UserLogRoute from "./routes/UserLogRoute.js";
 import AdminRoute from "./routes/AdminRoute.js";
+import ReportRoute from "./routes/ReportRoute.js";
 
 app.use("/api/users", UserRoute);
 app.use("/api/messages", MessageRoute);
@@ -91,6 +92,7 @@ app.use("/api/sk-personnel", SKPersonnelRoute);
 app.use("/api/notifications", NotificationRoute);
 app.use("/api/user-logs", UserLogRoute);
 app.use("/api/admins", AdminRoute);
+app.use("/api/reports", ReportRoute);
 
 app.use("/api/posts", (req, res) => {
   res.send("Posts route is under construction.");
