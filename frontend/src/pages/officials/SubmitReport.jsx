@@ -375,6 +375,9 @@ const SubmitReport = () => {
                       Barangay
                     </th>
                     <th className="px-4 py-3 text-sm font-semibold text-slate-700">
+                      Validation
+                    </th>
+                    <th className="px-4 py-3 text-sm font-semibold text-slate-700">
                       Submitted At
                     </th>
                   </tr>
@@ -405,6 +408,21 @@ const SubmitReport = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {report.barangay?.barangayName || "Unknown"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                            report.validationStatus === "valid"
+                              ? "bg-green-100 text-green-800"
+                              : report.validationStatus === "not valid"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {report.validationStatus
+                            ? report.validationStatus
+                            : "pending"}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {new Date(report.submittedAt).toLocaleString()}

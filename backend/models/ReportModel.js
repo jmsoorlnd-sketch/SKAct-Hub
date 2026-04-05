@@ -46,6 +46,11 @@ const reportSchema = new mongoose.Schema({
     default: "completed",
     enum: ["completed"],
   },
+  validationStatus: {
+    type: String,
+    enum: ["pending", "valid", "not valid"],
+    default: "pending",
+  },
   barangay: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Barangay",

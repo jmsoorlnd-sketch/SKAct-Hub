@@ -5,6 +5,7 @@ import {
   getAllReports,
   getReportsByBarangay,
   getUserReports,
+  updateReportValidation,
 } from "../controllers/ReportController.js";
 
 const router = express.Router();
@@ -20,5 +21,8 @@ router.get("/", requireAuth, getAllReports);
 
 // Get reports by barangay (optional, for filtering)
 router.get("/barangay/:barangayId", requireAuth, getReportsByBarangay);
+
+// Update validation status for a report (admin only)
+router.patch("/:reportId/validation", requireAuth, updateReportValidation);
 
 export default router;

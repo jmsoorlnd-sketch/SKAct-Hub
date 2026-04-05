@@ -105,3 +105,38 @@ export const getUserReports = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// Update admin validation status for a report
+export const updateReportValidation = async (req, res) => {
+  try {
+    if (req.user.role !== "Admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { reportId } = req.params;
+    const { validationStatus } = req.body;
+    const allowed = ["valid", "not valid"];
+    if (!allowed.includes(validationStatus)) {
+      return res.status(400).json({ message: "Invalid validation status" });
+    }
+
+    let report = await Report.findByIdAndUpdate(
+      reportId,
+      { validationStatus },
+      { new: true },
+    );
+
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    report = await Report.findById(reportId)
+      .populate("barangay", "barangayName")
+      .populate("submittedBy", "firstname lastname");
+
+    res.json(report);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

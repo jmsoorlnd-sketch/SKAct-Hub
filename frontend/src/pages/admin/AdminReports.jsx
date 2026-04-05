@@ -69,6 +69,35 @@ const AdminReports = () => {
     setShowDetailModal(false);
   };
 
+  const updateValidationStatus = async (reportId, validationStatus) => {
+    try {
+      const res = await axios.patch(
+        `http://localhost:5000/api/reports/${reportId}/validation`,
+        { validationStatus },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      const updatedReport = res.data;
+      setReports((prev) =>
+        prev.map((report) =>
+          report._id === updatedReport._id ? updatedReport : report,
+        ),
+      );
+      setFilteredReports((prev) =>
+        prev.map((report) =>
+          report._id === updatedReport._id ? updatedReport : report,
+        ),
+      );
+      if (selectedReport?._id === updatedReport._id) {
+        setSelectedReport(updatedReport);
+      }
+    } catch {
+      error("Failed to update validation status");
+    }
+  };
+
   const uniqueBarangays = [
     ...new Set(reports.map((r) => r.barangay?.barangayName || "Unknown")),
   ].sort();
@@ -181,6 +210,9 @@ const AdminReports = () => {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
                     Submitted At
                   </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Validation
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -220,7 +252,7 @@ const AdminReports = () => {
                       ₱{report.budgetSpent.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
+                      <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
                         {report.status}
                       </span>
                     </td>
@@ -233,6 +265,38 @@ const AdminReports = () => {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-700">
                       {new Date(report.submittedAt).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateValidationStatus(report._id, "valid");
+                          }}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                            report.validationStatus === "valid"
+                              ? "bg-green-600 text-white shadow-sm"
+                              : "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
+                          }`}
+                        >
+                          Valid
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateValidationStatus(report._id, "not valid");
+                          }}
+                          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                            report.validationStatus === "not valid"
+                              ? "bg-red-600 text-white shadow-sm"
+                              : "bg-red-100 text-red-900 hover:bg-red-200"
+                          }`}
+                        >
+                          Not Valid
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -303,6 +367,24 @@ const AdminReports = () => {
                   <p className="mt-1 text-sm text-slate-900">
                     {selectedReport.submittedBy?.firstname || ""}{" "}
                     {selectedReport.submittedBy?.lastname || ""}
+                  </p>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Validation
+                  </span>
+                  <p className="mt-1 text-sm">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                        selectedReport.validationStatus === "valid"
+                          ? "bg-green-600 text-white"
+                          : selectedReport.validationStatus === "not valid"
+                            ? "bg-red-600 text-white"
+                            : "bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      {selectedReport.validationStatus || "pending"}
+                    </span>
                   </p>
                 </div>
               </div>
