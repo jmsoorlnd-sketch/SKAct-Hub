@@ -481,12 +481,20 @@ export const getInbox = async (req, res) => {
             isDeleted: false,
           },
           // Official documents that were created for approval, including pending/rejected
+          // Exclude event/activity messages by requiring no startDate.
           {
             status: { $in: ["pending", "rejected"] },
             isAdminScheduled: { $ne: true },
-            $or: [
-              { intendedFolder: { $exists: true, $ne: null } },
-              { attachedToBarangay: { $exists: true, $ne: null } },
+            $and: [
+              {
+                $or: [{ startDate: { $exists: false } }, { startDate: null }],
+              },
+              {
+                $or: [
+                  { intendedFolder: { $exists: true, $ne: null } },
+                  { attachedToBarangay: { $exists: true, $ne: null } },
+                ],
+              },
             ],
             isDeleted: false,
           },
