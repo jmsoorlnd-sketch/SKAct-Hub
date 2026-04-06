@@ -178,7 +178,7 @@ const AdminReports = () => {
               <thead className="bg-slate-50 border-b-2 border-slate-200">
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
-                    ID Number
+                    Reference ID
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     PYDP
@@ -330,7 +330,7 @@ const AdminReports = () => {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    ID Number
+                    Reference ID
                   </span>
                   <p className="mt-1 text-sm text-slate-900">
                     {selectedReport.idNumber}

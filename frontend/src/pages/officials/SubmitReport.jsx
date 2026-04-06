@@ -35,8 +35,11 @@ const SubmitReport = () => {
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.idNumber || formData.idNumber.trim() === "") {
-      errors.idNumber = "ID Number is required";
+    const referenceId = formData.idNumber?.toString().trim() || "";
+    if (!referenceId) {
+      errors.idNumber = "Reference ID Number is required";
+    } else if (!/^\d{5}$/.test(referenceId)) {
+      errors.idNumber = "Reference ID must be exactly 5 digits";
     }
     if (!formData.pydp) {
       errors.pydp = "PYDP is required";
@@ -116,9 +119,15 @@ const SubmitReport = () => {
       fetchMyReports();
     } catch (err) {
       const message = err?.response?.data?.message;
-      if (message === "ID number already taken. Please use another ID.") {
-        setFormErrors({ idNumber: "This ID is already taken" });
-        error("The ID is already taken, please use another ID");
+      if (
+        message ===
+        "Reference ID number already taken. Please use another Reference ID."
+      ) {
+        setFormErrors({ idNumber: "This Reference ID is already taken" });
+        error("The Reference ID is already taken, please use another ID");
+      } else if (message === "Reference ID number must be exactly 5 digits.") {
+        setFormErrors({ idNumber: "Reference ID must be exactly 5 digits" });
+        error("Reference ID must be exactly 5 digits");
       } else {
         error(message || "Failed to submit report");
       }
@@ -183,7 +192,7 @@ const SubmitReport = () => {
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
                     <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      ID Number
+                      Reference ID Number
                     </th>
                     <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       PYDP
@@ -301,17 +310,19 @@ const SubmitReport = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    ID Number
+                    Reference ID Number
                     <span className="text-red-500 ml-1">*</span>
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     name="idNumber"
                     value={formData.idNumber}
                     onChange={handleChange}
-                    min="1"
+                    inputMode="numeric"
+                    pattern="\d{5}"
+                    maxLength={5}
                     required
-                    placeholder="Enter ID Number"
+                    placeholder="Enter 5-digit Reference ID"
                     className={inputClass("idNumber")}
                   />
                   {formErrors.idNumber && (
