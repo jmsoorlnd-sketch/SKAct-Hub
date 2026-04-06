@@ -2672,22 +2672,6 @@ const BarangayStorage = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Back button - Only show when viewing document details */}
-                {folderModalSelectedDoc && (
-                  <button
-                    onClick={() => {
-                      setFolderModalSelectedDoc(null);
-                      setFolderModalViewType(null);
-                      setFolderModalShowUploadForm(false);
-                    }}
-                    className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors flex items-center gap-2 font-semibold text-sm"
-                  >
-                    <ArrowLeft size={16} />
-                    <span>Back to List</span>
-                  </button>
-                )}
-
-                {/* Close button */}
                 <button
                   onClick={() => {
                     setShowFolderViewModal(false);
@@ -3275,23 +3259,6 @@ const BarangayStorage = () => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setShowFolderViewModal(false);
-                  setFolderViewData(null);
-                  setFolderModalSelectedDoc(null);
-                  setFolderModalViewType(null);
-                  setFolderModalShowUploadForm(false);
-                  setFolderSearchQuery("");
-                }}
-                className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
