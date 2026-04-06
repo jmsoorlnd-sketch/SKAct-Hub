@@ -264,7 +264,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Your Barangay", icon: Home, path: "/barangay-storage" },
         { name: "Archive", icon: Archive, path: "/archive" },
         { name: "SK Personnel Status", icon: Users, path: "/sk-personnel" },
-        { name: "Youth Profiles", icon: Users, path: "/" },
+        // { name: "Youth Profiles", icon: Users, path: "/" },
         { name: "Submit Reports", icon: Download, path: "/submit-report" },
         { name: "Settings", icon: Settings, path: "/official/settings" },
       ],

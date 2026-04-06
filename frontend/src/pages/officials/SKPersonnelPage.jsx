@@ -46,6 +46,29 @@ const SKPersonnelPage = () => {
     secretary: { ...defaultFormData },
   });
 
+  const staticOfficials = useMemo(() => {
+    if (!skPersonnel)
+      return {
+        chairman: null,
+        secretary: null,
+        treasurer: null,
+      };
+
+    const getOfficial = (positionKey, fallbackKey) => {
+      return (
+        skPersonnel.accountPositions?.[positionKey] ||
+        skPersonnel[fallbackKey] ||
+        null
+      );
+    };
+
+    return {
+      chairman: getOfficial("chairman", "chairman"),
+      secretary: getOfficial("secretary", "secretary"),
+      treasurer: getOfficial("treasurer", "treasurer"),
+    };
+  }, [skPersonnel]);
+
   const [kagawadForm, setKagawadForm] = useState({
     surname: "",
     firstName: "",
@@ -513,6 +536,7 @@ const SKPersonnelPage = () => {
               <OfficialCard
                 title="SK Chairman"
                 color="blue"
+                displayData={staticOfficials.chairman}
                 formData={forms.chairman}
                 setFormData={(newData) =>
                   setForms({ ...forms, chairman: newData })
@@ -527,6 +551,7 @@ const SKPersonnelPage = () => {
               <OfficialCard
                 title="SK Secretary"
                 color="purple"
+                displayData={staticOfficials.secretary}
                 formData={forms.vicePresident}
                 setFormData={(newData) =>
                   setForms({ ...forms, vicePresident: newData })
@@ -543,6 +568,7 @@ const SKPersonnelPage = () => {
               <OfficialCard
                 title="SK Treasurer"
                 color="emerald"
+                displayData={staticOfficials.treasurer}
                 formData={forms.secretary}
                 setFormData={(newData) =>
                   setForms({ ...forms, secretary: newData })
@@ -1113,6 +1139,7 @@ const OfficialEditModal = ({
 const OfficialCard = ({
   title,
   color,
+  displayData,
   formData,
   setFormData,
   isEditing,
@@ -1142,7 +1169,8 @@ const OfficialCard = ({
   };
 
   const c = colors[color];
-  const isAssigned = formData.firstName && formData.surname;
+  const display = displayData || formData;
+  const isAssigned = display?.firstName && display?.surname;
 
   return (
     <>
@@ -1156,7 +1184,7 @@ const OfficialCard = ({
             >
               <span className="text-white font-bold text-base">
                 {isAssigned
-                  ? `${formData.firstName.charAt(0)}${formData.surname.charAt(0)}`
+                  ? `${display.firstName.charAt(0)}${display.surname.charAt(0)}`
                   : "?"}
               </span>
             </div>
@@ -1174,8 +1202,8 @@ const OfficialCard = ({
           <h4 className={`text-base font-bold ${c.text} mb-1.5`}>
             {isAssigned ? (
               <>
-                {formData.surname}, {formData.firstName}{" "}
-                {formData.middleName && formData.middleName}
+                {display.surname}, {display.firstName}{" "}
+                {display.middleName && display.middleName}
               </>
             ) : (
               "Not assigned"
@@ -1183,20 +1211,20 @@ const OfficialCard = ({
           </h4>
           {isAssigned && (
             <>
-              <p className="text-xs text-slate-600 mb-2">Age: {formData.age}</p>
+              <p className="text-xs text-slate-600 mb-2">Age: {display.age}</p>
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold border-2 ${
-                  formData.status === "Active"
+                  display.status === "Active"
                     ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                     : "bg-red-100 text-red-700 border-red-200"
                 }`}
               >
-                {formData.status === "Active" ? (
+                {display.status === "Active" ? (
                   <UserCheck size={11} />
                 ) : (
                   <UserX size={11} />
                 )}
-                {formData.status}
+                {display.status}
               </span>
             </>
           )}
