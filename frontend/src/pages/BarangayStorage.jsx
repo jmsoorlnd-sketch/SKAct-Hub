@@ -1313,11 +1313,6 @@ const BarangayStorage = () => {
       (item) => matchesDocSearch(item) && matchesDocStatus(item),
     );
 
-  // Update folder status (ongoing/completed)
-  const handleUpdateFolderStatus = async (folderId, status) => {
-    setStatusConfirm({ open: true, folderId, status });
-  };
-
   const confirmUpdateFolderStatus = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -1729,39 +1724,7 @@ const BarangayStorage = () => {
                                             "Official"}
                                         </div>
                                       )}
-                                      {/* Status change buttons for officials */}
-                                      {user?.role === "Official" && (
-                                        <div className="flex gap-2 mt-1">
-                                          {folder.status !== "ongoing" && (
-                                            <button
-                                              className="px-3 py-1 bg-amber-100 text-amber-800 rounded text-xs font-semibold border border-amber-300 hover:bg-amber-200 transition"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleUpdateFolderStatus(
-                                                  folder._id,
-                                                  "ongoing",
-                                                );
-                                              }}
-                                            >
-                                              Set Ongoing
-                                            </button>
-                                          )}
-                                          {folder.status !== "completed" && (
-                                            <button
-                                              className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded text-xs font-semibold border border-emerald-300 hover:bg-emerald-200 transition"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleUpdateFolderStatus(
-                                                  folder._id,
-                                                  "completed",
-                                                );
-                                              }}
-                                            >
-                                              Set Completed
-                                            </button>
-                                          )}
-                                        </div>
-                                      )}
+                                      {/* Status buttons removed for automatic workflow */}
                                     </div>
 
                                     {isSelectedFolder && (
@@ -2848,14 +2811,17 @@ const BarangayStorage = () => {
                                   <div className="flex items-center gap-2">
                                     <span
                                       className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
-                                        item.document?.status === "completed"
+                                        item.document?.status === "completed" ||
+                                        item.document?.status === "approved"
                                           ? "bg-emerald-100 text-emerald-700"
                                           : item.document?.status === "ongoing"
                                             ? "bg-amber-100 text-amber-700"
                                             : "bg-slate-100 text-slate-700"
                                       }`}
                                     >
-                                      {item.document?.status || item.status}
+                                      {item.document?.status === "approved"
+                                        ? "completed"
+                                        : item.document?.status || item.status}
                                     </span>
                                     <span className="text-xs text-slate-500">
                                       {new Date(
@@ -2914,7 +2880,9 @@ const BarangayStorage = () => {
                             <span
                               className={`inline-block px-3 py-1 rounded-lg text-xs font-bold ${
                                 folderModalSelectedDoc.document?.status ===
-                                "completed"
+                                  "completed" ||
+                                folderModalSelectedDoc.document?.status ===
+                                  "approved"
                                   ? "bg-emerald-100 text-emerald-700"
                                   : folderModalSelectedDoc.document?.status ===
                                       "ongoing"
@@ -2922,8 +2890,11 @@ const BarangayStorage = () => {
                                     : "bg-slate-100 text-slate-700"
                               }`}
                             >
-                              {folderModalSelectedDoc.document?.status ||
-                                folderModalSelectedDoc.status}
+                              {folderModalSelectedDoc.document?.status ===
+                              "approved"
+                                ? "completed"
+                                : folderModalSelectedDoc.document?.status ||
+                                  folderModalSelectedDoc.status}
                             </span>
                             <span className="text-sm text-slate-600">
                               {new Date(
@@ -3027,51 +2998,7 @@ const BarangayStorage = () => {
                             <span>Post Update</span>
                           </button>
 
-                          {/* status change buttons inline */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() =>
-                                openConfirmationModal(
-                                  "pending",
-                                  folderModalSelectedDoc.document._id,
-                                  null,
-                                  "Mark as Pending",
-                                  "Change document status to pending?",
-                                )
-                              }
-                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all"
-                            >
-                              Pending
-                            </button>
-                            <button
-                              onClick={() =>
-                                openConfirmationModal(
-                                  "ongoing",
-                                  folderModalSelectedDoc.document._id,
-                                  null,
-                                  "Mark as Ongoing",
-                                  "Change document status to ongoing?",
-                                )
-                              }
-                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 hover:bg-amber-200 transition-all"
-                            >
-                              Ongoing
-                            </button>
-                            <button
-                              onClick={() =>
-                                openConfirmationModal(
-                                  "completed",
-                                  folderModalSelectedDoc.document._id,
-                                  null,
-                                  "Mark as Completed",
-                                  "Change document status to completed?",
-                                )
-                              }
-                              className="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-all"
-                            >
-                              Completed
-                            </button>
-                          </div>
+                          {/* status buttons removed for automatic workflow */}
                         </>
                       )}
                     </div>

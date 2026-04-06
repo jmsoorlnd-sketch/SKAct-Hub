@@ -362,7 +362,7 @@ export const approveMessageForBarangay = async (req, res) => {
         .json({ message: "No target barangay specified for this message" });
     }
 
-    message.status = "approved";
+    message.status = "completed";
     message.isAttached = true;
     message.attachedToBarangay = barangayId;
     await message.save();

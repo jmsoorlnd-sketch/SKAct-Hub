@@ -86,7 +86,8 @@ const DocumentItem = ({
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const normalized = status === "approved" ? "completed" : status;
+    switch (normalized) {
       case "completed":
         return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200";
       case "ongoing":
@@ -136,7 +137,9 @@ const DocumentItem = ({
                 item.document?.status || item.status,
               )}`}
             >
-              {item.document?.status || item.status}
+              {item.document?.status === "approved"
+                ? "completed"
+                : item.document?.status || item.status}
             </span>
             <span className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
               {new Date(item.createdAt).toLocaleDateString()}

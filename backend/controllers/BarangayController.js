@@ -812,6 +812,7 @@ export const createFolder = async (req, res) => {
       name,
       barangay: barangayId,
       createdBy,
+      status: documentType ? "completed" : "pending",
       documentType: documentType || null,
       isShared: !!isShared,
       sharedWithRoles: validatedSharedWithRoles,
@@ -1118,13 +1119,16 @@ export const hardDeleteFolder = async (req, res) => {
   }
 };
 
-// Update folder status (ongoing / completed)
+// Update folder status (pending / ongoing / completed / approved)
 export const updateFolderStatus = async (req, res) => {
   try {
     const { barangayId, folderId } = req.params;
     const { status } = req.body;
 
-    if (!status || !["pending", "ongoing", "completed"].includes(status)) {
+    if (
+      !status ||
+      !["pending", "ongoing", "completed", "approved"].includes(status)
+    ) {
       return res.status(400).json({ message: "Invalid status" });
     }
 

@@ -17,7 +17,7 @@ const folderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "ongoing", "completed"],
+    enum: ["pending", "ongoing", "completed", "approved"],
     default: "pending",
   },
   documentType: {
