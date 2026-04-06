@@ -16,10 +16,6 @@ import {
 
 /* ===================== CONSTANTS ===================== */
 const API_BASE = "http://localhost:5000/api";
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 /* ===================== MAIN COMPONENT ===================== */
 const AdminNotification = () => {
@@ -30,31 +26,41 @@ const AdminNotification = () => {
   const tokenRef = useRef(localStorage.getItem("token"));
   const { socket, isConnected } = useSocket();
 
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
+
   /* ===================== FETCH FUNCTIONS ===================== */
-  const fetchPendingMessages = async () => {
+  const fetchPendingMessages = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/messages/inbox`, {
         headers: getAuthHeaders(),
       });
       const inbox = res.data.messages || [];
-      return inbox
+      const result = inbox
         .filter((m) => m.status === "pending")
         .map((m) => ({
           type: "message_pending",
           id: m._id,
-          title: `Pending approval: ${m.subject}`,
-          subtitle: `From: ${m.sender?.username || "Unknown"}`,
+          title: `Pending approval: ${m.subject || "(No subject)"}`,
+          subtitle: `From: ${(m.sender?.username || m.sender?.firstname || "Unknown").trim()}`,
           time: m.createdAt,
           meta: { messageId: m._id },
           icon: "message",
         }));
+      console.log(
+        "[DEBUG] fetchPendingMessages returning:",
+        result.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle })),
+      );
+      return result;
     } catch (err) {
       console.error("Failed to fetch pending messages:", err);
       return [];
     }
-  };
+  }, [getAuthHeaders]);
 
-  const fetchBarangayUpdates = async () => {
+  const fetchBarangayUpdates = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/barangays/all-barangays`, {
         headers: getAuthHeaders(),
@@ -73,8 +79,10 @@ const AdminNotification = () => {
             const formatNotif = (s, type) => ({
               type,
               id: s._id,
-              title: `${type === "barangay_ongoing" ? "Ongoing" : "Completed"}: ${b.barangayName || b.barangay}`,
-              subtitle: s.documentName || s.document?.subject || "Project",
+              title: `${type === "barangay_ongoing" ? "Ongoing" : "Completed"}: ${(b.barangayName || b.barangay || "Barangay").trim()}`,
+              subtitle:
+                (s.documentName || s.document?.subject || "Project").trim() ||
+                "(Untitled)",
               time: s.createdAt || s.updatedAt,
               meta: { barangayId: b._id },
               icon: type === "barangay_ongoing" ? "ongoing" : "completed",
@@ -100,14 +108,19 @@ const AdminNotification = () => {
         }),
       );
 
-      return allBarangayNotifs.flat();
+      const result = allBarangayNotifs.flat();
+      console.log(
+        "[DEBUG] fetchBarangayUpdates returning:",
+        result.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle })),
+      );
+      return result;
     } catch (err) {
       console.error("Failed to fetch barangays:", err);
       return [];
     }
-  };
+  }, [getAuthHeaders]);
 
-  const fetchActivities = async () => {
+  const fetchActivities = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/messages/activities`, {
         headers: getAuthHeaders(),
@@ -129,8 +142,8 @@ const AdminNotification = () => {
         .map(({ a, timeLeft }) => ({
           type: "activity",
           id: a._id,
-          title: a.subject,
-          subtitle: `By: ${a.sender?.username || "Admin"}`,
+          title: `${a.subject || "(Untitled activity)"}`,
+          subtitle: `By: ${(a.sender?.username || "Admin").trim()}`,
           time: a.startDate,
           meta: { activityId: a._id },
           note: timeLeft < 86400000 ? "Within 24 hours" : "Upcoming",
@@ -150,8 +163,10 @@ const AdminNotification = () => {
           return {
             type: "activity_update",
             id: latest._id,
-            title: `New update: ${a.subject}`,
-            subtitle: `${latest.uploadedBy?.firstname || ""} ${latest.uploadedBy?.lastname || ""}`,
+            title: `New update: ${a.subject || "(Untitled)"}`,
+            subtitle:
+              `${(latest.uploadedBy?.firstname || "Unknown").trim()} ${(latest.uploadedBy?.lastname || "").trim()}`.trim() ||
+              "(No name)",
             time: latest.createdAt,
             meta: { documentId: a._id },
             note: latest.caption || "",
@@ -164,12 +179,70 @@ const AdminNotification = () => {
       });
 
       const updatesNotifications = (await Promise.all(updatesPromises)).flat();
-      return [...upcoming, ...updatesNotifications];
+      const result = [...upcoming, ...updatesNotifications];
+      console.log(
+        "[DEBUG] fetchActivities returning:",
+        result.map((r) => ({ id: r.id, title: r.title, subtitle: r.subtitle })),
+      );
+      return result;
     } catch (err) {
       console.error("Failed to fetch activities:", err);
       return [];
     }
-  };
+  }, [getAuthHeaders]);
+
+  const fetchSavedNotifications = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/notifications`, {
+        headers: getAuthHeaders(),
+      });
+      const rawNotifications = res.data.notifications || [];
+      console.log(
+        "[DEBUG] Raw notifications fetched from API:",
+        rawNotifications,
+      );
+
+      const validNotifications = rawNotifications.filter((n) => {
+        const hasType =
+          n && typeof n.type === "string" && n.type.trim().length > 0;
+        const hasTitle =
+          typeof n.title === "string" && n.title.trim().length > 0;
+        const hasSubtitle =
+          typeof n.subtitle === "string" && n.subtitle.trim().length > 0;
+        const isValid = hasType && hasTitle && hasSubtitle;
+        if (!isValid) {
+          console.log(
+            "[DEBUG] Saved notification failed validation - hasType:",
+            hasType,
+            "hasTitle:",
+            hasTitle,
+            "hasSubtitle:",
+            hasSubtitle,
+            "Full:",
+            n,
+          );
+        }
+        return isValid;
+      });
+      console.log(
+        "[DEBUG] Valid saved notifications after filtering:",
+        validNotifications.map((v) => ({
+          id: v.id,
+          title: v.title,
+          subtitle: v.subtitle,
+        })),
+      );
+
+      return validNotifications.map((notification) => ({
+        ...notification,
+        icon: notification.type,
+        time: notification.time || notification.createdAt || null,
+      }));
+    } catch (err) {
+      console.error("Failed to fetch saved notifications:", err);
+      return [];
+    }
+  }, [getAuthHeaders]);
 
   const loadNotifications = useCallback(async () => {
     if (!tokenRef.current) return setError("No auth token");
@@ -177,11 +250,20 @@ const AdminNotification = () => {
     setError(null);
 
     try {
-      const [messages, barangays, activities] = await Promise.all([
-        fetchPendingMessages(),
-        fetchBarangayUpdates(),
-        fetchActivities(),
-      ]);
+      const [messages, barangays, activities, savedNotifications] =
+        await Promise.all([
+          fetchPendingMessages(),
+          fetchBarangayUpdates(),
+          fetchActivities(),
+          fetchSavedNotifications(),
+        ]);
+
+      console.log("[DEBUG] All notification sources loaded:", {
+        messages: messages.length,
+        barangays: barangays.length,
+        activities: activities.length,
+        savedNotifications: savedNotifications.length,
+      });
 
       // Load seen statuses
       const res = await axios.get(`${API_BASE}/notifications/status`, {
@@ -189,21 +271,108 @@ const AdminNotification = () => {
       });
       const seenMap = res.data.seenStatuses || {};
 
-      setNotifications(
-        [...messages, ...barangays, ...activities]
-          .filter((n) => n.id)
-          .map((n) => ({
-            ...n,
-            seen: seenMap[n.id] || false,
-          })),
+      const allNotifications = [
+        ...messages,
+        ...barangays,
+        ...activities,
+        ...savedNotifications,
+      ];
+
+      console.log(
+        "[DEBUG] All notifications before deduplication:",
+        allNotifications.map((n) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+        })),
       );
+
+      const uniqueNotifications = Array.from(
+        allNotifications
+          .reduce((map, notification) => {
+            if (notification?.id && !map.has(notification.id)) {
+              map.set(notification.id, notification);
+            }
+            return map;
+          }, new Map())
+          .values(),
+      );
+
+      console.log(
+        "[DEBUG] Unique notifications after deduplication:",
+        uniqueNotifications.map((n) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+        })),
+      );
+
+      const filteredNotifications = uniqueNotifications.filter((n) => {
+        const hasType =
+          n && typeof n.type === "string" && n.type.trim().length > 0;
+        const hasTitle =
+          typeof n.title === "string" && n.title.trim().length > 0;
+        const hasSubtitle =
+          typeof n.subtitle === "string" && n.subtitle.trim().length > 0;
+        const isValid = hasType && hasTitle && hasSubtitle;
+
+        if (!isValid) {
+          console.log(
+            "[DEBUG] FILTERED OUT - hasType:",
+            hasType,
+            "| hasTitle:",
+            hasTitle,
+            "| hasSubtitle:",
+            hasSubtitle,
+            "| Full:",
+            n,
+          );
+        }
+        return isValid;
+      });
+
+      console.log(
+        "[DEBUG] Notifications after final validation:",
+        filteredNotifications.length,
+      );
+      console.log(
+        "[DEBUG] Final notifications to display:",
+        filteredNotifications.map((n) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+        })),
+      );
+
+      const notificationsToSet = filteredNotifications
+        .map((n) => ({
+          ...n,
+          seen: seenMap[n.id] || false,
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.time || b.createdAt) - new Date(a.time || a.createdAt),
+        );
+
+      console.log(
+        "[DEBUG] ABOUT TO SET STATE with notifications:",
+        notificationsToSet.length,
+        notificationsToSet,
+      );
+      setNotifications(notificationsToSet);
     } catch (err) {
       console.error(err);
       setError("Failed to load notifications");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [
+    fetchPendingMessages,
+    fetchBarangayUpdates,
+    fetchActivities,
+    fetchSavedNotifications,
+    getAuthHeaders,
+  ]);
 
   /* ===================== SOCKET EVENT HANDLERS ===================== */
   const handleNewNotification = useCallback(
@@ -336,6 +505,9 @@ const AdminNotification = () => {
           state: { messageId: notification.meta.documentId },
         });
         break;
+      case "report_submitted":
+        navigate("/admin/reports");
+        break;
       default:
         navigate("/admin/monitoring");
     }
@@ -345,21 +517,63 @@ const AdminNotification = () => {
 
   const getNotificationIcon = (iconType) => {
     const configs = {
+      message_pending: {
+        icon: FileText,
+        color: "from-orange-500 to-orange-600",
+      },
+      message_approved: {
+        icon: CheckCircle,
+        color: "from-emerald-500 to-emerald-600",
+      },
+      message_rejected: { icon: AlertCircle, color: "from-red-500 to-red-600" },
+      message_updated: { icon: Bell, color: "from-slate-500 to-slate-600" },
+      report_submitted: {
+        icon: FileText,
+        color: "from-amber-500 to-amber-600",
+      },
       activity: { icon: Clock, color: "from-purple-500 to-purple-600" },
-      message: { icon: FileText, color: "from-orange-500 to-orange-600" },
       activity_update: {
         icon: ImageIcon,
         color: "from-emerald-500 to-emerald-600",
       },
-      ongoing: { icon: Clock, color: "from-amber-500 to-amber-600" },
-      completed: { icon: CheckCircle, color: "from-blue-500 to-blue-600" },
+      barangay_ongoing: { icon: Clock, color: "from-amber-500 to-amber-600" },
+      barangay_completed: {
+        icon: CheckCircle,
+        color: "from-blue-500 to-blue-600",
+      },
     };
     return (
       configs[iconType] || { icon: Bell, color: "from-slate-500 to-slate-600" }
     );
   };
 
+  const getNotificationLabel = (type) => {
+    switch (type) {
+      case "message_pending":
+        return "Document Pending";
+      case "message_approved":
+        return "Document Approved";
+      case "message_rejected":
+        return "Document Rejected";
+      case "message_updated":
+        return "Document Updated";
+      case "report_submitted":
+        return "Report Submitted";
+      case "activity":
+        return "Upcoming Activity";
+      case "activity_update":
+        return "Activity Update";
+      case "barangay_ongoing":
+        return "Ongoing Barangay";
+      case "barangay_completed":
+        return "Completed Barangay";
+      default:
+        return "Notification";
+    }
+  };
+
   /* ==================== RENDER ==================== */
+  console.log("[DEBUG] RENDER called with notifications state:", notifications);
   return (
     <div className="min-h-screen bg-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -390,7 +604,7 @@ const AdminNotification = () => {
             {unseenCount > 0 && (
               <button
                 onClick={markAllAsSeen}
-                className="px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                className="px-3 py-2 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2"
               >
                 <Eye size={16} />
                 <span>Mark all as read</span>
@@ -410,7 +624,7 @@ const AdminNotification = () => {
                     {notifications.length}
                   </p>
                 </div>
-                <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                <div className="w-11 h-11 bg-linear-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
                   <Bell className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -426,7 +640,7 @@ const AdminNotification = () => {
                     {unseenCount}
                   </p>
                 </div>
-                <div className="w-11 h-11 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
+                <div className="w-11 h-11 bg-linear-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
                   <EyeOff className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -469,6 +683,7 @@ const AdminNotification = () => {
         ) : (
           <div className="space-y-3">
             {notifications.map((n) => {
+              console.log("[DEBUG] Rendering notification:", n);
               const { icon: Icon, color } = getNotificationIcon(n.icon);
 
               return (
@@ -483,35 +698,47 @@ const AdminNotification = () => {
                 >
                   <div className="p-4 flex items-start gap-3">
                     <div
-                      className={`w-11 h-11 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center shadow-md flex-shrink-0`}
+                      className={`w-11 h-11 bg-linear-to-br ${color} rounded-lg flex items-center justify-center shadow-md shrink-0`}
                     >
                       <Icon className="w-5 h-5 text-white" />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3 mb-1">
-                        <h3 className="font-bold text-slate-900 text-base leading-tight">
-                          {n.title}
-                        </h3>
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <div>
+                          <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                            {getNotificationLabel(n.type)}
+                          </span>
+                          <h3 className="mt-2 font-bold text-slate-900 text-base leading-tight">
+                            {n.title || getNotificationLabel(n.type)}
+                          </h3>
+                        </div>
                         {!n.seen && (
-                          <div className="w-2.5 h-2.5 bg-red-500 rounded-full mt-1 animate-pulse flex-shrink-0" />
+                          <div className="w-2.5 h-2.5 bg-red-500 rounded-full mt-1 animate-pulse shrink-0" />
                         )}
                       </div>
 
-                      <p className="text-xs text-slate-600 mb-2">
-                        {n.subtitle}
+                      <p className="text-sm text-slate-600 mb-2">
+                        {n.subtitle || "No additional details"}
                       </p>
 
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-1 text-[11px] text-slate-500">
                           <Clock size={12} />
                           <span className="font-medium">
-                            {new Date(n.time).toLocaleString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {(() => {
+                              const rawTime = n.time || n.createdAt;
+                              if (!rawTime) return "No date";
+                              const parsed = new Date(rawTime);
+                              return Number.isNaN(parsed.getTime())
+                                ? "No date"
+                                : parsed.toLocaleString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  });
+                            })()}
                           </span>
                         </div>
 

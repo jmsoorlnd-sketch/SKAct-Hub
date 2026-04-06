@@ -135,6 +135,26 @@ const Sidebar = ({ onClose = () => {} }) => {
         );
       } catch {}
 
+      try {
+        const res = await axios.get(`${API_BASE}/notifications`, {
+          headers: getAuthHeaders(),
+        });
+        const savedNotifications = res.data.notifications || [];
+        const existingIds = new Set(allNotifs.map((n) => n.id));
+
+        savedNotifications.forEach((notif) => {
+          if (notif?.id && !existingIds.has(notif.id)) {
+            allNotifs.push({ id: notif.id });
+            existingIds.add(notif.id);
+          }
+        });
+      } catch (saveErr) {
+        console.error(
+          "Failed to fetch saved notifications for count:",
+          saveErr,
+        );
+      }
+
       /* ================== COUNT ================== */
       const unseen = allNotifs.filter((n) => !seenMap[n.id]).length;
       setUnseenCount(unseen);

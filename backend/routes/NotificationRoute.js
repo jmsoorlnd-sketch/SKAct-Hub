@@ -6,9 +6,13 @@ import {
   markAllNotificationsAsSeen,
   getNotificationSeenStatus,
   batchMarkNotificationsAsSeen,
+  getNotifications,
 } from "../controllers/NotificationController.js";
 
 const router = express.Router();
+
+// Get all notifications for current user
+router.get("/", requireAuth, getNotifications);
 
 // Get all notification seen statuses for current user
 router.get("/status", requireAuth, getNotificationSeenStatus);

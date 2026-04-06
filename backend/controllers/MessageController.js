@@ -137,6 +137,56 @@ export const sendMessage = async (req, res) => {
         data: message,
         type: "direct",
       });
+
+      // If the direct message is pending and meant for an admin, create a pending document notification.
+      if (messageStatus === "pending") {
+        const recipientUser = await User.findById(finalRecipientId).select(
+          "_id username firstname lastname role position",
+        );
+
+        if (recipientUser?.role === "Admin") {
+          const notificationTitle = `📄 New Document Pending: ${message.subject}`;
+          const notificationSubtitle = `From: ${senderUser.firstname || senderUser.username} ${senderUser.lastname || ""} (${senderUser.position || senderUser.role || "Official"})`;
+
+          console.log(
+            "[DEBUG] Creating notification for direct pending message:",
+            {
+              adminId: finalRecipientId,
+              type: "message_pending",
+              title: notificationTitle,
+              subtitle: notificationSubtitle,
+            },
+          );
+
+          await createAndEmitNotification(
+            io,
+            finalRecipientId,
+            message._id.toString(),
+            "message_pending",
+            notificationTitle,
+            notificationSubtitle,
+            {
+              messageId: message._id,
+              senderId,
+              barangayId,
+            },
+          );
+
+          io.to("role-Admin").emit("new-notification", {
+            id: message._id.toString(),
+            type: "message_pending",
+            title: notificationTitle,
+            subtitle: notificationSubtitle,
+            time: new Date(),
+            seen: false,
+            meta: {
+              messageId: message._id,
+              senderId,
+              barangayId,
+            },
+          });
+        }
+      }
     }
 
     // If it's an admin event, notify all relevant users with real-time notifications

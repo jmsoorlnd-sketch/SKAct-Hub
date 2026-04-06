@@ -179,40 +179,40 @@ const SubmitReport = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm text-slate-700">
+              <table className="min-w-full text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 text-slate-600">
                   <tr>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       ID Number
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       PYDP
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Program Name
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Objectives
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Start Date
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Budget Allocated
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Budget Spent
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Status
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Barangay
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Submitted By
                     </th>
-                    <th className="whitespace-nowrap px-4 py-3 font-semibold">
+                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
                       Submitted At
                     </th>
                   </tr>
@@ -220,24 +220,24 @@ const SubmitReport = () => {
                 <tbody className="divide-y divide-slate-200">
                   {myReports.map((report) => (
                     <tr key={report._id} className="hover:bg-slate-50">
-                      <td className="px-4 py-4">{report.idNumber}</td>
-                      <td className="px-4 py-4">{report.pydp}</td>
-                      <td className="px-4 py-4">{report.programName || "-"}</td>
-                      <td className="max-w-60 px-4 py-4 text-slate-700 overflow-hidden text-ellipsis whitespace-nowrap">
+                      <td className="px-3 py-2">{report.idNumber}</td>
+                      <td className="px-3 py-2">{report.pydp}</td>
+                      <td className="px-3 py-2">{report.programName || "-"}</td>
+                      <td className="max-w-48 px-3 py-2 text-slate-700 overflow-hidden text-ellipsis whitespace-nowrap">
                         {report.objectives || "-"}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         {new Date(report.startDate).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         ₱{Number(report.budgetAllocated).toLocaleString()}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         ₱{Number(report.budgetSpent).toLocaleString()}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                             report.validationStatus === "valid"
                               ? "bg-emerald-100 text-emerald-700"
                               : report.validationStatus === "not valid"
@@ -250,14 +250,14 @@ const SubmitReport = () => {
                             : "pending"}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         {report.barangay?.barangayName || "Unknown"}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         {report.submittedBy?.firstname || ""}{" "}
                         {report.submittedBy?.lastname || ""}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-2">
                         {new Date(report.submittedAt).toLocaleString()}
                       </td>
                     </tr>

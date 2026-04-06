@@ -174,43 +174,43 @@ const AdminReports = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-auto text-xs">
               <thead className="bg-slate-50 border-b-2 border-slate-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     ID Number
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     PYDP
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Program Name
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Objectives
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Start Date
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Budget Allocated
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Budget Spent
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Barangay
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Submitted By
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Submitted At
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-slate-700">
                     Validation
                   </th>
                 </tr>
@@ -224,49 +224,49 @@ const AdminReports = () => {
                       index % 2 === 0 ? "bg-white" : "bg-slate-50"
                     }`}
                   >
-                    <td className="px-6 py-4 text-sm text-slate-700 font-medium">
+                    <td className="px-3 py-2 text-xs text-slate-700 font-medium">
                       {report.idNumber}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       {report.pydp}
                     </td>
                     <td
-                      className="px-6 py-4 text-sm text-slate-700 max-w-xs truncate"
+                      className="px-3 py-2 text-xs text-slate-700 max-w-xs truncate"
                       title={report.programName}
                     >
                       {report.programName || "-"}
                     </td>
                     <td
-                      className="px-6 py-4 text-sm text-slate-700 max-w-xs truncate"
+                      className="px-3 py-2 text-xs text-slate-700 max-w-xs truncate"
                       title={report.objectives}
                     >
                       {report.objectives}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       {new Date(report.startDate).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       ₱{report.budgetAllocated.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       ₱{report.budgetSpent.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    <td className="px-3 py-2 text-xs">
+                      <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-[10px] font-semibold">
                         {report.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       {report.barangay?.barangayName || "Unknown"}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       {report.submittedBy?.firstname || ""}{" "}
                       {report.submittedBy?.lastname || ""}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       {new Date(report.submittedAt).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       <div className="flex items-center gap-2 whitespace-nowrap">
                         <button
                           type="button"

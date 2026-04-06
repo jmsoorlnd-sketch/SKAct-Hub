@@ -15,12 +15,28 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "message_pending",
+        "message_approved",
+        "message_rejected",
+        "message_updated",
         "barangay_ongoing",
         "barangay_completed",
         "activity",
         "activity_update",
+        "report_submitted",
       ],
       required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    subtitle: {
+      type: String,
+      required: true,
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     seen: {
       type: Boolean,

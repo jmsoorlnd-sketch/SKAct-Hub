@@ -1,6 +1,7 @@
 import Report from "../models/ReportModel.js";
-import User from "../models/userModel.js";
+import User from "../models/UserModel.js";
 import Barangay from "../models/BarangayModel.js";
+import { createAndEmitNotification } from "./NotificationController.js";
 
 // Submit a report
 export const submitReport = async (req, res) => {
@@ -44,6 +45,61 @@ export const submitReport = async (req, res) => {
     });
 
     await report.save();
+
+    const io = req.app.get("io");
+    const notificationId = `report_${report._id}`;
+    const title = `New report submitted: ${report.programName}`;
+    const subtitle = `By ${user.firstname} ${user.lastname} - ${user.barangay.barangayName}`;
+
+    const adminUsers = await User.find({ role: "Admin" }).select(
+      "_id firstname lastname email",
+    );
+
+    console.log("[DEBUG] Submitting report and notifying admins:", {
+      reportId: report._id,
+      adminCount: adminUsers.length,
+      title,
+      subtitle,
+    });
+
+    await Promise.all(
+      adminUsers.map((admin) => {
+        console.log("[DEBUG] Creating notification for admin:", {
+          adminId: admin._id,
+          adminEmail: admin.email,
+          type: "report_submitted",
+        });
+        return createAndEmitNotification(
+          io,
+          admin._id,
+          notificationId,
+          "report_submitted",
+          title,
+          subtitle,
+          {
+            reportId: report._id,
+            barangayId: user.barangay._id,
+            submittedBy,
+          },
+        );
+      }),
+    );
+
+    // Also emit a role-based event so all connected admins receive it immediately
+    io.to("role-Admin").emit("new-notification", {
+      id: notificationId,
+      type: "report_submitted",
+      title,
+      subtitle,
+      time: new Date(),
+      seen: false,
+      meta: {
+        reportId: report._id,
+        barangayId: user.barangay._id,
+        submittedBy,
+      },
+    });
+
     res.status(201).json({ message: "Report submitted successfully", report });
   } catch (error) {
     console.error(error);
