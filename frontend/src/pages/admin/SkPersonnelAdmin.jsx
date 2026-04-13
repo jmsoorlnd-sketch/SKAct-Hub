@@ -23,6 +23,7 @@ const SkPersonnelAdmin = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedPersonnel, setSelectedPersonnel] = useState(null);
+  const [isDeactivatingAccount, setIsDeactivatingAccount] = useState(false);
 
   /* ===================== DATA FETCH ===================== */
   useEffect(() => {
@@ -82,6 +83,69 @@ const SkPersonnelAdmin = () => {
     }
   };
 
+  const handleToggleAccountStatus = async (personnel = selectedPersonnel) => {
+    if (!personnel?._id) {
+      toast.error(
+        "Unable to update account status: missing account reference.",
+      );
+      return;
+    }
+
+    const currentStatus = personnel.status || "Active";
+    if (currentStatus === "Resigned") {
+      toast.error("Resigned accounts cannot be updated.");
+      return;
+    }
+
+    const nextStatus = currentStatus === "Inactive" ? "Active" : "Inactive";
+    const actionLabel = nextStatus === "Active" ? "Activate" : "Deactivate";
+
+    const confirmed = window.confirm(
+      `${actionLabel} this official's account? This will set the official account status to ${nextStatus}.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeactivatingAccount(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5000/api/admins/status-official/${personnel._id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: nextStatus }),
+        },
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data.message || `Failed to ${actionLabel.toLowerCase()} account`,
+        );
+      }
+
+      toast.success(
+        `Account ${nextStatus === "Active" ? "activated" : "deactivated"} successfully.`,
+      );
+      await fetchSKPersonnel(selectedBarangay);
+      setSelectedPersonnel((prev) =>
+        prev ? { ...prev, status: nextStatus } : prev,
+      );
+    } catch (error) {
+      toast.error(
+        error.message || `Failed to ${actionLabel.toLowerCase()} account`,
+      );
+    } finally {
+      setIsDeactivatingAccount(false);
+    }
+  };
+
   /* ===================== COMPUTED VALUES ===================== */
   const currentBarangay = useMemo(() => {
     return barangays.find((b) => b._id === selectedBarangay);
@@ -90,13 +154,35 @@ const SkPersonnelAdmin = () => {
   const resolvedSkPersonnel = useMemo(() => {
     if (!skPersonnel) return null;
 
+    const mergeOfficial = (positionKey, fallbackKey) => {
+      const accountOfficial = skPersonnel.accountPositions?.[positionKey] || {};
+      const fallbackOfficial = skPersonnel[fallbackKey] || {};
+      const hasAssignedName =
+        accountOfficial.firstName ||
+        accountOfficial.surname ||
+        fallbackOfficial.firstName ||
+        fallbackOfficial.surname;
+
+      if (!hasAssignedName) return null;
+
+      return {
+        _id: accountOfficial._id || fallbackOfficial._id || null,
+        surname: accountOfficial.surname || fallbackOfficial.surname || "",
+        firstName:
+          accountOfficial.firstName || fallbackOfficial.firstName || "",
+        middleName:
+          accountOfficial.middleName || fallbackOfficial.middleName || "",
+        age: fallbackOfficial.age ?? accountOfficial.age ?? "",
+        status: fallbackOfficial.status || accountOfficial.status || "Active",
+        username: accountOfficial.username || fallbackOfficial.username || "",
+      };
+    };
+
     return {
       ...skPersonnel,
-      chairman: skPersonnel.accountPositions?.chairman || skPersonnel.chairman,
-      secretary:
-        skPersonnel.accountPositions?.secretary || skPersonnel.secretary,
-      treasurer:
-        skPersonnel.accountPositions?.treasurer || skPersonnel.treasurer,
+      chairman: mergeOfficial("chairman", "chairman"),
+      secretary: mergeOfficial("secretary", "secretary"),
+      treasurer: mergeOfficial("treasurer", "treasurer"),
     };
   }, [skPersonnel]);
 
@@ -109,24 +195,31 @@ const SkPersonnelAdmin = () => {
       resolvedSkPersonnel.secretary,
       resolvedSkPersonnel.treasurer,
       ...(resolvedSkPersonnel.kagawad || []),
-    ].filter(Boolean);
+    ].filter((m) => m?.firstName || m?.surname);
 
     const total = allMembers.length;
-    const active = allMembers.filter((m) => m.status !== "Inactive").length;
-    const inactive = total - active;
+    const active = allMembers.filter((m) => m.status === "Active").length;
+    const inactive = allMembers.filter((m) => m.status === "Inactive").length;
     const activeRate = total > 0 ? ((active / total) * 100).toFixed(1) : 0;
 
     return { total, active, inactive, activeRate };
   }, [resolvedSkPersonnel]);
 
   /* ===================== COMPONENTS ===================== */
-  const DirectoryItem = ({ role, data, isKeyOfficial = false, onView }) => {
+  const DirectoryItem = ({
+    role,
+    data,
+    isKeyOfficial = false,
+    onView,
+    onDeactivate,
+  }) => {
     const fullName =
       data?.firstName && data?.surname
         ? `${data.surname}, ${data.firstName} ${data.middleName || ""}`.trim()
         : "Not Assigned";
 
     const status = data?.status || "Active";
+    const statusLabel = status === "Inactive" ? "Deactivated" : status;
     const isInactive = status === "Inactive";
     const isResigned = status === "Resigned";
     const isAssigned = data?.firstName && data?.surname;
@@ -186,28 +279,45 @@ const SkPersonnelAdmin = () => {
                 <h4 className="text-lg font-bold text-slate-900">{fullName}</h4>
               </div>
             </div>
-            <div>
+            <div className="flex items-center gap-2">
               {isAssigned ? (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                    isResigned
-                      ? "bg-red-100 text-red-700 border-2 border-red-200"
-                      : isInactive
-                        ? "bg-yellow-100 text-yellow-700 border-2 border-yellow-200"
-                        : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
-                  }`}
-                >
-                  {isResigned ? (
-                    <UserX size={18} />
-                  ) : isInactive ? (
-                    <UserX size={18} />
-                  ) : (
-                    <UserCheck size={18} />
+                <>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
+                      isResigned
+                        ? "bg-red-100 text-red-700 border-2 border-red-200"
+                        : isInactive
+                          ? "bg-yellow-100 text-yellow-700 border-2 border-yellow-200"
+                          : "bg-emerald-100 text-emerald-700 border-2 border-emerald-200"
+                    }`}
+                  >
+                    {isResigned ? (
+                      <UserX size={18} />
+                    ) : isInactive ? (
+                      <UserX size={18} />
+                    ) : (
+                      <UserCheck size={18} />
+                    )}
+                    {statusLabel}
+                  </span>
+                  {!isResigned && data?._id && (
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDeactivate && onDeactivate(data);
+                      }}
+                      className={`px-2 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 bg-white transition-all ${
+                        isInactive
+                          ? "text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                          : "text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {isInactive ? "Activate" : "Deactivate"}
+                    </button>
                   )}
-                  {status}
-                </span>
+                </>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border-2 border-amber-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border-2 border-amber-200">
                   <UserX size={18} />
                   Vacant
                 </span>
@@ -343,9 +453,15 @@ const SkPersonnelAdmin = () => {
                             }
                             isKeyOfficial={true}
                             onView={(personnel) => {
-                              setSelectedPersonnel(personnel);
+                              setSelectedPersonnel({
+                                ...personnel,
+                                role: "SK Chairman",
+                              });
                               setShowModal(true);
                             }}
+                            onDeactivate={(personnel) =>
+                              handleToggleAccountStatus(personnel)
+                            }
                           />
                           <DirectoryItem
                             role="SK Secretary"
@@ -355,9 +471,15 @@ const SkPersonnelAdmin = () => {
                             }
                             isKeyOfficial={true}
                             onView={(personnel) => {
-                              setSelectedPersonnel(personnel);
+                              setSelectedPersonnel({
+                                ...personnel,
+                                role: "SK Secretary",
+                              });
                               setShowModal(true);
                             }}
+                            onDeactivate={(personnel) =>
+                              handleToggleAccountStatus(personnel)
+                            }
                           />
                           <DirectoryItem
                             role="SK Treasurer"
@@ -367,9 +489,15 @@ const SkPersonnelAdmin = () => {
                             }
                             isKeyOfficial={true}
                             onView={(personnel) => {
-                              setSelectedPersonnel(personnel);
+                              setSelectedPersonnel({
+                                ...personnel,
+                                role: "SK Treasurer",
+                              });
                               setShowModal(true);
                             }}
+                            onDeactivate={(personnel) =>
+                              handleToggleAccountStatus(personnel)
+                            }
                           />
                         </div>
                       </div>
@@ -478,6 +606,9 @@ const SkPersonnelAdmin = () => {
                                     setSelectedPersonnel(personnel);
                                     setShowModal(true);
                                   }}
+                                  onDeactivate={(personnel) =>
+                                    handleToggleAccountStatus(personnel)
+                                  }
                                 />
                               ))}
                             </div>
@@ -574,29 +705,59 @@ const SkPersonnelAdmin = () => {
                 <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">
                   Status
                 </p>
-                <div className="flex items-center gap-2">
-                  {selectedPersonnel.status === "Active" ? (
-                    <>
-                      <UserCheck size={18} className="text-emerald-600" />
-                      <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-bold border-2 border-emerald-200">
-                        Active
-                      </span>
-                    </>
-                  ) : selectedPersonnel.status === "Inactive" ? (
-                    <>
-                      <UserX size={18} className="text-yellow-600" />
-                      <span className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-bold border-2 border-yellow-200">
-                        Inactive
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <UserX size={18} className="text-red-600" />
-                      <span className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold border-2 border-red-200">
-                        Resigned
-                      </span>
-                    </>
-                  )}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    {selectedPersonnel.status === "Active" ? (
+                      <>
+                        <UserCheck size={18} className="text-emerald-600" />
+                        <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-bold border-2 border-emerald-200">
+                          Active
+                        </span>
+                      </>
+                    ) : selectedPersonnel.status === "Inactive" ? (
+                      <>
+                        <UserX size={18} className="text-yellow-600" />
+                        <span className="px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-bold border-2 border-yellow-200">
+                          Inactive
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <UserX size={18} className="text-red-600" />
+                        <span className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold border-2 border-red-200">
+                          Resigned
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {selectedPersonnel.status !== "Resigned" &&
+                    selectedPersonnel._id && (
+                      <button
+                        onClick={() =>
+                          handleToggleAccountStatus(selectedPersonnel)
+                        }
+                        disabled={isDeactivatingAccount}
+                        className={`inline-flex items-center justify-center rounded-lg px-4 py-2 border font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                          selectedPersonnel.status === "Inactive"
+                            ? "border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                            : "border-yellow-400 bg-yellow-50 text-yellow-800 hover:bg-yellow-100"
+                        }`}
+                      >
+                        {isDeactivatingAccount
+                          ? selectedPersonnel.status === "Inactive"
+                            ? "Activating..."
+                            : "Deactivating..."
+                          : selectedPersonnel.status === "Inactive"
+                            ? "Activate Account"
+                            : "Deactivate Account"}
+                      </button>
+                    )}
+                  {selectedPersonnel.skStatus &&
+                    selectedPersonnel.skStatus !== selectedPersonnel.status && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        SK Personnel status: {selectedPersonnel.skStatus}
+                      </p>
+                    )}
                 </div>
               </div>
             </div>

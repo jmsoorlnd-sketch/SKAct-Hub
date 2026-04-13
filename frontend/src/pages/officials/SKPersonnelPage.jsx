@@ -55,11 +55,26 @@ const SKPersonnelPage = () => {
       };
 
     const getOfficial = (positionKey, fallbackKey) => {
-      return (
-        skPersonnel.accountPositions?.[positionKey] ||
-        skPersonnel[fallbackKey] ||
-        null
-      );
+      const accountOfficial = skPersonnel.accountPositions?.[positionKey] || {};
+      const fallbackOfficial = skPersonnel[fallbackKey] || {};
+      const hasAssignedName =
+        accountOfficial.firstName ||
+        accountOfficial.surname ||
+        fallbackOfficial.firstName ||
+        fallbackOfficial.surname;
+
+      if (!hasAssignedName) return null;
+
+      return {
+        surname: accountOfficial.surname || fallbackOfficial.surname || "",
+        firstName:
+          accountOfficial.firstName || fallbackOfficial.firstName || "",
+        middleName:
+          accountOfficial.middleName || fallbackOfficial.middleName || "",
+        age: fallbackOfficial.age ?? accountOfficial.age ?? "",
+        status: fallbackOfficial.status || accountOfficial.status || "Active",
+        username: accountOfficial.username || fallbackOfficial.username || "",
+      };
     };
 
     return {
@@ -199,15 +214,25 @@ const SKPersonnelPage = () => {
         });
 
         const getAuthorityData = (positionKey, fallbackKey) => {
-          return (
-            data.skPersonnel.accountPositions?.[positionKey] ||
-            data.skPersonnel[fallbackKey] ||
-            {}
-          );
+          const accountOfficial =
+            data.skPersonnel.accountPositions?.[positionKey] || {};
+          const fallbackOfficial = data.skPersonnel[fallbackKey] || {};
+
+          return {
+            surname: accountOfficial.surname || fallbackOfficial.surname || "",
+            firstName:
+              accountOfficial.firstName || fallbackOfficial.firstName || "",
+            middleName:
+              accountOfficial.middleName || fallbackOfficial.middleName || "",
+            age: fallbackOfficial.age ?? accountOfficial.age ?? "",
+            status:
+              fallbackOfficial.status || accountOfficial.status || "Active",
+            username:
+              accountOfficial.username || fallbackOfficial.username || "",
+          };
         };
 
         // Populate forms using unified object.
-        // Use account positions automatically when available.
         setForms({
           chairman: populateFormData(getAuthorityData("chairman", "chairman")),
           vicePresident: populateFormData(
@@ -430,12 +455,28 @@ const SKPersonnelPage = () => {
     if (!skPersonnel)
       return { total: 0, active: 0, inactive: 0, activeRate: 0 };
 
+    const mergeOfficialData = (positionKey, fallbackKey) => {
+      const accountOfficial = skPersonnel.accountPositions?.[positionKey] || {};
+      const fallbackOfficial = skPersonnel[fallbackKey] || {};
+      return {
+        ...accountOfficial,
+        surname: accountOfficial.surname || fallbackOfficial.surname || "",
+        firstName:
+          accountOfficial.firstName || fallbackOfficial.firstName || "",
+        middleName:
+          accountOfficial.middleName || fallbackOfficial.middleName || "",
+        age: fallbackOfficial.age ?? accountOfficial.age ?? "",
+        status: fallbackOfficial.status || accountOfficial.status || "Active",
+        username: accountOfficial.username || fallbackOfficial.username || "",
+      };
+    };
+
     const allMembers = [
-      skPersonnel.accountPositions?.chairman || skPersonnel.chairman,
-      skPersonnel.accountPositions?.secretary || skPersonnel.secretary,
-      skPersonnel.accountPositions?.treasurer || skPersonnel.treasurer,
+      mergeOfficialData("chairman", "chairman"),
+      mergeOfficialData("secretary", "secretary"),
+      mergeOfficialData("treasurer", "treasurer"),
       ...(skPersonnel.kagawad?.filter((k) => !k.isDeleted) || []),
-    ].filter(Boolean);
+    ].filter((m) => m && (m.firstName || m.surname));
 
     const total = allMembers.length;
     const active = allMembers.filter((m) => m.status === "Active").length;

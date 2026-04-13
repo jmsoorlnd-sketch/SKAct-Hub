@@ -1,5 +1,5 @@
 import Message from "../models/MessageModel.js";
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 import UserLog from "../models/UserLogModel.js";
 import BarangayStorage from "../models/BarangayStorageModel.js";
 import Barangay from "../models/BarangayModel.js";

@@ -1,5 +1,5 @@
 import Report from "../models/ReportModel.js";
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 import Barangay from "../models/BarangayModel.js";
 import { createAndEmitNotification } from "./NotificationController.js";
 
@@ -33,12 +33,10 @@ export const submitReport = async (req, res) => {
 
     const existingReport = await Report.findOne({ idNumber });
     if (existingReport) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Reference ID number already taken. Please use another Reference ID.",
-        });
+      return res.status(400).json({
+        message:
+          "Reference ID number already taken. Please use another Reference ID.",
+      });
     }
 
     const report = new Report({
@@ -113,12 +111,10 @@ export const submitReport = async (req, res) => {
   } catch (error) {
     console.error(error);
     if (error.code === 11000 && error.keyPattern?.idNumber) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Reference ID number already taken. Please use another Reference ID.",
-        });
+      return res.status(400).json({
+        message:
+          "Reference ID number already taken. Please use another Reference ID.",
+      });
     }
     res.status(500).json({ message: "Server error" });
   }

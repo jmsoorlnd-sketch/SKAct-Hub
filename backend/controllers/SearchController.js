@@ -1,4 +1,4 @@
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 import Message from "../models/MessageModel.js";
 
 // Admin search: find users matching query and messages they sent
@@ -31,7 +31,7 @@ export const searchAll = async (req, res) => {
           .limit(20)
           .select("_id subject body createdAt status attachmentName");
         return { user: u, messages };
-      })
+      }),
     );
 
     // also include messages that match subject/body directly (so admin can search content)

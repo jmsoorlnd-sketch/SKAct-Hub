@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 import UserLog from "../models/UserLogModel.js";
 import bcrypt from "bcryptjs";
 import { validateEmail } from "../utils/validateEmail.js";

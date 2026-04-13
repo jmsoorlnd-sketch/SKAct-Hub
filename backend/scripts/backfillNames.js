@@ -1,5 +1,5 @@
 import connectDB from "../configDB.js";
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 
 /**
  * Backfill script: populate missing firstname/lastname for users.

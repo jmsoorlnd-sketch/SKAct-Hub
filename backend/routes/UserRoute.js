@@ -74,7 +74,7 @@ router.post(
   uploadProfile.single("profileImage"),
   async (req, res) => {
     try {
-      const User = (await import("../models/UserModel.js")).default;
+      const User = (await import("../models/userModel.js")).default;
 
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });

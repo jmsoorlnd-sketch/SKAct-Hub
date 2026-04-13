@@ -23,6 +23,7 @@ const getAccountPositions = async (barangayId) => {
   const personFromAccount = (user) => {
     if (!user) return null;
     return {
+      _id: user._id,
       surname: user.lastname || "",
       firstName: user.firstname || "",
       middleName: "",
@@ -43,6 +44,27 @@ const getAccountPositions = async (barangayId) => {
       accountUsers.find((user) => user.position === "Treasurer"),
     ),
   };
+};
+
+const updateAccountPosition = async (
+  barangayId,
+  position,
+  firstName,
+  surname,
+) => {
+  await User.findOneAndUpdate(
+    {
+      barangay: barangayId,
+      role: "Official",
+      position,
+      isDeleted: false,
+    },
+    {
+      firstname: firstName,
+      lastname: surname,
+    },
+    { new: true },
+  );
 };
 
 // Get SK Personnel for a barangay
@@ -108,7 +130,10 @@ export const getSKPersonnelByBarangay = async (req, res) => {
 
     const accountPositions = await getAccountPositions(barangayId);
 
-    res.status(200).json({ skPersonnel, accountPositions });
+    res.status(200).json({
+      skPersonnel: skPersonnel.toObject(),
+      accountPositions,
+    });
   } catch (error) {
     console.error("Error fetching SK Personnel:", error);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -204,6 +229,14 @@ export const updateChairman = async (req, res) => {
 
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
+
+    await updateAccountPosition(
+      barangayId,
+      "Chairman",
+      firstName,
+      surname,
+      status || "Active",
+    );
 
     const accountPositions = await getAccountPositions(barangayId);
 
@@ -327,6 +360,14 @@ export const updateSecretary = async (req, res) => {
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
 
+    await updateAccountPosition(
+      barangayId,
+      "Secretary",
+      firstName,
+      surname,
+      status || "Active",
+    );
+
     const accountPositions = await getAccountPositions(barangayId);
 
     // Log the action
@@ -449,6 +490,14 @@ export const updateTreasurer = async (req, res) => {
 
     skPersonnel.updatedAt = new Date();
     await skPersonnel.save();
+
+    await updateAccountPosition(
+      barangayId,
+      "Treasurer",
+      firstName,
+      surname,
+      status || "Active",
+    );
 
     const accountPositions = await getAccountPositions(barangayId);
 

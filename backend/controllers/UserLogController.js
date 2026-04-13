@@ -1,5 +1,5 @@
 import UserLog from "../models/UserLogModel.js";
-import User from "../models/UserModel.js";
+import User from "../models/userModel.js";
 
 /**
  * @desc Log user action
