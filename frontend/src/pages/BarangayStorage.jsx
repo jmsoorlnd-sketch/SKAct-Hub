@@ -2704,9 +2704,9 @@ const BarangayStorage = () => {
       BarangayStorage.jsx with this code  */}
       {showFolderViewModal && folderViewData && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex items-center justify-between flex-shrink-0">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3 text-white">
                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                   <FileText size={20} />
@@ -2744,8 +2744,8 @@ const BarangayStorage = () => {
             <div className="flex-1 overflow-y-auto">
               {/* LEFT PANEL - Document List (Show when no document selected) */}
               {!folderModalSelectedDoc && (
-                <div className="w-full h-full overflow-y-auto p-6">
-                  <div className="max-w-4xl mx-auto">
+                <div className="w-full h-full overflow-y-auto p-5">
+                  <div className="max-w-5xl mx-auto">
                     <h3 className="text-lg font-bold text-slate-900 mb-4">
                       Documents in this folder
                     </h3>
@@ -2761,7 +2761,7 @@ const BarangayStorage = () => {
                           placeholder="Search by name or status..."
                           value={folderSearchQuery}
                           onChange={(e) => setFolderSearchQuery(e.target.value)}
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          className="w-full px-3 py-2 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         />
                       </div>
                       <div>
@@ -2773,7 +2773,7 @@ const BarangayStorage = () => {
                           onChange={(e) =>
                             setFolderStatusFilter(e.target.value)
                           }
-                          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          className="w-full px-3 py-2 border-2 border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                         >
                           <option value="all">All statuses</option>
                           <option value="approved">Approved</option>
@@ -2795,80 +2795,99 @@ const BarangayStorage = () => {
                         </p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {filteredFolderDocuments.map((item) => {
-                          const messageId = item.document?._id || item._id;
-                          const canDeleteMessage =
-                            user?.role === "Official" &&
-                            (user.position === "Secretary" ||
-                              user.position === "Treasurer" ||
-                              user.position === "Chairman");
+                      <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
+                        <table className="min-w-full divide-y divide-slate-200">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Document
+                              </th>
+                              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                From
+                              </th>
+                              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Status
+                              </th>
+                              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Date
+                              </th>
+                              <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-slate-200">
+                            {filteredFolderDocuments.map((item) => {
+                              const messageId = item.document?._id || item._id;
+                              const canDeleteMessage =
+                                user?.role === "Official" &&
+                                (user.position === "Secretary" ||
+                                  user.position === "Treasurer" ||
+                                  user.position === "Chairman");
 
-                          return (
-                            <div
-                              key={item._id}
-                              onClick={() => {
-                                setFolderModalSelectedDoc(item);
-                                setFolderModalViewType("details"); // Auto-show details
-                              }}
-                              className="relative border-2 border-slate-200 rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 hover:shadow-lg bg-slate-50 hover:bg-blue-50"
-                            >
-                              {canDeleteMessage && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteMessage(messageId);
+                              return (
+                                <tr
+                                  key={item._id}
+                                  onClick={() => {
+                                    setFolderModalSelectedDoc(item);
+                                    setFolderModalViewType("details");
                                   }}
-                                  className="absolute top-3 right-3 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all"
-                                  title="Delete document"
+                                  className="cursor-pointer hover:bg-slate-50 transition-colors"
                                 >
-                                  <Trash2 size={14} />
-                                </button>
-                              )}
-
-                              <div className="flex items-start gap-3">
-                                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <FileText className="w-6 h-6 text-blue-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
-                                    {item.documentName ||
-                                      item.document?.subject ||
-                                      "Document"}
-                                  </h3>
-                                  <p className="text-xs text-slate-600 mb-2">
-                                    From:{" "}
-                                    <span className="font-semibold">
-                                      {item.document?.sender?.username ||
-                                        item.uploadedBy?.username}
-                                    </span>
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${
-                                        item.document?.status === "completed" ||
-                                        item.document?.status === "approved"
-                                          ? "bg-emerald-100 text-emerald-700"
-                                          : item.document?.status === "ongoing"
-                                            ? "bg-amber-100 text-amber-700"
-                                            : "bg-slate-100 text-slate-700"
-                                      }`}
-                                    >
+                                  <td className="px-4 py-4 align-top">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center">
+                                        <FileText className="w-4 h-4 text-blue-600" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-slate-900 truncate">
+                                          {item.documentName || item.document?.subject || "Document"}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500 truncate">
+                                          {item.document?.sender?.username || item.uploadedBy?.username}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-4 align-top text-sm text-slate-700">
+                                    {item.document?.sender?.username || item.uploadedBy?.username}
+                                  </td>
+                                  <td className="px-4 py-4 align-top">
+                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                                      item.document?.status === "completed" ||
+                                      item.document?.status === "approved"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : item.document?.status === "ongoing"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : "bg-slate-100 text-slate-700"
+                                    }`}>
                                       {item.document?.status === "approved"
                                         ? "completed"
                                         : item.document?.status || item.status}
                                     </span>
-                                    <span className="text-xs text-slate-500">
-                                      {new Date(
-                                        item.createdAt,
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                                  </td>
+                                  <td className="px-4 py-4 align-top text-sm text-slate-500">
+                                    {new Date(item.createdAt).toLocaleDateString()}
+                                  </td>
+                                  <td className="px-4 py-4 align-top text-right text-xs text-slate-500">
+                                    {canDeleteMessage && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteMessage(messageId);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
+                                        title="Delete document"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     )}
 

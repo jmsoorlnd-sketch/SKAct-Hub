@@ -89,11 +89,11 @@ const DocumentItem = ({
     const normalized = status === "approved" ? "completed" : status;
     switch (normalized) {
       case "completed":
-        return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200";
+        return "bg-linear-to-r from-emerald-100 to-emerald-50 text-emerald-700 border-emerald-200";
       case "ongoing":
-        return "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border-amber-200";
+        return "bg-linear-to-r from-amber-100 to-amber-50 text-amber-700 border-amber-200";
       default:
-        return "bg-gradient-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-200";
+        return "bg-linear-to-r from-slate-100 to-slate-50 text-slate-700 border-slate-200";
     }
   };
 
@@ -117,13 +117,13 @@ const DocumentItem = ({
   }
 
   return (
-    <div className="border-2 border-slate-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-white">
-      <div className="flex justify-between items-start mb-4">
+    <div className="border border-slate-200 rounded-2xl p-3 hover:shadow-md hover:border-blue-300 transition-all duration-200 bg-white">
+      <div className="flex justify-between items-start gap-3 mb-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-slate-900 text-lg mb-2">
+          <h3 className="font-semibold text-slate-900 text-sm mb-1">
             {item.documentName || item.document?.subject || "Document"}
           </h3>
-          <p className="text-sm text-slate-600 mb-3">
+          <p className="text-[11px] text-slate-600 mb-2">
             From:{" "}
             <span className="font-semibold">
               {item.document?.sender?.username || item.uploadedBy?.username}
@@ -133,7 +133,7 @@ const DocumentItem = ({
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 ${getStatusColor(
+              className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border ${getStatusColor(
                 item.document?.status || item.status,
               )}`}
             >
@@ -141,17 +141,17 @@ const DocumentItem = ({
                 ? "completed"
                 : item.document?.status || item.status}
             </span>
-            <span className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
+            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-semibold">
               {new Date(item.createdAt).toLocaleDateString()}
             </span>
           </div>
           {item.description && (
-            <p className="text-xs text-slate-700 mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200 line-clamp-2">
+            <p className="text-xs text-slate-700 mt-2 p-2 bg-slate-50 rounded-2xl border border-slate-200 line-clamp-1">
               {item.description}
             </p>
           )}
         </div>
-        <div className="ml-4 flex items-start gap-2">
+        <div className="ml-3 flex items-start gap-2">
           {user?.role &&
             (user.role === "Official" || user.role === "Admin") && (
               <button
@@ -159,7 +159,7 @@ const DocumentItem = ({
                   setSelectedDocument(item);
                   fetchActivityUpdates(item.document?._id || item._id);
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-sm font-semibold border-2 border-purple-200 transition-all"
+                className="px-3 py-1.5 bg-linear-to-r from-purple-100 to-purple-50 hover:from-purple-200 hover:to-purple-100 text-purple-700 rounded-lg text-xs font-semibold border border-purple-200 transition-all"
               >
                 Activity
               </button>
@@ -173,14 +173,14 @@ const DocumentItem = ({
                       setPreviewUrl(`http://localhost:5000${att.url}`);
                       setShowPreviewModal(true);
                     }}
-                    className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm font-semibold border-2 border-indigo-200 transition-all"
+                    className="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-200 transition-all"
                   >
                     View
                   </button>
                   <a
                     href={`http://localhost:5000${att.url}`}
                     download={att.name}
-                    className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm font-semibold border-2 border-blue-200 transition-all"
+                    className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-all"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -267,7 +267,7 @@ const DocumentItem = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 pt-6 border-t-2 border-slate-100 mt-6">
+      <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-200 mt-4">
         {String(item.document?.sender?._id) === String(user?._id) && (
           <>
             <button
@@ -280,7 +280,7 @@ const DocumentItem = ({
                   "Are you sure you want to mark this document as pending?",
                 )
               }
-              className="px-4 py-2 bg-gradient-to-r from-slate-100 to-slate-50 hover:from-slate-200 hover:to-slate-100 text-slate-700 rounded-lg text-sm font-semibold border-2 border-slate-200 transition-all"
+              className="px-3 py-1.5 bg-linear-to-r from-slate-100 to-slate-50 hover:from-slate-200 hover:to-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-all"
             >
               Mark Pending
             </button>
@@ -294,7 +294,7 @@ const DocumentItem = ({
                   "Are you sure you want to mark this document as ongoing?",
                 )
               }
-              className="px-4 py-2 bg-gradient-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 rounded-lg text-sm font-semibold border-2 border-amber-200 transition-all"
+              className="px-3 py-1.5 bg-linear-to-r from-amber-100 to-amber-50 hover:from-amber-200 hover:to-amber-100 text-amber-700 rounded-lg text-xs font-semibold border border-amber-200 transition-all"
             >
               Mark Ongoing
             </button>
@@ -308,7 +308,7 @@ const DocumentItem = ({
                   "Are you sure you want to mark this document as completed?",
                 )
               }
-              className="px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 hover:from-emerald-200 hover:to-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold border-2 border-emerald-200 transition-all"
+              className="px-3 py-1.5 bg-linear-to-r from-emerald-100 to-emerald-50 hover:from-emerald-200 hover:to-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-200 transition-all"
             >
               Mark Completed
             </button>
@@ -323,7 +323,7 @@ const DocumentItem = ({
                     "Are you sure you want to cancel this document submission for approval?",
                   )
                 }
-                className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
+                className="px-3 py-1.5 bg-linear-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-xs font-semibold border border-red-200 transition-all"
               >
                 Cancel
               </button>
@@ -346,7 +346,7 @@ const DocumentItem = ({
                     "Are you sure you want to remove this message from the barangay? It will be returned to your inbox.",
                   )
                 }
-                className="px-4 py-2 bg-gradient-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-sm font-semibold border-2 border-red-200 transition-all"
+                className="px-3 py-1.5 bg-linear-to-r from-red-100 to-red-50 hover:from-red-200 hover:to-red-100 text-red-700 rounded-lg text-xs font-semibold border border-red-200 transition-all"
               >
                 Remove
               </button>
@@ -358,7 +358,7 @@ const DocumentItem = ({
       {showCalendarModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <Calendar size={24} />
@@ -410,7 +410,7 @@ const DocumentItem = ({
                 <button
                   type="submit"
                   disabled={addingToCalendar}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
+                  className="flex-1 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-500 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all"
                 >
                   {addingToCalendar ? "Adding..." : "Add to Calendar"}
                 </button>
@@ -431,7 +431,7 @@ const DocumentItem = ({
       {confirmationModal.isOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-6 rounded-t-2xl">
               <h3 className="text-xl font-bold text-white">
                 {confirmationModal.title}
               </h3>
@@ -459,7 +459,7 @@ const DocumentItem = ({
                   Cancel
                 </button>
                 <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700"
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 text-xs"
                   onClick={handleConfirmAction}
                 >
                   Confirm
