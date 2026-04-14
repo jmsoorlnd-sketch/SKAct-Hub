@@ -36,102 +36,150 @@ const AddBarangay = lazy(
 /* ===================== CUSTOM FOLDER STYLES ===================== */
 const folderStyles = `
   .folder-container {
-    perspective: 1200px;
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    width: 100%;
+    perspective: 1500px;
   }
 
-  .animated-folder {
+  .folder-group {
     position: relative;
-    width: 100px;
-    height: 60px;
-    background: #F5E6D3;
-    border: 3px solid #D4A574; /* light brown border */
-    border-radius: 5px;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-style: preserve-3d;
-  }
-
-  .animated-folder::before {
-    content: "";
-    position: absolute;
-    top: -23%;
-    left: -3px;
-    width: 30px;
-    height: 14px;
-    background-color: #D4A574; /* light brown flap */
-    border-radius: 5px 5px 0 0;
-    z-index: 1;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-origin: center bottom;
-  }
-
-  .animated-folder::after {
-    content: "";
-    position: absolute;
-    width: 104%;
-    height: 103%;
-    background-color: #D4A574;
-    border: 3px solid #D4A574;
-    border-radius: 5px;
-    left: -2px;
-    top: -1px;
-    transform: rotateX(0deg);
-    transform-origin: top;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    backface-visibility: hidden;
-  }
-
-  .folder-container:hover .animated-folder::after {
-    transform: rotateX(-45deg);
-  }
-
-  .folder-container:hover .animated-folder::before {
-    transform: rotateX(-45deg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 
   .file {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    cursor: pointer;
+    transform-origin: bottom;
+    perspective: 1500px;
+    z-index: 50;
+  }
+
+  .work-5 {
+    background-color: #b45309;
+    width: 100%;
+    height: 100%;
+    transform-origin: top;
+    border-radius: 0.5rem;
+    border-top-left-radius: 0;
+    box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .work-5::after {
+    content: '';
     position: absolute;
-    width: 50px;
-    height: 40px;
-    border-radius: 4px;
-    transition: all 0.3s ease-in-out;
+    bottom: 99%;
+    left: 0;
+    width: 40px;
+    height: 8px;
+    background-color: #b45309;
+    border-radius: 0.5rem 0.5rem 0 0;
   }
 
-  .file.one {
-    top: 10px;
-    left: 10px;
-    background: #ffd6a5;
-    transform: translate(0, 0) rotate(0deg);
+  .work-5::before {
+    content: '';
+    position: absolute;
+    top: -7px;
+    left: 75px;
+    width: 8px;
+    height: 8px;
+    background-color: #b45309;
+    clip-path: polygon(0% 35%, 0% 100%, 50% 100%);
   }
 
-  .file.two {
-    top: 15px;
-    left: 35px;
-    background: #efa390;
-    transform: translate(0, 0) rotate(0deg);
+  .work-4 {
+    position: absolute;
+    inset: 2px;
+    background-color: #a3a3a3;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    transform-origin: bottom;
   }
 
-  .file.three {
-    top: 22px;
-    left: 22px;
-    background: #fdffb6;
-    transform: translate(0, 0) rotate(0deg);
+  .work-3 {
+    position: absolute;
+    inset: 2px;
+    background-color: #c4c4c4;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    transform-origin: bottom;
   }
 
-  .folder-container:hover .file.one {
-    transform: translate(-40px, -60px) rotate(-13deg);
+  .work-2 {
+    position: absolute;
+    inset: 2px;
+    background-color: #e5e5e5;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    transform-origin: bottom;
   }
 
-  .folder-container:hover .file.two {
-    transform: translate(40px, -60px) rotate(13deg);
+  .work-1 {
+    position: absolute;
+    bottom: 0;
+    background: linear-gradient(to top, #f59e0b, #FDE047);
+    width: 100%;
+    height: 78px;
+    border-radius: 0.5rem;
+    border-top-right-radius: 0;
+    transition: all 0.3s ease;
+    transform-origin: bottom;
+    display: flex;
+    align-items: flex-end;
   }
 
-  .folder-container:hover .file.three {
-    transform: translate(0px, -50px) rotate(0deg);
+  .work-1::after {
+    content: '';
+    position: absolute;
+    bottom: 99%;
+    right: 0;
+    width: 73px;
+    height: 8px;
+    background-color: #FDE047;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+
+  .work-1::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: 71px;
+    width: 6px;
+    height: 6px;
+    background-color: #FDE047;
+    clip-path: polygon(100% 14%, 50% 100%, 100% 100%);
+  }
+
+  .folder-container:hover .work-5 {
+    box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  .folder-container:hover .work-4 {
+    transform: rotateX(-20deg);
+  }
+
+  .folder-container:hover .work-3 {
+    transform: rotateX(-30deg);
+  }
+
+  .folder-container:hover .work-2 {
+    transform: rotateX(-38deg);
+  }
+
+  .folder-container:hover .work-1 {
+    box-shadow: inset 0 20px 40px #fbbf24, inset 0 -20px 40px #d97706;
+    transform: rotateX(-46deg) translateY(1px);
   }
 
   .folder-name {
@@ -1622,11 +1670,14 @@ const BarangayStorage = () => {
                                       setShowFolderViewModal(true);
                                     }}
                                   >
-                                    <div className="animated-folder">
-                                      {/* File cards */}
-                                      <div className="file one"></div>
-                                      <div className="file two"></div>
-                                      <div className="file three"></div>
+                                    <div className="folder-group">
+                                      <div className="file">
+                                        <div className="work-5"></div>
+                                        <div className="work-4"></div>
+                                        <div className="work-3"></div>
+                                        <div className="work-2"></div>
+                                        <div className="work-1"></div>
+                                      </div>
                                     </div>
 
                                     {/* Controls */}
