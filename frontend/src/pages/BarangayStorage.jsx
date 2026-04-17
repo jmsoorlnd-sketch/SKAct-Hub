@@ -270,6 +270,7 @@ const BarangayStorage = () => {
   ];
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [activeAttachmentMenu, setActiveAttachmentMenu] = useState(null);
   const [showFolderViewModal, setShowFolderViewModal] = useState(false);
   const [folderViewData, setFolderViewData] = useState(null);
   const [folderModalSelectedDoc, setFolderModalSelectedDoc] = useState(null);
@@ -329,6 +330,13 @@ const BarangayStorage = () => {
       url,
       name: names[idx] || `Attachment ${idx + 1}`,
     }));
+  };
+
+  const resolveAttachmentUrl = (url) => {
+    if (!url) return "";
+    if (/^(https?:)?\/\//i.test(url)) return url;
+    if (url.startsWith("/")) return `http://localhost:5000${url}`;
+    return `http://localhost:5000/${url}`;
   };
 
   const folderModalAttachments = getAttachmentsFromDoc(folderModalSelectedDoc);
@@ -3189,25 +3197,47 @@ const BarangayStorage = () => {
                                         Click to view or download
                                       </p>
                                     </div>
-                                    <div className="flex gap-2 flex-shrink-0">
+                                    <div className="relative">
                                       <button
-                                        onClick={() => {
-                                          setPreviewUrl(
-                                            `http://localhost:5000${att.url}`,
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveAttachmentMenu(
+                                            activeAttachmentMenu === idx
+                                              ? null
+                                              : idx,
                                           );
-                                          setShowPreviewModal(true);
                                         }}
-                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition-colors"
                                       >
-                                        View
+                                        Actions
                                       </button>
-                                      <a
-                                        href={`http://localhost:5000${att.url}`}
-                                        download={att.name}
-                                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
-                                      >
-                                        Download
-                                      </a>
+                                      {activeAttachmentMenu === idx && (
+                                        <div className="absolute right-0 z-20 mt-2 w-40 rounded-xl border border-slate-200 bg-white shadow-lg">
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setPreviewUrl(
+                                                resolveAttachmentUrl(att.url),
+                                              );
+                                              setShowPreviewModal(true);
+                                              setActiveAttachmentMenu(null);
+                                            }}
+                                            className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 text-sm"
+                                          >
+                                            View
+                                          </button>
+                                          <a
+                                            href={resolveAttachmentUrl(att.url)}
+                                            download={att.name}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="block px-4 py-2 hover:bg-slate-100 text-slate-700 text-sm"
+                                          >
+                                            Download
+                                          </a>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 ))}

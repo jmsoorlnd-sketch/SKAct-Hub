@@ -29,11 +29,19 @@ const DocumentItem = ({
   const [showMenu, setShowMenu] = useState(false);
   const [showFolderSubmenu, setShowFolderSubmenu] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [openAttachmentMenu, setOpenAttachmentMenu] = useState(null);
   const [calendarFormData, setCalendarFormData] = useState({
     startDate: "",
     endDate: "",
   });
   const [addingToCalendar, setAddingToCalendar] = useState(false);
+
+  const resolveAttachmentUrl = (url) => {
+    if (!url) return "";
+    if (/^(https?:)?\/\//i.test(url)) return url;
+    if (url.startsWith("/")) return `http://localhost:5000${url}`;
+    return `http://localhost:5000/${url}`;
+  };
 
   const handleAddToCalendar = async (e) => {
     e.preventDefault();
@@ -166,28 +174,47 @@ const DocumentItem = ({
             )}
           {documentAttachments.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {documentAttachments.map((att, idx) => (
-                <div key={idx} className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setPreviewUrl(`http://localhost:5000${att.url}`);
-                      setShowPreviewModal(true);
-                    }}
-                    className="px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-200 transition-all"
-                  >
-                    View
-                  </button>
-                  <a
-                    href={`http://localhost:5000${att.url}`}
-                    download={att.name}
-                    className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-all"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Download
-                  </a>
-                </div>
-              ))}
+              {documentAttachments.map((att, idx) => {
+                const attachmentUrl = resolveAttachmentUrl(att.url);
+                return (
+                  <div key={idx} className="relative">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenAttachmentMenu(
+                          openAttachmentMenu === idx ? null : idx,
+                        )
+                      }
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold border border-slate-800 transition-all"
+                    >
+                      Actions
+                    </button>
+                    {openAttachmentMenu === idx && (
+                      <div className="absolute right-0 top-full mt-2 w-40 rounded-xl border border-slate-200 bg-white shadow-lg z-20">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewUrl(attachmentUrl);
+                            setShowPreviewModal(true);
+                            setOpenAttachmentMenu(null);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-slate-100 text-slate-700 text-sm"
+                        >
+                          View
+                        </button>
+                        <a
+                          href={attachmentUrl}
+                          download={att.name}
+                          onClick={() => setOpenAttachmentMenu(null)}
+                          className="block px-4 py-2 hover:bg-slate-100 text-slate-700 text-sm"
+                        >
+                          Download
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="relative">
