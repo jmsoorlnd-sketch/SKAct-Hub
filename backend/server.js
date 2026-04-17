@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import http from "http";
+import { fileURLToPath } from "url";
 import { Server } from "socket.io";
 
 //dotenv config
@@ -107,8 +108,14 @@ app.get("/", (req, res) => {
 import connectDB from "./configDB.js";
 connectDB();
 
-// serve uploaded files
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// serve uploaded files from backend/uploads, and also from the workspace documents folder
+const backendUploadsDir = path.join(__dirname, "uploads");
+const workspaceDocumentsDir = path.resolve(__dirname, "..", "documents");
+app.use("/uploads", express.static(backendUploadsDir));
+app.use("/uploads", express.static(workspaceDocumentsDir));
 
 //port setup
 const PORT = process.env.PORT || 5000;
