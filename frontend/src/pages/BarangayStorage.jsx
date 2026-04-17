@@ -1003,51 +1003,6 @@ const BarangayStorage = () => {
     );
   };
 
-  const handleDeleteMessage = async (messageId) => {
-    if (!messageId) return;
-    if (!window.confirm("Delete this document?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/messages/${messageId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      toast.success("Document deleted successfully!");
-
-      // Remove the deleted document from folderViewData immediately (instant UI update)
-      if (folderViewData) {
-        setFolderViewData({
-          ...folderViewData,
-          documents: folderViewData.documents.filter((item) => {
-            const itemId = item.document?._id || item._id;
-            return itemId !== messageId;
-          }),
-        });
-      }
-
-      // Close the selected doc detail modal if it was the deleted one
-      if (
-        folderModalSelectedDoc &&
-        (folderModalSelectedDoc._id === messageId ||
-          folderModalSelectedDoc.document?._id === messageId)
-      ) {
-        setFolderModalSelectedDoc(null);
-      }
-
-      // Also update storage documents list for the main view
-      setStorage((prevStorage) =>
-        prevStorage.filter((item) => {
-          const itemId = item.document?._id || item._id;
-          return itemId !== messageId;
-        }),
-      );
-    } catch (error) {
-      console.error("Error deleting document:", error);
-      toast.error("Failed to delete document.");
-    }
-  };
-
   const handleUploadToFolderCompose = async (folderId) => {
     if (!selectedBarangay || !folderId) {
       toast.warning("Please select a folder");
@@ -2812,18 +2767,16 @@ const BarangayStorage = () => {
                                 Date
                               </th>
                               <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                Actions
+                                Position
                               </th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-slate-200">
                             {filteredFolderDocuments.map((item) => {
-                              const messageId = item.document?._id || item._id;
-                              const canDeleteMessage =
-                                user?.role === "Official" &&
-                                (user.position === "Secretary" ||
-                                  user.position === "Treasurer" ||
-                                  user.position === "Chairman");
+                              const rowPosition =
+                                item.document?.sender?.position ||
+                                item.uploadedBy?.position ||
+                                "No Position";
 
                               return (
                                 <tr
@@ -2841,47 +2794,44 @@ const BarangayStorage = () => {
                                       </div>
                                       <div className="min-w-0">
                                         <p className="text-sm font-semibold text-slate-900 truncate">
-                                          {item.documentName || item.document?.subject || "Document"}
+                                          {item.documentName ||
+                                            item.document?.subject ||
+                                            "Document"}
                                         </p>
                                         <p className="text-[11px] text-slate-500 truncate">
-                                          {item.document?.sender?.username || item.uploadedBy?.username}
+                                          {item.document?.sender?.username ||
+                                            item.uploadedBy?.username}
                                         </p>
                                       </div>
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 align-top text-sm text-slate-700">
-                                    {item.document?.sender?.username || item.uploadedBy?.username}
+                                    {item.document?.sender?.username ||
+                                      item.uploadedBy?.username}
                                   </td>
                                   <td className="px-4 py-4 align-top">
-                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                                      item.document?.status === "completed" ||
-                                      item.document?.status === "approved"
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : item.document?.status === "ongoing"
-                                          ? "bg-amber-100 text-amber-700"
-                                          : "bg-slate-100 text-slate-700"
-                                    }`}>
+                                    <span
+                                      className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                                        item.document?.status === "completed" ||
+                                        item.document?.status === "approved"
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : item.document?.status === "ongoing"
+                                            ? "bg-amber-100 text-amber-700"
+                                            : "bg-slate-100 text-slate-700"
+                                      }`}
+                                    >
                                       {item.document?.status === "approved"
                                         ? "completed"
                                         : item.document?.status || item.status}
                                     </span>
                                   </td>
                                   <td className="px-4 py-4 align-top text-sm text-slate-500">
-                                    {new Date(item.createdAt).toLocaleDateString()}
+                                    {new Date(
+                                      item.createdAt,
+                                    ).toLocaleDateString()}
                                   </td>
-                                  <td className="px-4 py-4 align-top text-right text-xs text-slate-500">
-                                    {canDeleteMessage && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteMessage(messageId);
-                                        }}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
-                                        title="Delete document"
-                                      >
-                                        <Trash2 size={14} />
-                                      </button>
-                                    )}
+                                  <td className="px-4 py-4 align-top text-right text-sm text-slate-700">
+                                    {rowPosition}
                                   </td>
                                 </tr>
                               );

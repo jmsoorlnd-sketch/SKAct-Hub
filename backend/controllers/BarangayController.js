@@ -389,11 +389,14 @@ export const getBarangayStorage = async (req, res) => {
       barangay: barangayId,
       isDeleted: false,
     })
-      .populate("uploadedBy", "username firstname lastname")
+      .populate("uploadedBy", "username firstname lastname position")
       .populate("folder", "name")
       .populate({
         path: "document",
-        populate: { path: "sender", select: "username firstname lastname" },
+        populate: {
+          path: "sender",
+          select: "username firstname lastname position",
+        },
       })
       .sort({ createdAt: -1 });
 
@@ -503,11 +506,14 @@ export const getMyBarangayStorage = async (req, res) => {
     };
 
     const storage = await BarangayStorage.find(storageQuery)
-      .populate("uploadedBy", "username firstname lastname")
+      .populate("uploadedBy", "username firstname lastname position")
       .populate("folder", "name")
       .populate({
         path: "document",
-        populate: { path: "sender", select: "username firstname lastname" },
+        populate: {
+          path: "sender",
+          select: "username firstname lastname position",
+        },
       })
       .sort({ createdAt: -1 });
 
