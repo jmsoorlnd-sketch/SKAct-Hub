@@ -280,7 +280,7 @@ const AdminReports = () => {
                   <tr
                     key={report._id}
                     onClick={() => openReportModal(report)}
-                    className={`cursor-pointer border-b border-slate-200 hover:bg-slate-50 transition-colors ${
+                    className={`cursor-pointer border-b border-slate-200 hover:bg-blue-50 transition-all duration-200 hover:scale-[1.01] hover:shadow-md hover:z-10 relative ${
                       index % 2 === 0 ? "bg-white" : "bg-slate-50"
                     }`}
                   >
