@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Settings,
@@ -18,15 +18,17 @@ import {
 const AdminSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [backupStatus, setBackupStatus] = useState("");
+  const [restoreStatus, setRestoreStatus] = useState("");
+  const restoreFileRef = useRef(null);
 
-  /* System information */
-  const systemInfo = {
+  const [systemInfo, setSystemInfo] = useState({
     version: "1.0.0",
     releaseDate: "April 2026",
     environment: "Production",
-  };
+  });
 
-  const systemFeatures = [
+  const [systemFeatures, setSystemFeatures] = useState([
     {
       id: 1,
       name: "Document Storage",
@@ -106,7 +108,59 @@ const AdminSettings = () => {
       icon: Shield,
       status: "Active",
     },
-  ];
+  ]);
+
+  const handleCreateBackup = () => {
+    const backupData = {
+      systemInfo,
+      systemFeatures,
+      createdAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `skacthub-backup-${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setBackupStatus(
+      "Backup created successfully. Save the file to restore later.",
+    );
+    setRestoreStatus("");
+  };
+
+  const handleRestoreFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      try {
+        const content = JSON.parse(loadEvent.target.result);
+        if (content.systemInfo && content.systemFeatures) {
+          setSystemInfo(content.systemInfo);
+          setSystemFeatures(content.systemFeatures);
+          setRestoreStatus("System restored successfully from backup.");
+          setBackupStatus("");
+        } else {
+          throw new Error("Invalid backup file");
+        }
+      } catch (restoreError) {
+        console.error(restoreError);
+        setRestoreStatus(
+          "Unable to restore backup. Please upload a valid backup file.",
+        );
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = null;
+  };
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -130,7 +184,7 @@ const AdminSettings = () => {
       {/* Header */}
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg p-3">
+          <div className="bg-linear-to-br from-blue-600 to-indigo-600 rounded-lg p-3">
             <Settings className="text-white" size={28} />
           </div>
           <div>
@@ -224,6 +278,47 @@ const AdminSettings = () => {
               );
             })}
           </div>
+        </div>
+
+        {/* Backup & Recovery Actions */}
+        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 mt-6 border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <Database className="text-blue-600" size={24} />
+            Backup & Recovery
+          </h2>
+          <p className="text-sm text-slate-600 mb-4">
+            Export a system backup file or restore the admin settings and
+            feature configuration from a previously saved backup.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={handleCreateBackup}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-all duration-200"
+            >
+              <Download size={16} />
+              Download Backup
+            </button>
+            <button
+              type="button"
+              onClick={() => restoreFileRef.current?.click()}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
+            >
+              Restore from Backup
+            </button>
+          </div>
+          <input
+            ref={restoreFileRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={handleRestoreFile}
+          />
+          {(backupStatus || restoreStatus) && (
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              {backupStatus || restoreStatus}
+            </div>
+          )}
         </div>
 
         {/* Additional Info */}
