@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useToast } from "../../components/Toast";
-import { Search, Filter, Download, X } from "lucide-react";
+import { Search, Filter, Download, X, FileDown } from "lucide-react";
 
 const AdminReports = () => {
   const { error } = useToast();
@@ -96,6 +96,66 @@ const AdminReports = () => {
     } catch {
       error("Failed to update validation status");
     }
+  };
+
+  const exportReportToCSV = (report) => {
+    // Helper function to format values for CSV
+    const escapeCSV = (value) => {
+      if (value === null || value === undefined) return "";
+      const stringValue = String(value);
+      if (
+        stringValue.includes(",") ||
+        stringValue.includes('"') ||
+        stringValue.includes("\n")
+      ) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
+    // Prepare report data for CSV
+    const csvData = [
+      ["Report Export"],
+      [],
+      ["Field", "Value"],
+      ["Reference ID", report.idNumber],
+      ["PYDP", report.pydp],
+      ["Program Name", report.programName || "-"],
+      ["Objectives", report.objectives],
+      ["Start Date", new Date(report.startDate).toLocaleDateString("en-US")],
+      ["Budget Allocated", `₱${report.budgetAllocated.toLocaleString()}`],
+      ["Budget Spent", `₱${report.budgetSpent.toLocaleString()}`],
+      ["Status", report.status],
+      ["Barangay", report.barangay?.barangayName || "Unknown"],
+      [
+        "Submitted By",
+        `${report.submittedBy?.firstname || ""} ${report.submittedBy?.lastname || ""}`,
+      ],
+      ["Submitted At", new Date(report.submittedAt).toLocaleString("en-US")],
+      ["Validation Status", report.validationStatus || "pending"],
+      ["Description", report.description || ""],
+    ];
+
+    // Convert array to CSV string
+    const csvString = csvData
+      .map((row) => row.map((cell) => escapeCSV(cell)).join(","))
+      .join("\n");
+
+    // Create blob and download
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `Report_${report.idNumber}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
+    link.style.visibility = "hidden";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const uniqueBarangays = [
@@ -268,6 +328,17 @@ const AdminReports = () => {
                     </td>
                     <td className="px-3 py-2 text-xs text-slate-700">
                       <div className="flex items-center gap-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            exportReportToCSV(report);
+                          }}
+                          className="rounded-full px-2 py-1 text-xs font-semibold transition-colors bg-blue-100 text-blue-900 hover:bg-blue-200"
+                          title="Export this report as CSV"
+                        >
+                          <FileDown size={14} className="inline" />
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -445,7 +516,14 @@ const AdminReports = () => {
                 </p>
               </div>
             </div>
-            <div className="border-t border-slate-200 px-6 py-4 text-right">
+            <div className="border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+              <button
+                onClick={() => exportReportToCSV(selectedReport)}
+                className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                <FileDown size={16} />
+                Export as CSV
+              </button>
               <button
                 onClick={closeReportModal}
                 className="inline-flex rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
