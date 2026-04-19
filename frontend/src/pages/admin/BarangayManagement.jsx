@@ -498,7 +498,7 @@ const BarangayManagement = () => {
             {barangays.map((b) => (
               <div
                 key={b._id}
-                className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg overflow-hidden hover:shadow-lg hover:from-blue-100 hover:to-blue-150 transition-all duration-300 transform hover:scale-105"
+                className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg overflow-hidden hover:shadow-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-200 transform hover:scale-[1.02] hover:z-10 cursor-pointer"
               >
                 {/* Folder Tab */}
                 <div className="absolute top-0 left-0 w-32 h-8 bg-gradient-to-r from-blue-400 to-blue-500 rounded-br-lg"></div>
