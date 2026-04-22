@@ -215,39 +215,60 @@ const Signin = () => {
     <>
       <div className="min-h-screen w-full bg-blue-200 flex items-center justify-center p-4">
         <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+          {/* MOBILE HEADER - Logo and Title */}
+          <div className="md:hidden w-full bg-gradient-to-br from-blue-600 to-indigo-700 p-3 flex flex-col justify-center text-white relative overflow-hidden">
+            <div className="relative z-10">
+              {/* Logo */}
+              <div className="mb-2">
+                <img
+                  src={SKLOGO}
+                  alt="Logo"
+                  className="h-6 w-6 object-contain"
+                />
+              </div>
+
+              {/* Title */}
+              <h1 className="text-lg font-bold mb-0 leading-tight">
+                Welcome to
+                <br />
+                SKActHub
+              </h1>
+            </div>
+          </div>
+
           {/* LEFT SIDE - Hero Section */}
-          <div className="w-full md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 lg:p-12 flex flex-col justify-center text-white relative overflow-hidden">
+          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-6 md:p-8 lg:p-12 flex-col justify-center text-white relative overflow-hidden">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-24 -mt-24"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-white opacity-5 rounded-full -ml-20 -mb-20"></div>
 
             <div className="relative z-10">
               {/* Logo */}
-              <div className="mb-6">
+              <div className="mb-4 md:mb-6">
                 <img
                   src={SKLOGO}
                   alt="Logo"
-                  className="h-10 w-10 object-contain"
+                  className="h-8 md:h-10 w-8 md:w-10 object-contain"
                 />
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl lg:text-4xl font-bold mb-3 leading-tight">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 leading-tight">
                 Welcome to
                 <br />
                 SKActHub
               </h1>
 
               {/* Description */}
-              <p className="text-base text-blue-100 mb-6 leading-relaxed">
+              <p className="text-sm md:text-base text-blue-100 mb-6 leading-relaxed">
                 Your centralized platform for Sangguniang Kabataan project
                 management and document tracking. Streamline your workflow and
                 enhance collaboration.
               </p>
 
               {/* Features */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-blue-100 text-sm">
+              <div className="space-y-1.5 md:space-y-2">
+                <div className="flex items-center gap-2 text-blue-100 text-xs md:text-sm">
                   <svg
                     className="w-4 h-4"
                     fill="currentColor"
@@ -294,14 +315,14 @@ const Signin = () => {
           </div>
 
           {/* RIGHT SIDE - Form Section */}
-          <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center bg-blue-50">
+          <div className="w-full md:w-1/2 p-4 md:p-8 lg:p-12 flex flex-col justify-center bg-blue-50 overflow-y-auto max-h-screen md:max-h-none">
             <div className="w-full max-w-md mx-auto">
               {/* Header */}
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-slate-900 mb-1">
+              <div className="mb-4 md:mb-6">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
                   Sign In
                 </h2>
-                <p className="text-sm text-slate-600">
+                <p className="text-xs md:text-sm text-slate-600">
                   Enter your username or email to access your account
                 </p>
                 {failedAttempts > 0 && (
@@ -311,7 +332,7 @@ const Signin = () => {
 
               {/* Error Message */}
               {error && (
-                <div className="mb-5 p-3 bg-red-50 border-2 border-red-200 rounded-lg flex items-start gap-2">
+                <div className="mb-3 md:mb-5 p-2 md:p-3 bg-red-50 border-2 border-red-200 rounded-lg flex items-start gap-2">
                   <svg
                     className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0"
                     fill="currentColor"
@@ -340,10 +361,10 @@ const Signin = () => {
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-3 md:space-y-5">
                 {/* Username/Email Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-900 mb-1">
                     Username or Email
                   </label>
                   <div className="relative">
@@ -372,18 +393,18 @@ const Signin = () => {
                       autoComplete="username"
                       required
                       disabled={isLoading}
-                      className="w-full pl-10 pr-3 py-2.5 text-sm border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      className="w-full pl-10 pr-3 py-2 md:py-2.5 text-xs md:text-sm border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
                       placeholder="Enter your username or email"
                     />
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-slate-400 mt-0.5 md:mt-1">
                     Use your username or registered email address
                   </p>
                 </div>
 
                 {/* Password Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-900 mb-1">
                     Password
                   </label>
                   <div className="relative">
@@ -412,7 +433,7 @@ const Signin = () => {
                       autoComplete="current-password"
                       required
                       disabled={isLoading}
-                      className="w-full pl-10 pr-3 py-2.5 text-sm border-2  border-gray-500  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-white disabled:cursor-not-allowed"
+                      className="w-full pl-10 pr-3 py-2 md:py-2.5 text-xs md:text-sm border-2  border-gray-500  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-white disabled:cursor-not-allowed"
                       placeholder="Enter your password"
                     />
                   </div>
@@ -435,7 +456,7 @@ const Signin = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
+                  className="w-full py-2 md:py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
@@ -482,7 +503,7 @@ const Signin = () => {
               </form>
 
               {/* Footer */}
-              <div className="mt-6 text-center">
+              <div className="mt-4 md:mt-6 text-center">
                 <p className="text-xs text-slate-600">
                   Don't have an account?{" "}
                   <a
