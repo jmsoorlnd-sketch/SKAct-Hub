@@ -9,9 +9,6 @@ import React, {
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Image as ImageIcon, X } from "lucide-react";
-const TopBarangays = lazy(
-  () => import("../../components/adminMonitoringComponents/TopBarangays"),
-);
 const RecentActivities = lazy(
   () => import("../../components/adminMonitoringComponents/RecentActivities"),
 );
@@ -19,99 +16,16 @@ const StatsCards = lazy(
   () => import("../../components/adminMonitoringComponents/StatsCards"),
 );
 
-const ProjectOverview = lazy(
-  () => import("../../components/adminMonitoringComponents/ProjectOverview"),
-);
-
-const DonutChart = lazy(
-  () => import("../../components/adminMonitoringComponents/DonutChart"),
-);
-
 const AdminMonitoring = () => {
   const [barangays, setBarangays] = useState([]);
-  const [ongoingMap, setOngoingMap] = useState({});
-  const [completedMap, setCompletedMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedUpdates, setSelectedUpdates] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [loadingUpdates, setLoadingUpdates] = useState(false);
   const [timeRange, setTimeRange] = useState("Last 30 Days");
   const [allStorage, setAllStorage] = useState([]);
-  const [carouselIndex, setCarouselIndex] = useState({});
-  const [animatingBarangay, setAnimatingBarangay] = useState(null);
 
   const location = useLocation();
-
-  useEffect(() => {
-    (async () => {
-      await fetchBarangays();
-    })();
-  }, []);
-
-  // If navigated with a message/document id (from notifications), open updates
-  useEffect(() => {
-    const messageId = location?.state?.messageId || location?.state?.documentId;
-    if (messageId) {
-      setSelectedMessage({ messageId });
-      fetchActivityUpdates(messageId);
-    }
-  }, [location]);
-
-  const fetchBarangays = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "http://localhost:5000/api/barangays/all-barangays",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      const bars = res.data.barangays || [];
-      setBarangays(bars);
-
-      const ongoingMapTemp = {};
-      const completedMapTemp = {};
-      const allStorageTemp = [];
-
-      await Promise.all(
-        bars.map(async (b) => {
-          try {
-            const r = await axios.get(
-              `http://localhost:5000/api/barangays/${b._id}/storage`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            );
-            const storage = r.data.storage || [];
-            allStorageTemp.push(...storage.map((s) => ({ ...s, barangay: b })));
-
-            const ongoing = storage.filter((item) => {
-              const status = item.document?.status || item.status;
-              return status === "ongoing";
-            });
-
-            const completed = storage.filter((item) => {
-              const status = item.document?.status || item.status;
-              return status === "completed";
-            });
-
-            if (ongoing.length > 0) ongoingMapTemp[b._id] = ongoing;
-            if (completed.length > 0) completedMapTemp[b._id] = completed;
-          } catch (err) {
-            console.warn("Failed to fetch storage for ", b._id, err?.message);
-          }
-        }),
-      );
-
-      setOngoingMap(ongoingMapTemp);
-      setCompletedMap(completedMapTemp);
-      setAllStorage(allStorageTemp);
-    } catch (error) {
-      console.error("Error fetching barangays for monitoring:", error);
-      setBarangays([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchActivityUpdates = useCallback(async (messageId) => {
     if (!messageId) return;
@@ -131,17 +45,60 @@ const AdminMonitoring = () => {
       setLoadingUpdates(false);
     }
   }, []);
-  const storageByBarangay = useMemo(() => {
-    const map = {};
 
-    allStorage.forEach((s) => {
-      const id = s.barangay?._id;
-      if (!map[id]) map[id] = [];
-      map[id].push(s);
-    });
+  useEffect(() => {
+    (async () => {
+      await fetchBarangays();
+    })();
+  }, []);
 
-    return map;
-  }, [allStorage]);
+  // If navigated with a message/document id (from notifications), open updates
+  useEffect(() => {
+    const messageId = location?.state?.messageId || location?.state?.documentId;
+    if (messageId) {
+      setSelectedMessage({ messageId });
+      fetchActivityUpdates(messageId);
+    }
+  }, [location, fetchActivityUpdates]);
+
+  const fetchBarangays = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        "http://localhost:5000/api/barangays/all-barangays",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const bars = res.data.barangays || [];
+      setBarangays(bars);
+
+      const allStorageTemp = [];
+
+      await Promise.all(
+        bars.map(async (b) => {
+          try {
+            const r = await axios.get(
+              `http://localhost:5000/api/barangays/${b._id}/storage`,
+              { headers: { Authorization: `Bearer ${token}` } },
+            );
+            const storage = r.data.storage || [];
+            allStorageTemp.push(...storage.map((s) => ({ ...s, barangay: b })));
+          } catch (err) {
+            console.warn("Failed to fetch storage for ", b._id, err?.message);
+          }
+        }),
+      );
+
+      setAllStorage(allStorageTemp);
+    } catch (error) {
+      console.error("Error fetching barangays for monitoring:", error);
+      setBarangays([]);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Calculate statistics
   const stats = useMemo(() => {
     let completed = 0;
@@ -169,26 +126,6 @@ const AdminMonitoring = () => {
       pendingRate: total ? ((approved / total) * 100).toFixed(1) : 0,
     };
   }, [allStorage]);
-  // Get top performing barangays (based on completion rate)
-
-  const topBarangays = useMemo(() => {
-    return barangays
-      .map((b) => {
-        const barangayStorage = storageByBarangay[b._id] || [];
-
-        const completed = barangayStorage.filter(
-          (s) => (s.document?.status || s.status) === "completed",
-        ).length;
-
-        const total = barangayStorage.length;
-
-        const rate = total > 0 ? (completed / total) * 100 : 0;
-
-        return { barangay: b, completionRate: rate, total, completed };
-      })
-      .sort((a, b) => b.completionRate - a.completionRate)
-      .slice(0, 4);
-  }, [barangays, storageByBarangay]);
   // Recent activities - get latest 3 storage items
   const recentActivities = useMemo(() => {
     return [...allStorage]
@@ -240,39 +177,11 @@ const AdminMonitoring = () => {
               <StatsCards stats={stats} barangays={barangays} />
             </Suspense>
 
-            {/* Main Content Grid */}
+            {/* Main Content */}
             <Suspense fallback={<div>Loading...</div>}>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                {/* Performance Overview - Project Status */}
-
-                <ProjectOverview
-                  barangays={barangays}
-                  ongoingMap={ongoingMap}
-                  completedMap={completedMap}
-                  storageByBarangay={storageByBarangay}
-                  carouselIndex={carouselIndex}
-                  setCarouselIndex={setCarouselIndex}
-                  animatingBarangay={animatingBarangay}
-                  setAnimatingBarangay={setAnimatingBarangay}
-                  setSelectedMessage={setSelectedMessage}
-                  fetchActivityUpdates={fetchActivityUpdates}
-                />
-                {/* Project Status Breakdown (Donut Chart) */}
-                <DonutChart stats={stats} />
-              </div>
-            </Suspense>
-            {/* Bottom Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Recent Activities Timeline */}
-              <Suspense fallback={<div>Loading...</div>}>
-                <RecentActivities recentActivities={recentActivities} />
-              </Suspense>
-
-              <Suspense fallback={<div>Loading...</div>}>
-                {/* Top Performing Barangays */}
-                <TopBarangays topBarangays={topBarangays} />
-              </Suspense>
-            </div>
+              <RecentActivities recentActivities={recentActivities} />
+            </Suspense>
             {/* Activity Updates Modal */}
             {selectedMessage && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
