@@ -88,6 +88,9 @@ const AdminCalendar = () => {
   const [showCreateEventForm, setShowCreateEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventDetailModal, setShowEventDetailModal] = useState(false);
+  const [showCompletedEventsModal, setShowCompletedEventsModal] =
+    useState(false);
+  const [showUpcomingEventsModal, setShowUpcomingEventsModal] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [createEventMessage, setCreateEventMessage] = useState("");
   const [availableParticipants, setAvailableParticipants] = useState([]);
@@ -598,7 +601,7 @@ const AdminCalendar = () => {
             </div>
           ) : (
             <>
-              {/* Two-Column Layout: Calendar + Today's Events */}
+              {/* Two-Column Layout: Calendar + Today's Events + Completed/Upcoming Events */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Calendar - 2 columns */}
                 <div className="lg:col-span-2">
@@ -618,8 +621,8 @@ const AdminCalendar = () => {
                   </Suspense>
                 </div>
 
-                {/* Today's Events + Stats - 1 column */}
-                <div className="lg:col-span-1 space-y-3">
+                {/* Today's Events + Completed + Upcoming Events - 1 column */}
+                <div className="lg:col-span-1 space-y-3 flex flex-col">
                   <div className="grid grid-cols-2 gap-2">
                     <StatCard
                       compact
@@ -661,9 +664,9 @@ const AdminCalendar = () => {
                     />
                   </div>
 
-                  <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden sticky top-6 max-h-[600px] flex flex-col">
-                    <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-slate-200">
-                      <h3 className="text-lg font-bold text-slate-900">
+                  <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden max-h-[400px] flex flex-col">
+                    <div className="bg-linear-to-r from-blue-50 to-indigo-50 px-3 py-2 border-b-2 border-slate-200">
+                      <h3 className="text-sm font-bold text-slate-900">
                         Today's Events
                       </h3>
                       <p className="text-xs text-slate-600 mt-0.5">
@@ -674,7 +677,7 @@ const AdminCalendar = () => {
                         })}
                       </p>
                     </div>
-                    <div className="p-4 overflow-y-auto flex-1">
+                    <div className="p-3 overflow-y-auto flex-1">
                       {(() => {
                         const today = new Date();
                         const todayEvents = events.filter((e) => {
@@ -688,9 +691,9 @@ const AdminCalendar = () => {
 
                         if (todayEvents.length === 0) {
                           return (
-                            <div className="text-center py-8">
-                              <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                              <p className="text-sm text-slate-500 font-medium">
+                            <div className="text-center py-6">
+                              <CalendarIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                              <p className="text-xs text-slate-500 font-medium">
                                 No events today
                               </p>
                             </div>
@@ -698,7 +701,7 @@ const AdminCalendar = () => {
                         }
 
                         return (
-                          <div className="space-y-2.5">
+                          <div className="space-y-2">
                             {todayEvents.map((evt) => {
                               const barangayName =
                                 barangayMap[evt.attachedToBarangay];
@@ -710,14 +713,14 @@ const AdminCalendar = () => {
                               return (
                                 <div
                                   key={evt._id}
-                                  className="p-3 bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg hover:shadow-md transition-all"
+                                  className="p-2 bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg hover:shadow-md transition-all text-xs"
                                 >
-                                  <div className="flex items-start justify-between gap-2 mb-1">
-                                    <h4 className="font-bold text-sm text-slate-900 mb-1 truncate">
+                                  <div className="flex items-start justify-between gap-1 mb-0.5">
+                                    <h4 className="font-bold text-slate-900 mb-0.5 truncate line-clamp-1">
                                       {evt.subject}
                                     </h4>
                                     <span
-                                      className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getStatusClasses(
+                                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${getStatusClasses(
                                         evt.status,
                                       )}`}
                                     >
@@ -726,13 +729,13 @@ const AdminCalendar = () => {
                                   </div>
 
                                   {evt.body && (
-                                    <p className="text-xs text-slate-600 mb-2 line-clamp-2">
+                                    <p className="text-xs text-slate-600 mb-1 line-clamp-1">
                                       {evt.body}
                                     </p>
                                   )}
 
-                                  <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold mb-1">
-                                    <Clock size={12} />
+                                  <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold mb-0.5">
+                                    <Clock size={10} />
                                     {new Date(evt.startDate).toLocaleTimeString(
                                       "default",
                                       {
@@ -742,19 +745,21 @@ const AdminCalendar = () => {
                                     )}
                                   </div>
                                   {barangayName && (
-                                    <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
-                                      <MapPin size={12} />
-                                      {barangayName}
+                                    <div className="flex items-center gap-1 text-xs text-slate-600 mb-0.5">
+                                      <MapPin size={10} />
+                                      <span className="truncate">
+                                        {barangayName}
+                                      </span>
                                     </div>
                                   )}
 
                                   {evt.participants &&
                                     evt.participants.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 text-xs text-slate-700 mb-1">
+                                      <div className="flex flex-wrap gap-1 text-xs text-slate-700 mb-0.5">
                                         <span className="font-semibold">
                                           Participants:
                                         </span>
-                                        <span className="italic">
+                                        <span className="italic line-clamp-1">
                                           {Array.isArray(evt.participants)
                                             ? evt.participants.join(", ")
                                             : String(evt.participants)}
@@ -763,9 +768,9 @@ const AdminCalendar = () => {
                                     )}
 
                                   {isOwner && (
-                                    <div className="mt-2">
-                                      <label className="text-xs font-semibold text-slate-700 mr-2">
-                                        Set status:
+                                    <div className="mt-1">
+                                      <label className="text-xs font-semibold text-slate-700 mr-1">
+                                        Status:
                                       </label>
                                       <select
                                         value={evt.status || "pending"}
@@ -775,7 +780,7 @@ const AdminCalendar = () => {
                                             e.target.value,
                                           )
                                         }
-                                        className="text-xs px-2 py-1 rounded border border-slate-300"
+                                        className="text-xs px-1.5 py-0.5 rounded border border-slate-300"
                                       >
                                         {STATUS_OPTIONS.map((status) => (
                                           <option key={status} value={status}>
@@ -787,9 +792,9 @@ const AdminCalendar = () => {
                                     </div>
                                   )}
 
-                                  <div className="text-xs text-slate-500 font-medium px-2 py-1 bg-slate-200 rounded mt-2">
-                                    Created by:{" "}
-                                    <span className="font-semibold text-slate-700">
+                                  <div className="text-xs text-slate-500 font-medium px-1.5 py-0.5 bg-slate-200 rounded mt-1">
+                                    By:{" "}
+                                    <span className="font-semibold text-slate-700 line-clamp-1">
                                       {creatorName}
                                     </span>
                                   </div>
@@ -801,95 +806,42 @@ const AdminCalendar = () => {
                       })()}
                     </div>
                   </div>
-                </div>
 
-                {/* Completed Events List */}
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4">
-                  <div className="mb-3">
-                    <h3 className="text-xl font-bold text-slate-900">
-                      Completed Events
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Past events that are complete.
-                    </p>
-                  </div>
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto">
-                    {completedEvents.length === 0 ? (
-                      <div className="text-center py-8 text-slate-500">
-                        No completed events yet.
-                      </div>
-                    ) : (
-                      completedEvents.map((evt) => (
-                        <button
-                          key={evt._id}
-                          onClick={() => {
-                            setSelectedEvent(evt);
-                            setShowEventDetailModal(true);
-                          }}
-                          className="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-start gap-2 hover:shadow-lg transition-all"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 truncate">
-                              {evt.subject}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {new Date(evt.startDate).toLocaleString()}
-                            </p>
-                          </div>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            Completed
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
+                  {/* Completed Events Count Card */}
+                  <button
+                    onClick={() => setShowCompletedEventsModal(true)}
+                    className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 hover:shadow-xl hover:border-emerald-300 transition-all cursor-pointer"
+                  >
+                    <div className="text-center">
+                      <h3 className="text-sm font-bold text-slate-900 mb-2">
+                        Completed Events
+                      </h3>
+                      <p className="text-3xl font-bold text-emerald-600 mb-1">
+                        {completedEvents.length}
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Click to view all
+                      </p>
+                    </div>
+                  </button>
 
-                {/* Upcoming Events List */}
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4">
-                  <div className="mb-3">
-                    <h3 className="text-xl font-bold text-slate-900">
-                      Upcoming Events
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Events scheduled for today or later.
-                    </p>
-                  </div>
-                  <div className="space-y-2 max-h-[220px] overflow-y-auto">
-                    {upcomingEvents.length === 0 ? (
-                      <div className="text-center py-8 text-slate-500">
-                        No upcoming events.
-                      </div>
-                    ) : (
-                      upcomingEvents.map((evt) => (
-                        <button
-                          key={evt._id}
-                          onClick={() => {
-                            setSelectedEvent(evt);
-                            setShowEventDetailModal(true);
-                          }}
-                          className="w-full text-left p-3 rounded-xl border border-slate-200 bg-white flex justify-between items-start gap-2 hover:shadow-lg transition-all"
-                        >
-                          <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 truncate">
-                              {evt.subject}
-                            </p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {new Date(evt.startDate).toLocaleString()}
-                            </p>
-                          </div>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-200">
-                            <span className="w-2 h-2 rounded-full bg-blue-500" />
-                            {String(evt.status || "Scheduled")
-                              .charAt(0)
-                              .toUpperCase() +
-                              String(evt.status || "Scheduled").slice(1)}
-                          </span>
-                        </button>
-                      ))
-                    )}
-                  </div>
+                  {/* Upcoming Events Count Card */}
+                  <button
+                    onClick={() => setShowUpcomingEventsModal(true)}
+                    className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer"
+                  >
+                    <div className="text-center">
+                      <h3 className="text-sm font-bold text-slate-900 mb-2">
+                        Upcoming Events
+                      </h3>
+                      <p className="text-3xl font-bold text-blue-600 mb-1">
+                        {upcomingEvents.length}
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Click to view all
+                      </p>
+                    </div>
+                  </button>
                 </div>
               </div>
             </>
@@ -995,6 +947,143 @@ const AdminCalendar = () => {
           onConfirm={handleConfirmAction}
           onClose={closeConfirmationModal}
         />
+      )}
+
+      {/* Completed Events Modal */}
+      {showCompletedEventsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-linear-to-r from-emerald-600 to-teal-600 p-4 flex justify-between items-center">
+              <h2 className="text-white text-xl font-bold">
+                Completed Events ({completedEvents.length})
+              </h2>
+              <button
+                onClick={() => setShowCompletedEventsModal(false)}
+                className="text-white p-2 hover:bg-white/20 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4">
+              {completedEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500 font-medium">
+                    No completed events yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {completedEvents.map((evt) => {
+                    const barangayName = barangayMap[evt.attachedToBarangay];
+                    return (
+                      <button
+                        key={evt._id}
+                        onClick={() => {
+                          setSelectedEvent(evt);
+                          setShowEventDetailModal(true);
+                          setShowCompletedEventsModal(false);
+                        }}
+                        className="w-full text-left p-3 rounded-lg border border-emerald-200 bg-emerald-50 hover:shadow-lg transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-slate-900 truncate">
+                              {evt.subject}
+                            </h4>
+                            <p className="text-sm text-slate-600 mt-0.5">
+                              {new Date(evt.startDate).toLocaleString()}
+                            </p>
+                            {barangayName && (
+                              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                <MapPin size={12} />
+                                {barangayName}
+                              </p>
+                            )}
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-emerald-700 bg-emerald-100 border border-emerald-200 whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Completed
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Events Modal */}
+      {showUpcomingEventsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-4 flex justify-between items-center">
+              <h2 className="text-white text-xl font-bold">
+                Upcoming Events ({upcomingEvents.length})
+              </h2>
+              <button
+                onClick={() => setShowUpcomingEventsModal(false)}
+                className="text-white p-2 hover:bg-white/20 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4">
+              {upcomingEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500 font-medium">
+                    No upcoming events.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingEvents.map((evt) => {
+                    const barangayName = barangayMap[evt.attachedToBarangay];
+                    return (
+                      <button
+                        key={evt._id}
+                        onClick={() => {
+                          setSelectedEvent(evt);
+                          setShowEventDetailModal(true);
+                          setShowUpcomingEventsModal(false);
+                        }}
+                        className="w-full text-left p-3 rounded-lg border border-blue-200 bg-blue-50 hover:shadow-lg transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-slate-900 truncate">
+                              {evt.subject}
+                            </h4>
+                            <p className="text-sm text-slate-600 mt-0.5">
+                              {new Date(evt.startDate).toLocaleString()}
+                            </p>
+                            {barangayName && (
+                              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                <MapPin size={12} />
+                                {barangayName}
+                              </p>
+                            )}
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-blue-700 bg-blue-100 border border-blue-200 whitespace-nowrap">
+                            <span className="w-2 h-2 rounded-full bg-blue-500" />
+                            {String(evt.status || "Scheduled")
+                              .charAt(0)
+                              .toUpperCase() +
+                              String(evt.status || "Scheduled").slice(1)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
