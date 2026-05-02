@@ -239,18 +239,20 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
 
   /* ==================== RENDER ==================== */
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50">
+      <div className="bg-white w-full max-w-lg rounded-xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[98vh] sm:max-h-[95vh] overflow-hidden">
         {/* ====== MODAL HEADER ====== */}
-        <div className="bg-blue-600 px-6 py-5 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-white">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <ShieldCheck size={22} />
+        <div className="bg-blue-600 px-3 sm:px-6 py-3 sm:py-5 shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 text-white min-w-0">
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
+                <ShieldCheck size={18} className="sm:w-[22px] sm:h-[22px]" />
               </div>
-              <div>
-                <h2 className="text-xl font-bold">Create SK Official</h2>
-                <p className="text-blue-100 text-sm">
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-bold truncate">
+                  Create SK Official
+                </h2>
+                <p className="text-blue-100 text-xs sm:text-sm hidden sm:block">
                   Add a new official to the system
                 </p>
               </div>
@@ -258,9 +260,9 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <button
               onClick={handleClose}
               disabled={isSubmitting}
-              className="p-2 hover:bg-white/20 rounded-xl transition-colors disabled:opacity-50"
+              className="p-1.5 sm:p-2 hover:bg-white/20 rounded-lg sm:rounded-xl transition-colors disabled:opacity-50 flex-shrink-0"
             >
-              <X size={22} className="text-white" />
+              <X size={18} className="text-white sm:w-[22px] sm:h-[22px]" />
             </button>
           </div>
         </div>
@@ -270,21 +272,25 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
           onSubmit={handleSubmit}
           className="flex flex-col flex-1 overflow-hidden"
         >
-          <div className="p-6 overflow-y-auto flex-1 space-y-5">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 overflow-y-auto flex-1 space-y-3 sm:space-y-5">
             {/* API Error Banner */}
             {apiError && (
-              <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-                <p className="text-red-700 text-sm font-semibold">{apiError}</p>
+              <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-4 bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl">
+                <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5 text-red-600 shrink-0 mt-0.5" />
+                <p className="text-red-700 text-xs sm:text-sm font-semibold">
+                  {apiError}
+                </p>
               </div>
             )}
 
             {/* ---- Full Name Row ---- */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <FormField
                 label="First Name"
                 required
-                icon={<User size={15} className="text-blue-600" />}
+                icon={
+                  <User size={13} className="text-blue-600 sm:w-4 sm:h-4" />
+                }
                 error={errors.firstname}
               >
                 <input
@@ -300,7 +306,9 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
               <FormField
                 label="Last Name"
                 required
-                icon={<User size={15} className="text-blue-600" />}
+                icon={
+                  <User size={13} className="text-blue-600 sm:w-4 sm:h-4" />
+                }
                 error={errors.lastname}
               >
                 <input
@@ -318,7 +326,9 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <FormField
               label="Position"
               required
-              icon={<Briefcase size={15} className="text-blue-600" />}
+              icon={
+                <Briefcase size={13} className="text-blue-600 sm:w-4 sm:h-4" />
+              }
               error={errors.position}
             >
               <select
@@ -335,14 +345,14 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             </FormField>
 
             {/* ---- Position Limit Notice ---- */}
-            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertCircle
-                size={18}
-                className="text-amber-600 flex-shrink-0 mt-0.5"
+                size={15}
+                className="text-amber-600 flex-shrink-0 mt-0.5 sm:w-[18px] sm:h-[18px]"
               />
-              <div className="text-sm text-amber-800">
+              <div className="text-xs sm:text-sm text-amber-800">
                 <p className="font-semibold">One position per barangay</p>
-                <p>
+                <p className="hidden sm:block">
                   Only one official per position is allowed. Creating a new
                   official with an existing position will deactivate the
                   previous one.
@@ -354,7 +364,9 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <FormField
               label="Barangay"
               required
-              icon={<MapPin size={15} className="text-emerald-600" />}
+              icon={
+                <MapPin size={13} className="text-emerald-600 sm:w-4 sm:h-4" />
+              }
               error={errors.barangay}
             >
               <select
@@ -365,9 +377,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                 className={inputClass(errors.barangay)}
               >
                 <option value="">
-                  {fetchingBarangays
-                    ? "Loading barangays..."
-                    : "— Select Barangay —"}
+                  {fetchingBarangays ? "Loading..." : "— Select Barangay —"}
                 </option>
                 {barangays.map((b) => (
                   <option key={b._id} value={b._id}>
@@ -381,7 +391,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <FormField
               label="Username"
               required
-              icon={<User size={15} className="text-blue-600" />}
+              icon={<User size={13} className="text-blue-600 sm:w-4 sm:h-4" />}
               error={errors.username}
             >
               <div className="relative">
@@ -392,7 +402,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="juandelacruz"
                   autoComplete="off"
-                  className={`${inputClass(errors.username)} pr-10`}
+                  className={`${inputClass(errors.username)} pr-8 sm:pr-10`}
                 />
                 <button
                   type="button"
@@ -402,7 +412,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                   }
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <RefreshIcon size={16} />
+                  <RefreshIcon size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
             </FormField>
@@ -410,7 +420,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             {/* ---- Email ---- */}
             <FormField
               label="Email Address"
-              icon={<Mail size={15} className="text-blue-600" />}
+              icon={<Mail size={13} className="text-blue-600 sm:w-4 sm:h-4" />}
               error={errors.email}
             >
               <input
@@ -428,7 +438,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <FormField
               label="Password"
               required
-              icon={<Lock size={15} className="text-blue-600" />}
+              icon={<Lock size={13} className="text-blue-600 sm:w-4 sm:h-4" />}
               error={errors.password}
             >
               <div className="relative">
@@ -439,14 +449,18 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="Min. 8 characters"
                   autoComplete="new-password"
-                  className={`${inputClass(errors.password)} pr-20`}
+                  className={`${inputClass(errors.password)} pr-16 sm:pr-20`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-7 sm:right-8 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? (
+                    <EyeOff size={14} className="sm:w-[18px] sm:h-[18px]" />
+                  ) : (
+                    <Eye size={14} className="sm:w-[18px] sm:h-[18px]" />
+                  )}
                 </button>
                 <button
                   type="button"
@@ -456,12 +470,12 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                   }
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  <RefreshIcon size={16} />
+                  <RefreshIcon size={14} className="sm:w-4 sm:h-4" />
                 </button>
               </div>
               {/* Password Strength Indicator */}
               {formData.password && passwordStrength && (
-                <div className="mt-2">
+                <div className="mt-1.5 sm:mt-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-slate-500">
                       Password strength
@@ -472,7 +486,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                       {passwordStrength.label}
                     </span>
                   </div>
-                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-1 sm:h-1.5 bg-slate-200 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
                       style={{
@@ -495,7 +509,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
             <FormField
               label="Confirm Password"
               required
-              icon={<Lock size={15} className="text-blue-600" />}
+              icon={<Lock size={13} className="text-blue-600 sm:w-4 sm:h-4" />}
               error={errors.confirmPassword}
             >
               <div className="relative">
@@ -506,17 +520,17 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="Re-enter your password"
                   autoComplete="new-password"
-                  className={`${inputClass(errors.confirmPassword)} pr-12`}
+                  className={`${inputClass(errors.confirmPassword)} pr-8 sm:pr-12`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff size={18} />
+                    <EyeOff size={14} className="sm:w-[18px] sm:h-[18px]" />
                   ) : (
-                    <Eye size={18} />
+                    <Eye size={14} className="sm:w-[18px] sm:h-[18px]" />
                   )}
                 </button>
               </div>
@@ -524,7 +538,7 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
               {formData.confirmPassword &&
                 !errors.confirmPassword &&
                 formData.password === formData.confirmPassword && (
-                  <p className="text-emerald-600 text-xs font-semibold mt-1.5 flex items-center gap-1">
+                  <p className="text-emerald-600 text-xs font-semibold mt-1 flex items-center gap-1">
                     <CheckCircle size={12} /> Passwords match
                   </p>
                 )}
@@ -532,21 +546,23 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
 
           {/* ====== MODAL FOOTER ====== */}
-          <div className="px-6 py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-3 shrink-0">
+          <div className="px-3 sm:px-6 py-2 sm:py-4 border-t-2 border-slate-200 bg-slate-50 flex gap-2 sm:gap-3 shrink-0">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-6 py-3 bg-blue-600  hover:bg-blue-700 hover:to-indigo-700 disabled:from-slate-400 disabled:to-slate-500 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              className="flex-1 px-3 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 disabled:from-slate-400 disabled:to-slate-500 text-white text-sm sm:text-base rounded-lg sm:rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2"
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                  <span>Creating...</span>
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent" />
+                  <span className="hidden sm:inline">Creating...</span>
+                  <span className="sm:hidden">...</span>
                 </>
               ) : (
                 <>
-                  <Save size={18} />
-                  <span>Create Official</span>
+                  <Save size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="hidden sm:inline">Create Official</span>
+                  <span className="sm:hidden">Create</span>
                 </>
               )}
             </button>
@@ -554,9 +570,10 @@ const CreateOfficialModal = ({ isOpen, onClose, onSubmit }) => {
               type="button"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="px-6 py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-xl font-bold transition-all disabled:opacity-50"
+              className="px-3 sm:px-6 py-2 sm:py-3 bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300 rounded-lg sm:rounded-xl font-bold text-sm sm:text-base transition-all disabled:opacity-50"
             >
-              Cancel
+              <span className="hidden sm:inline">Cancel</span>
+              <span className="sm:hidden">×</span>
             </button>
           </div>
         </form>
