@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Users,
   Award,
@@ -26,11 +26,38 @@ const SkPersonnelAdmin = () => {
   const [isDeactivatingAccount, setIsDeactivatingAccount] = useState(false);
 
   /* ===================== DATA FETCH ===================== */
-  useEffect(() => {
-    fetchBarangays();
-  }, []);
+  const fetchSKPersonnel = useCallback(
+    async (barangayId) => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(
+          `http://localhost:5000/api/sk-personnel/${barangayId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
 
-  const fetchBarangays = async () => {
+        const data = await res.json();
+        setSkPersonnel(
+          data.skPersonnel
+            ? {
+                ...data.skPersonnel,
+                accountPositions: data.accountPositions || null,
+              }
+            : null,
+        );
+      } catch {
+        toast.error("Failed to load SK personnel");
+        setSkPersonnel(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [toast],
+  );
+
+  const fetchBarangays = useCallback(async () => {
     setInitialLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -46,42 +73,18 @@ const SkPersonnelAdmin = () => {
 
       if (list.length) {
         setSelectedBarangay(list[0]._id);
-        fetchSKPersonnel(list[0]._id);
+        await fetchSKPersonnel(list[0]._id);
       }
     } catch {
       toast.error("Failed to fetch barangays");
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [fetchSKPersonnel, toast]);
 
-  const fetchSKPersonnel = async (barangayId) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:5000/api/sk-personnel/${barangayId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      const data = await res.json();
-      setSkPersonnel(
-        data.skPersonnel
-          ? {
-              ...data.skPersonnel,
-              accountPositions: data.accountPositions || null,
-            }
-          : null,
-      );
-    } catch {
-      toast.error("Failed to load SK personnel");
-      setSkPersonnel(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchBarangays();
+  }, [fetchBarangays]);
 
   const handleToggleAccountStatus = async (personnel = selectedPersonnel) => {
     if (!personnel?._id) {
@@ -253,9 +256,9 @@ const SkPersonnelAdmin = () => {
       return (
         <div
           onClick={() => onView && data?.firstName && onView({ ...data, role })}
-          className={`p-5 bg-gradient-to-r ${colors.bg} rounded-xl border-2 ${colors.border} hover:shadow-md transition-all ${
+          className={`p-5 bg-white/95 rounded-3xl border border-slate-200 shadow-sm transition-all duration-300 ${
             data?.firstName && data?.surname
-              ? "cursor-pointer hover:scale-105"
+              ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-xl"
               : ""
           }`}
         >
@@ -332,15 +335,15 @@ const SkPersonnelAdmin = () => {
     return (
       <div
         onClick={() => onView && data?.firstName && onView({ ...data, role })}
-        className={`flex items-center justify-between p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:shadow-md hover:border-blue-300 transition-all ${
+        className={`flex items-center justify-between gap-4 p-4 bg-white rounded-3xl border border-slate-200 shadow-sm transition-all duration-300 ${
           data?.firstName && data?.surname
-            ? "cursor-pointer hover:scale-105"
+            ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg"
             : ""
         }`}
       >
         {" "}
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-md">
+          <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center shadow-md">
             <span className="text-white font-bold text-sm">
               {isAssigned
                 ? `${data.firstName.charAt(0)}${data.surname.charAt(0)}`
@@ -390,16 +393,50 @@ const SkPersonnelAdmin = () => {
   /* ===================== RENDER ===================== */
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Page Header */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h1 className="text-2xl font-bold">SK Personnel Directory</h1>
-                <p className="text-slate-600 mt-1 text-sm">
-                  Official directory of Sangguniang Kabataan members
-                </p>
+          <div className="mb-8">
+            <div className="bg-white/90 backdrop-blur-md rounded-4xl border border-slate-200 shadow-xl p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div>
+                  <p className="text-sm font-semibold text-blue-600 uppercase tracking-[0.24em] mb-2">
+                    SK Personnel Directory
+                  </p>
+                  <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-900">
+                    SK Personnel Directory
+                  </h1>
+                  <p className="text-slate-600 mt-3 max-w-2xl text-sm md:text-base">
+                    Browse SK officers, view account status, and manage barangay
+                    personnel assignments.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+                  <div className="rounded-3xl bg-slate-50 border border-slate-200 p-4 text-center">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500 mb-2">
+                      Barangay
+                    </p>
+                    <p className="text-base font-semibold text-slate-900">
+                      {currentBarangay?.barangayName || "None selected"}
+                    </p>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 border border-slate-200 p-4 text-center">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500 mb-2">
+                      Active Rate
+                    </p>
+                    <p className="text-base font-semibold text-slate-900">
+                      {statistics.activeRate}%
+                    </p>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 border border-slate-200 p-4 text-center">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500 mb-2">
+                      Total Officials
+                    </p>
+                    <p className="text-base font-semibold text-slate-900">
+                      {statistics.total}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -432,7 +469,7 @@ const SkPersonnelAdmin = () => {
                     {/* Key Officials - 2 columns */}
                     <div className="lg:col-span-2 space-y-6">
                       <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-                        <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b-2 border-slate-200">
+                        <div className="bg-linear-to-r from-slate-50 to-blue-50 px-6 py-4 border-b-2 border-slate-200">
                           <div className="flex items-center gap-2">
                             <Shield className="w-5 h-5 text-blue-600" />
                             <h3 className="text-lg font-bold text-slate-900">
@@ -505,7 +542,7 @@ const SkPersonnelAdmin = () => {
 
                     {/* Kagawad Members + Stats Sidebar */}
                     <div className="lg:col-span-1 space-y-4">
-                      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg p-4 border border-blue-200">
+                      <div className="bg-linear-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg p-4 border border-blue-200">
                         <h3 className="text-sm font-bold mb-1">Barangay</h3>
                         <p className="text-lg font-bold">
                           {currentBarangay?.barangayName || "--"}
@@ -577,7 +614,7 @@ const SkPersonnelAdmin = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                     <div className="lg:col-span-2">
                       <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-                        <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-6 py-4 border-b-2 border-slate-200">
+                        <div className="bg-linear-to-r from-slate-50 to-purple-50 px-6 py-4 border-b-2 border-slate-200">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Users className="w-5 h-5 text-purple-600" />
@@ -653,7 +690,7 @@ const SkPersonnelAdmin = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in fade-in scale-in">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+            <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-2xl">
               <h2 className="text-xl font-bold text-white">Details</h2>
               <button
                 onClick={() => {

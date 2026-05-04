@@ -240,11 +240,6 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Official Profiles", icon: Users, path: "/admin/sk-officials" },
         { name: "SK Personnel", icon: Users, path: "/admin/sk-personnel" },
         { name: "Event Scheduling", icon: CalendarDays, path: "/admin/events" },
-        {
-          name: "Monitoring & Evaluation",
-          icon: BarChart2,
-          path: "/admin/monitoring",
-        },
         { name: "User Logs", icon: Clock, path: "/admin/user-logs" },
         { name: "Archive", icon: Archive, path: "/admin/archive" },
         {

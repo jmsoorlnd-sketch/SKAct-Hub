@@ -501,7 +501,7 @@ const AdminNotification = () => {
         navigate("/admin/events");
         break;
       case "activity_update":
-        navigate("/admin/monitoring", {
+        navigate("/admin/dashboard", {
           state: { messageId: notification.meta.documentId },
         });
         break;
@@ -509,7 +509,7 @@ const AdminNotification = () => {
         navigate("/admin/reports");
         break;
       default:
-        navigate("/admin/monitoring");
+        navigate("/admin/dashboard");
     }
   };
 

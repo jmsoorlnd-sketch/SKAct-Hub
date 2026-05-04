@@ -68,13 +68,6 @@ const AdminSettings = () => {
     },
     {
       id: 6,
-      name: "Monitoring & Evaluation",
-      description: "Track system performance and analytics",
-      icon: BarChart3,
-      status: "Active",
-    },
-    {
-      id: 7,
       name: "User Logs",
       description: "Monitor user activities and system logs",
       icon: Clock,

@@ -27,8 +27,6 @@ import SkPersonnelAdmin from "./pages/admin/SkPersonnelAdmin";
 import AdminCalendar from "./pages/admin/AdminCalendar";
 import AdminSettings from "./pages/admin/AdminSettings";
 // import AdminSettings from "./pages/admin/AdminSettings";
-
-const AdminMonitoring = lazy(() => import("./pages/admin/AdminMonitoring"));
 import AdminNotification from "./pages/admin/AdminNotification";
 const AdminArchive = lazy(() => import("./pages/admin/AdminArchive"));
 const AdminUserLogs = lazy(() => import("./pages/admin/AdminUserLogs"));
@@ -151,16 +149,6 @@ const AppRoutes = () => {
               <RequireRole allowedRoles={[roles.ADMIN]}>
                 <AdminCalendar />
               </RequireRole>
-            }
-          />
-          <Route
-            path="/admin/monitoring"
-            element={
-              <Suspense fallback={<div>Loading...</div>}>
-                <RequireRole allowedRoles={[roles.ADMIN]}>
-                  <AdminMonitoring />
-                </RequireRole>
-              </Suspense>
             }
           />
           <Route
