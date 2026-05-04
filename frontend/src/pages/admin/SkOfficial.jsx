@@ -286,24 +286,24 @@ const SkOfficial = () => {
   return (
     <>
       <div className="min-h-screen bg-blue-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 py-2 sm:py-4">
           {/* Page Header */}
-          <div className="mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="mb-3 sm:mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
               <div className="flex-1">
-                <h1 className="text-xl sm:text-2xl font-bold">
+                <h1 className="text-lg sm:text-xl font-bold">
                   SK Officials Management
                 </h1>
-                <p className="text-slate-600 mt-1 text-xs sm:text-sm">
+                <p className="text-slate-600 mt-0.5 text-xs sm:text-sm">
                   Manage and monitor Sangguniang Kabataan officials
                 </p>
               </div>
               <button
                 onClick={() => setIsCreateOpen(true)}
-                className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center sm:justify-start gap-2 whitespace-nowrap"
+                className="w-full sm:w-auto px-2.5 sm:px-3 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center sm:justify-start gap-1.5 whitespace-nowrap"
               >
-                <UserPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span>Add Official</span>
+                <UserPlus size={14} className="sm:w-4 sm:h-4" />
+                <span>Add</span>
               </button>
             </div>
           </div>
@@ -336,7 +336,7 @@ const SkOfficial = () => {
               </Suspense>
 
               {/* Main Content Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <Suspense fallback={<div>Loading...</div>}>
                   {/* Officials Table */}
                   <OfficialsTable
@@ -351,11 +351,11 @@ const SkOfficial = () => {
                 </Suspense>
 
                 {/* Side Panel - Statistics (Hidden on Mobile, Visible on Large Screens) */}
-                <div className="hidden lg:block lg:col-span-1 space-y-4 sm:space-y-6">
+                <div className="hidden lg:block lg:col-span-1 space-y-3 sm:space-y-4">
                   {/* Position Distribution */}
-                  <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-                    <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-4 sm:px-6 py-3 sm:py-4 border-b-2 border-slate-200">
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  <div className="bg-white rounded-xl shadow-lg border-2 border-slate-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-3 sm:px-4 py-2 sm:py-3 border-b-2 border-slate-200">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900">
                         By Position
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-600 mt-1">
@@ -370,12 +370,12 @@ const SkOfficial = () => {
                             100
                           ).toFixed(0);
                           return (
-                            <div key={position} className="space-y-2">
+                            <div key={position} className="space-y-1">
                               <div className="flex justify-between items-center">
-                                <span className="text-xs sm:text-sm font-semibold text-slate-900">
+                                <span className="text-xs font-semibold text-slate-900">
                                   {position}
                                 </span>
-                                <span className="text-xs sm:text-sm font-bold text-slate-700">
+                                <span className="text-xs font-bold text-slate-700">
                                   {count}
                                 </span>
                               </div>
@@ -393,18 +393,18 @@ const SkOfficial = () => {
                   </div>
 
                   {/* Top Barangays */}
-                  <div className="bg-white rounded-2xl shadow-lg border-2 border-slate-200 overflow-hidden">
-                    <div className="bg-gradient-to-r from-slate-50 to-emerald-50 px-4 sm:px-6 py-3 sm:py-4 border-b-2 border-slate-200">
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  <div className="bg-white rounded-xl shadow-lg border-2 border-slate-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-slate-50 to-emerald-50 px-3 sm:px-4 py-2 sm:py-3 border-b-2 border-slate-200">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900">
                         Top Barangays
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-600 mt-1">
                         By officials
                       </p>
                     </div>
-                    <div className="p-4 sm:p-6 space-y-3">
+                    <div className="p-3 sm:p-4 space-y-2">
                       {topBarangays.length === 0 ? (
-                        <p className="text-xs sm:text-sm text-slate-500 text-center py-4">
+                        <p className="text-xs text-slate-500 text-center py-2">
                           No data available
                         </p>
                       ) : (
@@ -436,19 +436,19 @@ const SkOfficial = () => {
                           return (
                             <div
                               key={item.name}
-                              className={`p-3 bg-gradient-to-r ${color.bg} rounded-xl border-2 ${color.border}`}
+                              className={`p-2 bg-gradient-to-r ${color.bg} rounded-lg border-2 ${color.border}`}
                             >
-                              <div className="flex justify-between items-center">
-                                <div className="flex-1">
-                                  <p className="font-bold text-slate-900 text-xs sm:text-sm">
+                              <div className="flex justify-between items-center gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-slate-900 text-xs truncate">
                                     {item.name}
                                   </p>
-                                  <p className="text-xs text-slate-600 mt-1">
-                                    {item.active} active of {item.count} total
+                                  <p className="text-xs text-slate-600 mt-0.5">
+                                    {item.active}/{item.count}
                                   </p>
                                 </div>
                                 <div
-                                  className={`text-lg sm:text-xl font-bold ${color.text}`}
+                                  className={`text-base sm:text-lg font-bold ${color.text}`}
                                 >
                                   {item.count}
                                 </div>
