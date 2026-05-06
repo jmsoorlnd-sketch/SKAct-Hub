@@ -598,8 +598,12 @@ const AdminNotification = () => {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-1">Notifications</h1>
-              <p className="text-slate-500 text-sm">Stay updated with recent activities</p>
+              <h1 className="text-3xl font-bold text-slate-900 mb-1">
+                Notifications
+              </h1>
+              <p className="text-slate-500 text-sm">
+                Stay updated with recent activities
+              </p>
             </div>
 
             {unseenCount > 0 && (
@@ -654,7 +658,9 @@ const AdminNotification = () => {
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-3" />
-              <p className="text-slate-600 text-sm font-medium">Loading notifications...</p>
+              <p className="text-slate-600 text-sm font-medium">
+                Loading notifications...
+              </p>
             </div>
           </div>
         ) : error ? (
@@ -664,7 +670,9 @@ const AdminNotification = () => {
                 <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-red-900 mb-1">Error loading notifications</h3>
+                <h3 className="text-sm font-bold text-red-900 mb-1">
+                  Error loading notifications
+                </h3>
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             </div>
@@ -674,8 +682,12 @@ const AdminNotification = () => {
             <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-slate-400" />
             </div>
-            <p className="text-lg font-bold text-slate-900 mb-1">All caught up!</p>
-            <p className="text-slate-500 text-sm">No notifications at the moment.</p>
+            <p className="text-lg font-bold text-slate-900 mb-1">
+              All caught up!
+            </p>
+            <p className="text-slate-500 text-sm">
+              No notifications at the moment.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">

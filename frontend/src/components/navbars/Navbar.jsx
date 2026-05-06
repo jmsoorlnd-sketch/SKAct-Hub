@@ -3,7 +3,6 @@ import { Menu, X } from "lucide-react";
 import SKLOGO from "../../assets/sklogo.png";
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
-
   return (
     <nav className="flex items-center justify-between gap-4 px-4 py-3 bg-linear-to-r from-slate-900 via-blue-800 to-blue-700 text-white shadow-xl">
       <div className="flex items-center gap-3">
@@ -28,8 +27,6 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
           </p>
         </div>
       </div>
-
-
     </nav>
   );
 };
