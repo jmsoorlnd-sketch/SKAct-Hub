@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+﻿import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { useSocket } from "../../context/SocketContext"; // Adjust path
+import { useSocket } from "../../context/SocketContext";
 import SideProfile from "./SideProfile";
 import {
   Archive,
@@ -11,15 +11,11 @@ import {
   Users,
   CalendarClock,
   Settings,
-  BarChart2,
   Inbox,
   Clock,
-  Database,
   Download,
-  Shield,
 } from "lucide-react";
 
-/* ===================== CONSTANTS ===================== */
 const API_BASE = window.API_BASE;
 
 const getAuthHeaders = () => {
@@ -27,43 +23,37 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-/* ===================== MAIN COMPONENT ===================== */
 const Sidebar = ({ onClose = () => {} }) => {
-  /* ==================== STATE ==================== */
   const [user, setUser] = useState(null);
   const [unseenCount, setUnseenCount] = useState(0);
   const location = useLocation();
   const currentPath = location.pathname;
   const { socket, isConnected } = useSocket();
 
-  /* ==================== FETCH UNSEEN COUNT ==================== */
   const fetchUnseenCount = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      // Get seen statuses
       const seenStatusResponse = await axios.get(
         `${API_BASE}/notifications/status`,
         { headers: getAuthHeaders() },
       );
       const seenMap = seenStatusResponse.data.seenStatuses || {};
-
       const allNotifs = [];
 
-      /* ================== 1. PENDING MESSAGES ================== */
       try {
         const res = await axios.get(`${API_BASE}/messages/inbox`, {
           headers: getAuthHeaders(),
         });
         const inbox = res.data.messages || [];
-
         inbox
           .filter((m) => m.status === "pending")
           .forEach((m) => allNotifs.push({ id: m._id }));
-      } catch {}
+      } catch (error) {
+        console.debug(error);
+      }
 
-      /* ================== 2. BARANGAY ================== */
       try {
         const res = await axios.get(`${API_BASE}/barangays/all-barangays`, {
           headers: getAuthHeaders(),
@@ -92,12 +82,15 @@ const Sidebar = ({ onClose = () => {} }) => {
               [...ongoing, ...completed].forEach((s) =>
                 allNotifs.push({ id: s._id }),
               );
-            } catch {}
+            } catch (error) {
+              console.debug(error);
+            }
           }),
         );
-      } catch {}
+      } catch (error) {
+        console.debug(error);
+      }
 
-      /* ================== 3. ACTIVITIES ================== */
       try {
         const res = await axios.get(`${API_BASE}/messages/activities`, {
           headers: getAuthHeaders(),
@@ -105,19 +98,14 @@ const Sidebar = ({ onClose = () => {} }) => {
         const activities = res.data?.activities || [];
         const now = Date.now();
 
-        // Upcoming
         activities
           .filter((a) => a.startDate)
-          .map((a) => {
-            const timeLeft = new Date(a.startDate).getTime() - now;
-            return { a, timeLeft };
-          })
+          .map((a) => ({ a, timeLeft: new Date(a.startDate).getTime() - now }))
           .filter(({ timeLeft }) => timeLeft > 0)
           .sort((x, y) => new Date(x.a.startDate) - new Date(y.a.startDate))
           .slice(0, 10)
           .forEach(({ a }) => allNotifs.push({ id: a._id }));
 
-        // Updates
         await Promise.all(
           activities.map(async (a) => {
             try {
@@ -126,14 +114,17 @@ const Sidebar = ({ onClose = () => {} }) => {
                 { headers: getAuthHeaders() },
               );
               const updates = updatesRes.data?.updates || [];
-
               if (updates.length > 0) {
                 allNotifs.push({ id: updates[0]._id });
               }
-            } catch {}
+            } catch (error) {
+              console.debug(error);
+            }
           }),
         );
-      } catch {}
+      } catch (error) {
+        console.debug(error);
+      }
 
       try {
         const res = await axios.get(`${API_BASE}/notifications`, {
@@ -141,7 +132,6 @@ const Sidebar = ({ onClose = () => {} }) => {
         });
         const savedNotifications = res.data.notifications || [];
         const existingIds = new Set(allNotifs.map((n) => n.id));
-
         savedNotifications.forEach((notif) => {
           if (notif?.id && !existingIds.has(notif.id)) {
             allNotifs.push({ id: notif.id });
@@ -155,7 +145,6 @@ const Sidebar = ({ onClose = () => {} }) => {
         );
       }
 
-      /* ================== COUNT ================== */
       const unseen = allNotifs.filter((n) => !seenMap[n.id]).length;
       setUnseenCount(unseen);
     } catch (err) {
@@ -163,23 +152,18 @@ const Sidebar = ({ onClose = () => {} }) => {
     }
   }, []);
 
-  /* ==================== SOCKET EVENT HANDLERS ==================== */
   const handleNewNotification = useCallback(() => {
-    console.log("New notification received, refreshing count...");
     fetchUnseenCount();
   }, [fetchUnseenCount]);
 
   const handleStatusUpdate = useCallback(() => {
-    console.log("Notification status updated, refreshing count...");
     fetchUnseenCount();
   }, [fetchUnseenCount]);
 
   const handleAllSeen = useCallback(() => {
-    console.log("All notifications marked as seen");
     setUnseenCount(0);
   }, []);
 
-  /* ==================== USER & NOTIFICATIONS ==================== */
   useEffect(() => {
     const loadUser = () => {
       try {
@@ -197,8 +181,6 @@ const Sidebar = ({ onClose = () => {} }) => {
   useEffect(() => {
     if (user) {
       fetchUnseenCount();
-
-      // Refresh count every 30 seconds as fallback
       const interval = setInterval(fetchUnseenCount, 30000);
       return () => clearInterval(interval);
     }
@@ -209,7 +191,6 @@ const Sidebar = ({ onClose = () => {} }) => {
       socket.on("new-notification", handleNewNotification);
       socket.on("notification-status-updated", handleStatusUpdate);
       socket.on("all-notifications-seen", handleAllSeen);
-
       return () => {
         socket.off("new-notification", handleNewNotification);
         socket.off("notification-status-updated", handleStatusUpdate);
@@ -224,7 +205,6 @@ const Sidebar = ({ onClose = () => {} }) => {
     handleAllSeen,
   ]);
 
-  /* ==================== MENU CONFIGURATION ==================== */
   const role = user?.role || "Guest";
 
   const menuItems = useMemo(() => {
@@ -242,11 +222,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Event Scheduling", icon: CalendarDays, path: "/admin/events" },
         { name: "User Logs", icon: Clock, path: "/admin/user-logs" },
         { name: "Archive", icon: Archive, path: "/admin/archive" },
-        {
-          name: "Reports & Export",
-          icon: Download,
-          path: "/admin/reports",
-        },
+        { name: "Reports & Export", icon: Download, path: "/admin/reports" },
         { name: "Settings", icon: Settings, path: "/admin/settings" },
       ],
       Official: [
@@ -259,23 +235,20 @@ const Sidebar = ({ onClose = () => {} }) => {
         { name: "Your Barangay", icon: Home, path: "/barangay-storage" },
         { name: "Archive", icon: Archive, path: "/archive" },
         { name: "SK Personnel Status", icon: Users, path: "/sk-personnel" },
-        // { name: "Youth Profiles", icon: Users, path: "/" },
         { name: "Submit Reports", icon: Download, path: "/submit-report" },
         { name: "Settings", icon: Settings, path: "/official/settings" },
       ],
       Guest: [{ name: "Home", icon: Home, path: "/" }],
     };
-
     return menus[role] || menus.Guest;
   }, [role, unseenCount]);
 
-  /* ==================== RENDER HELPERS ==================== */
   const getMenuClass = (path) => {
     const isActive = currentPath === path;
-    return `relative flex items-center gap-2 px-2.5 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
+    return `relative flex items-center gap-2 px-3 py-3 rounded-2xl font-semibold text-sm transition-all duration-200 ${
       isActive
-        ? "bg-blue-600 text-white shadow-md"
-        : "text-slate-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700"
+        ? "bg-blue-600 text-white shadow-lg"
+        : "text-slate-700 hover:bg-slate-100 hover:text-blue-700"
     }`;
   };
 
@@ -290,18 +263,26 @@ const Sidebar = ({ onClose = () => {} }) => {
     }
   };
 
-  /* ==================== RENDER ====================== */
   return (
     <div className="w-full h-full bg-white shadow-xl flex flex-col">
-      {/* Header */}
-      <div className="py-2.5 px-4 border-b-2 border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
-        <h1 className="text-base font-bold text-slate-900">
-          {getPanelTitle()}
-        </h1>
+      <div className="py-4 px-5 border-b border-slate-200 bg-linear-to-r from-blue-50 to-indigo-50 shrink-0">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">
+              {getPanelTitle()}
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Quick access to your tasks
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            {user?.role || "Guest"}
+          </div>
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
         {menuItems.map((menu) => {
           const Icon = menu.icon;
           return (
@@ -311,12 +292,10 @@ const Sidebar = ({ onClose = () => {} }) => {
               onClick={onClose}
               className={getMenuClass(menu.path)}
             >
-              <Icon size={15} className="flex-shrink-0" />
-              <span className="flex-1">{menu.name}</span>
-
-              {/* Notification Badge */}
-              {menu.badge && menu.badge > 0 && (
-                <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full min-w-[16px] text-center flex-shrink-0">
+              <Icon size={16} className="shrink-0" />
+              <span className="flex-1 truncate">{menu.name}</span>
+              {menu.badge > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
                   {menu.badge > 99 ? "99+" : menu.badge}
                 </span>
               )}
@@ -325,8 +304,7 @@ const Sidebar = ({ onClose = () => {} }) => {
         })}
       </nav>
 
-      {/* Profile Footer */}
-      <div className="pb-5 p-3 border-t-2 border-slate-200 bg-blue-50">
+      <div className="pb-5 p-4 border-t border-slate-200 bg-slate-50">
         <SideProfile user={user} />
       </div>
     </div>
