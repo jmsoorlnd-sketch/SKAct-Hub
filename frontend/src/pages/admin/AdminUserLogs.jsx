@@ -29,7 +29,7 @@ import {
 import { useToast } from "../../components/Toast";
 
 import LogRow from "../../components/UserLogs/LogRow";
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = window.API_BASE;
 
 const ACTION_META = {
   login: { label: "Login", icon: LogIn, color: "green" },

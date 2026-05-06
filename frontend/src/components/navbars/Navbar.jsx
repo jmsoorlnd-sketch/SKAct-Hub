@@ -33,7 +33,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
       console.log("Token:", token ? "exists" : "missing");
 
       const res = await fetch(
-        `http://localhost:5000/api/search?q=${encodeURIComponent(q)}`,
+        `${window.API_BASE}/search?q=${encodeURIComponent(q)}`,
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : "",

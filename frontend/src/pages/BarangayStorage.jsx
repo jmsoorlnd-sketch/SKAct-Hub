@@ -335,8 +335,8 @@ const BarangayStorage = () => {
   const resolveAttachmentUrl = (url) => {
     if (!url) return "";
     if (/^(https?:)?\/\//i.test(url)) return url;
-    if (url.startsWith("/")) return `http://localhost:5000${url}`;
-    return `http://localhost:5000/${url}`;
+    if (url.startsWith("/")) return `${window.BACKEND_URL}${url}`;
+    return `${window.BACKEND_URL}/${url}`;
   };
 
   const folderModalAttachments = getAttachmentsFromDoc(folderModalSelectedDoc);
@@ -402,7 +402,7 @@ const BarangayStorage = () => {
     try {
       if (currentUser && currentUser.role === "Admin") {
         const res = await axios.get(
-          "http://localhost:5000/api/barangays/all-barangays",
+          `${window.API_BASE}/barangays/all-barangays`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -411,7 +411,7 @@ const BarangayStorage = () => {
       } else {
         try {
           const meRes = await axios.get(
-            "http://localhost:5000/api/barangays/me/barangay",
+            `${window.API_BASE}/barangays/me/barangay`,
             {
               headers: { Authorization: `Bearer ${token}` },
             },
@@ -454,7 +454,7 @@ const BarangayStorage = () => {
     try {
       if (currentUser && currentUser.role !== "Admin") {
         const res = await axios.get(
-          "http://localhost:5000/api/barangays/me/storage",
+          `${window.API_BASE}/barangays/me/storage`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -465,7 +465,7 @@ const BarangayStorage = () => {
         }
       } else if (currentUser && currentUser.role === "Admin") {
         const res = await axios.get(
-          `http://localhost:5000/api/barangays/${barangayId}/storage`,
+          `${window.API_BASE}/barangays/${barangayId}/storage`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -489,7 +489,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/barangays/${barangayId}/folders`,
+        `${window.API_BASE}/barangays/${barangayId}/folders`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -509,7 +509,7 @@ const BarangayStorage = () => {
       const token = localStorage.getItem("token");
       if (!user || user.role !== "Admin") return;
       const res = await axios.get(
-        `http://localhost:5000/api/barangays/${barangayId}/users`,
+        `${window.API_BASE}/barangays/${barangayId}/users`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -524,7 +524,7 @@ const BarangayStorage = () => {
   const fetchAvailableUsers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/users/all", {
+      const res = await axios.get(`${window.API_BASE}/users/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAvailableUsers(res.data.users || []);
@@ -570,7 +570,7 @@ const BarangayStorage = () => {
         region: "Region 8",
       };
       await axios.post(
-        "http://localhost:5000/api/barangays/add-barangay",
+        `${window.API_BASE}/barangays/add-barangay`,
         dataToSubmit,
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -602,7 +602,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/barangays/assign-user",
+        `${window.API_BASE}/barangays/assign-user`,
         { userId: selectedUserToAdd, barangayId: selectedBarangay },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -640,7 +640,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/barangays/remove-user",
+        `${window.API_BASE}/barangays/remove-user`,
         { userId, barangayId: selectedBarangay },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -682,7 +682,7 @@ const BarangayStorage = () => {
       if (composeFile) fd.append("attachment", composeFile);
 
       await axios.post(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/messages`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/messages`,
         fd,
         {
           headers: {
@@ -738,7 +738,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/folders`,
         { name: folderName, documentType: documentType || null },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -758,7 +758,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/storage/${storageId}/move`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/storage/${storageId}/move`,
         { folderId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -775,7 +775,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/messages/${messageId}/status`,
+        `${window.API_BASE}/messages/${messageId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -851,7 +851,7 @@ const BarangayStorage = () => {
 
       try {
         const token = localStorage.getItem("token");
-        const url = `http://localhost:5000/api/barangays/${selectedBarangay}/attach-message/${docId}`;
+        const url = `${window.API_BASE}/barangays/${selectedBarangay}/attach-message/${docId}`;
         await axios.delete(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -875,7 +875,7 @@ const BarangayStorage = () => {
         );
         const token = localStorage.getItem("token");
         await axios.delete(
-          `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folderId}`,
+          `${window.API_BASE}/barangays/${selectedBarangay}/folders/${folderId}`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
         toast.success(
@@ -946,7 +946,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folder._id}/share`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/folders/${folder._id}/share`,
         {
           isShared: true,
           shareWithRole: targetRole,
@@ -974,7 +974,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.put(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${folder._id}/share`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/folders/${folder._id}/share`,
         {
           isShared: false,
           shareWithRole: null,
@@ -1043,7 +1043,7 @@ const BarangayStorage = () => {
 
       // Create the message with approval required
       await axios.post(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/messages`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/messages`,
         fd,
         {
           headers: {
@@ -1093,7 +1093,7 @@ const BarangayStorage = () => {
 
       // Create a new message with the file
       const response = await axios.post(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/messages`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/messages`,
         fd,
         {
           headers: {
@@ -1126,7 +1126,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/messages/${documentId}/activity-updates`,
+        `${window.API_BASE}/messages/${documentId}/activity-updates`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setActivityUpdates(res.data.updates || []);
@@ -1151,7 +1151,7 @@ const BarangayStorage = () => {
 
       const messageId = selectedDocument.document?._id || selectedDocument._id;
       await axios.post(
-        `http://localhost:5000/api/messages/${messageId}/activity-updates`,
+        `${window.API_BASE}/messages/${messageId}/activity-updates`,
         formData,
         {
           headers: {
@@ -1180,7 +1180,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `http://localhost:5000/api/messages/activity-updates/${updateId}`,
+        `${window.API_BASE}/messages/activity-updates/${updateId}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
@@ -1197,7 +1197,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/messages/${documentId}/activity-updates`,
+        `${window.API_BASE}/messages/${documentId}/activity-updates`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setFolderModalActivityUpdates(res.data.updates || []);
@@ -1224,7 +1224,7 @@ const BarangayStorage = () => {
       const messageId =
         folderModalSelectedDoc.document?._id || folderModalSelectedDoc._id;
       await axios.post(
-        `http://localhost:5000/api/messages/${messageId}/activity-updates`,
+        `${window.API_BASE}/messages/${messageId}/activity-updates`,
         formData,
         {
           headers: {
@@ -1328,7 +1328,7 @@ const BarangayStorage = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/folders/${statusConfirm.folderId}/status`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/folders/${statusConfirm.folderId}/status`,
         { status: statusConfirm.status },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -2114,7 +2114,7 @@ const BarangayStorage = () => {
                                     className="border-2 border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
                                   >
                                     <img
-                                      src={`http://localhost:5000${update.photoUrl}`}
+                                      src={`${window.BACKEND_URL}${update.photoUrl}`}
                                       alt="Activity update"
                                       className="w-full h-48 object-cover"
                                     />
@@ -2956,7 +2956,7 @@ const BarangayStorage = () => {
                             try {
                               const token = localStorage.getItem("token");
                               const response = await axios.get(
-                                `http://localhost:5000/api/messages/${folderModalSelectedDoc.document._id}/attachment`,
+                                `${window.API_BASE}/messages/${folderModalSelectedDoc.document._id}/attachment`,
                                 {
                                   headers: {
                                     Authorization: `Bearer ${token}`,
@@ -3272,7 +3272,7 @@ const BarangayStorage = () => {
                               >
                                 {update.photoUrl && (
                                   <img
-                                    src={`http://localhost:5000${update.photoUrl}`}
+                                    src={`${window.BACKEND_URL}${update.photoUrl}`}
                                     alt="Activity Update"
                                     className="w-full h-48 object-cover"
                                   />

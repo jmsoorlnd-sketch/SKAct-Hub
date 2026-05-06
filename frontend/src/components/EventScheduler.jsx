@@ -33,7 +33,7 @@ const EventScheduler = () => {
   const fetchBarangays = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/barangays/all-barangays",
+        `${window.API_BASE}/barangays/all-barangays`,
       );
       setBarangays(res.data.barangays || []);
     } catch (error) {
@@ -45,7 +45,7 @@ const EventScheduler = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "http://localhost:5000/api/messages/activities",
+        `${window.API_BASE}/messages/activities`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -63,7 +63,7 @@ const EventScheduler = () => {
       const loggedIn = JSON.parse(localStorage.getItem("user") || "{}");
 
       if (loggedIn?.role === "Admin") {
-        const res = await axios.get("http://localhost:5000/api/users/all", {
+        const res = await axios.get(`${window.API_BASE}/users/all`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAvailableParticipants(res.data.users || []);
@@ -75,7 +75,7 @@ const EventScheduler = () => {
           return;
         }
         const res = await axios.get(
-          `http://localhost:5000/api/barangays/${barangayId}/users`,
+          `${window.API_BASE}/barangays/${barangayId}/users`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
         setAvailableParticipants(res.data.users || []);
@@ -174,7 +174,7 @@ const EventScheduler = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/messages/send",
+        `${window.API_BASE}/messages/send`,
         {
           subject: formData.subject,
           body: formData.body,

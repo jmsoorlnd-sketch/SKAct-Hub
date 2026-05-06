@@ -23,7 +23,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = window.API_BASE;
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -396,7 +396,7 @@ const ProfilePage = () => {
                       <img
                         src={
                           imagePreview ||
-                          `http://localhost:5000${formData.profileImage}`
+                          `${window.BACKEND_URL}${formData.profileImage}`
                         }
                         alt="Profile"
                         className="w-full h-full object-cover"

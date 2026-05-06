@@ -22,7 +22,7 @@ const OfficialDashboard = () => {
     const fetchUserBarangay = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:5000/api/barangays/me/barangay",
+          `${window.API_BASE}/barangays/me/barangay`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -80,7 +80,7 @@ const OfficialDashboard = () => {
       if (attachedFile) fd.append("attachment", attachedFile);
 
       await axios.post(
-        `http://localhost:5000/api/barangays/${userBarangay._id}/messages`,
+        `${window.API_BASE}/barangays/${userBarangay._id}/messages`,
         fd,
         {
           headers: {

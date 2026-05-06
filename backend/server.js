@@ -13,10 +13,14 @@ const app = express();
 // Create HTTP server
 const server = http.createServer(app);
 
+const FRONTEND_URLS = process.env.FRONTEND_URLS
+  ? process.env.FRONTEND_URLS.split(",").map((url) => url.trim())
+  : ["http://localhost:5173", "http://localhost:3000"];
+
 // Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:3000"], // Your React app URLs
+    origin: FRONTEND_URLS,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -27,7 +31,7 @@ const io = new Server(server, {
 //middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
+    origin: FRONTEND_URLS,
     credentials: true,
   }),
 );
@@ -119,7 +123,10 @@ app.use("/uploads", express.static(workspaceDocumentsDir));
 
 //port setup
 const PORT = process.env.PORT || 5000;
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+const SOCKET_URL = BACKEND_URL.replace(/^http/, "ws");
+
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🔌 Socket.IO listening on ws://localhost:${PORT}`);
+  console.log(`🚀 Server running on ${BACKEND_URL}`);
+  console.log(`🔌 Socket.IO listening on ${SOCKET_URL}`);
 });

@@ -34,7 +34,7 @@ const AdminMonitoring = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/messages/${messageId}/activity-updates`,
+        `${window.API_BASE}/messages/${messageId}/activity-updates`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
@@ -66,7 +66,7 @@ const AdminMonitoring = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "http://localhost:5000/api/barangays/all-barangays",
+        `${window.API_BASE}/barangays/all-barangays`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -80,7 +80,7 @@ const AdminMonitoring = () => {
         bars.map(async (b) => {
           try {
             const r = await axios.get(
-              `http://localhost:5000/api/barangays/${b._id}/storage`,
+              `${window.API_BASE}/barangays/${b._id}/storage`,
               { headers: { Authorization: `Bearer ${token}` } },
             );
             const storage = r.data.storage || [];
@@ -244,7 +244,7 @@ const AdminMonitoring = () => {
                           >
                             {update.photoUrl && (
                               <img
-                                src={`http://localhost:5000${update.photoUrl}`}
+                                src={`${window.BACKEND_URL}${update.photoUrl}`}
                                 alt={update.caption || "Activity update"}
                                 className="w-full h-56 object-cover"
                               />

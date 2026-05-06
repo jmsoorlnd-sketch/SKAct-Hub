@@ -37,7 +37,7 @@ const Signup = () => {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/users/signup", formData);
+      await axios.post(`${window.API_BASE}/users/signup`, formData);
 
       setSuccess("Signup successful! You can now login.");
       window.location.href = "/";

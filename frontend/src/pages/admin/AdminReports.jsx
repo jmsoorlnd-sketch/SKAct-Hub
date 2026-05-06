@@ -27,7 +27,7 @@ const AdminReports = () => {
 
   const fetchReports = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/reports", {
+      const res = await axios.get(`${window.API_BASE}/reports`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setReports(res.data);
@@ -72,7 +72,7 @@ const AdminReports = () => {
   const updateValidationStatus = async (reportId, validationStatus) => {
     try {
       const res = await axios.patch(
-        `http://localhost:5000/api/reports/${reportId}/validation`,
+        `${window.API_BASE}/reports/${reportId}/validation`,
         { validationStatus },
         {
           headers: { Authorization: `Bearer ${token}` },

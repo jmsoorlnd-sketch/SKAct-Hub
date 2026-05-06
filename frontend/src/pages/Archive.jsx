@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useToast } from "../components/Toast";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = window.API_BASE;
 
 const Archive = () => {
   const toast = useToast();

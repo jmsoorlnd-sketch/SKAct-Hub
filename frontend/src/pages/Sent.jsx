@@ -10,7 +10,7 @@ const Sent = () => {
     const fetchSent = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/messages/sent", {
+        const res = await axios.get(`${window.API_BASE}/messages/sent`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setMessages(res.data.messages || []);
@@ -65,7 +65,7 @@ const Sent = () => {
                   <div className="text-right flex-shrink-0">
                     {m.attachmentName && (
                       <a
-                        href={`http://localhost:5000${m.attachmentUrl}`}
+                        href={`${window.BACKEND_URL}${m.attachmentUrl}`}
                         target="_blank"
                         rel="noreferrer"
                         className="text-blue-600 hover:underline text-xs sm:text-sm font-medium"

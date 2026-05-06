@@ -117,7 +117,7 @@ const AdminCalendar = () => {
   const fetchBarangays = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/barangays/all-barangays",
+        `${window.API_BASE}/barangays/all-barangays`,
       );
       setBarangays(res.data.barangays || []);
     } catch (error) {
@@ -132,7 +132,7 @@ const AdminCalendar = () => {
       if (!token) return;
 
       const res = await axios.get(
-        "http://localhost:5000/api/messages/activities",
+        `${window.API_BASE}/messages/activities`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -153,7 +153,7 @@ const AdminCalendar = () => {
       if (!token) return;
 
       if (user?.role === "Admin") {
-        const res = await axios.get("http://localhost:5000/api/users/all", {
+        const res = await axios.get(`${window.API_BASE}/users/all`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const users = res.data.users || [];
@@ -166,7 +166,7 @@ const AdminCalendar = () => {
           return;
         }
         const res = await axios.get(
-          `http://localhost:5000/api/barangays/${barangayId}/users`,
+          `${window.API_BASE}/barangays/${barangayId}/users`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -258,7 +258,7 @@ const AdminCalendar = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
       await axios.put(
-        `http://localhost:5000/api/messages/${eventId}/status`,
+        `${window.API_BASE}/messages/${eventId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -276,7 +276,7 @@ const AdminCalendar = () => {
 
       await Promise.all(
         ids.map((id) =>
-          axios.delete(`http://localhost:5000/api/messages/${id}`, {
+          axios.delete(`${window.API_BASE}/messages/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ),
@@ -401,7 +401,7 @@ const AdminCalendar = () => {
       };
 
       const response = await axios.post(
-        "http://localhost:5000/api/messages/send",
+        `${window.API_BASE}/messages/send`,
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },

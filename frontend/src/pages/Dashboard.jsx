@@ -20,7 +20,7 @@ const Dashboard = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "http://localhost:5000/api/messages/inbox",
+          `${window.API_BASE}/messages/inbox`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -59,7 +59,7 @@ const Dashboard = () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "http://localhost:5000/api/messages/inbox",
+          `${window.API_BASE}/messages/inbox`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -82,7 +82,7 @@ const Dashboard = () => {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/messages/${messageId}`, {
+      await axios.delete(`${window.API_BASE}/messages/${messageId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -99,13 +99,13 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/messages/${messageId}/status`,
+        `${window.API_BASE}/messages/${messageId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
       // Refresh messages
-      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
+      const res = await axios.get(`${window.API_BASE}/messages/inbox`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessages(res.data.messages);
@@ -181,7 +181,7 @@ const Dashboard = () => {
                               }
 
                               await axios.post(
-                                `http://localhost:5000/api/barangays/${b._id}/attach-message`,
+                                `${window.API_BASE}/barangays/${b._id}/attach-message`,
                                 { messageId },
                                 {
                                   headers: { Authorization: `Bearer ${token}` },

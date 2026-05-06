@@ -44,7 +44,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        "http://localhost:5000/api/barangays/all-barangays",
+        `${window.API_BASE}/barangays/all-barangays`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -61,7 +61,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/barangays/${barangayId}/users`,
+        `${window.API_BASE}/barangays/${barangayId}/users`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -77,7 +77,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/barangays/${barangayId}/available-users`,
+        `${window.API_BASE}/barangays/${barangayId}/available-users`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -100,7 +100,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/add-user`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/add-user`,
         { userId: selectedUserToAdd },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -124,7 +124,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://localhost:5000/api/barangays/${selectedBarangay}/remove-user`,
+        `${window.API_BASE}/barangays/${selectedBarangay}/remove-user`,
         { userId },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -167,7 +167,7 @@ const BarangayManagement = () => {
       };
 
       await axios.post(
-        "http://localhost:5000/api/barangays/add-barangay",
+        `${window.API_BASE}/barangays/add-barangay`,
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -199,7 +199,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `http://localhost:5000/api/barangays/${barangayToDelete._id}`,
+        `${window.API_BASE}/barangays/${barangayToDelete._id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -220,7 +220,7 @@ const BarangayManagement = () => {
     setLoadingApprovals(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/messages/inbox", {
+      const res = await axios.get(`${window.API_BASE}/messages/inbox`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const pendingMessages = res.data.messages.filter(
@@ -249,7 +249,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/messages/admin/approve",
+        `${window.API_BASE}/messages/admin/approve`,
         { messageId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -270,7 +270,7 @@ const BarangayManagement = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/messages/admin/reject",
+        `${window.API_BASE}/messages/admin/reject`,
         { messageId },
         { headers: { Authorization: `Bearer ${token}` } },
       );

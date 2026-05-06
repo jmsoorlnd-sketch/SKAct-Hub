@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import io from "socket.io-client";
+import { BACKEND_URL } from "../config/apiConfig.js";
 
 const SocketContext = createContext();
 
@@ -45,7 +46,7 @@ export const SocketProvider = ({ children }) => {
     console.log("🔄 Attempting to connect to socket server...");
 
     // Initialize socket connection with auth
-    const newSocket = io("http://localhost:5000", {
+    const newSocket = io(BACKEND_URL, {
       auth: { token },
       transports: ["polling", "websocket"], // Try polling first, then upgrade to websocket
       reconnection: true,

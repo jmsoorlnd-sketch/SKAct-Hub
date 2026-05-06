@@ -74,7 +74,7 @@ const SubmitReport = () => {
   const fetchMyReports = async () => {
     setLoadingReports(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/reports/mine", {
+      const res = await axios.get(`${window.API_BASE}/reports/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMyReports(res.data);
@@ -101,7 +101,7 @@ const SubmitReport = () => {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/api/reports/submit", formData, {
+      await axios.post(`${window.API_BASE}/reports/submit`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       success("Report submitted successfully!");

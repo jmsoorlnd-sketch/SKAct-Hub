@@ -16,7 +16,7 @@
 //       try {
 //         const token = localStorage.getItem("token");
 //         const res = await axios.get(
-//           "http://localhost:5000/api/barangays/all-barangays",
+//           `${window.API_BASE}/barangays/all-barangays`,
 //           {
 //             headers: { Authorization: `Bearer ${token}` },
 //           },
@@ -35,7 +35,7 @@
 //       try {
 //         const token = localStorage.getItem("token");
 //         const res = await axios.get(
-//           "http://localhost:5000/api/admins/getofficials",
+//           `${window.API_BASE}/admins/getofficials`,
 //           {
 //             headers: { Authorization: `Bearer ${token}` },
 //           },

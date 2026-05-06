@@ -15,7 +15,7 @@ import {
 import { useToast } from "../../components/Toast";
 
 /* ===================== CONSTANTS ===================== */
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = window.API_BASE;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -248,7 +248,7 @@ const AdminDashboard = () => {
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex-shrink-0 overflow-hidden border-2 border-white shadow-md">
                           {msg.sender?.profileImage ? (
                             <img
-                              src={`http://localhost:5000${msg.sender.profileImage}`}
+                              src={`${window.BACKEND_URL}${msg.sender.profileImage}`}
                               alt={msg.sender.username}
                               className="w-full h-full object-cover"
                             />
@@ -357,7 +357,7 @@ const AdminDashboard = () => {
                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex-shrink-0 overflow-hidden border-2 border-white shadow-md">
                             {msg.sender?.profileImage ? (
                               <img
-                                src={`http://localhost:5000${msg.sender.profileImage}`}
+                                src={`${window.BACKEND_URL}${msg.sender.profileImage}`}
                                 alt={msg.sender.username}
                                 className="w-full h-full object-cover"
                               />
@@ -413,7 +413,7 @@ const AdminDashboard = () => {
                         <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex-shrink-0 overflow-hidden border-2 border-white shadow-md">
                           {selectedMessage.sender?.profileImage ? (
                             <img
-                              src={`http://localhost:5000${selectedMessage.sender.profileImage}`}
+                              src={`${window.BACKEND_URL}${selectedMessage.sender.profileImage}`}
                               alt={selectedMessage.sender.username}
                               className="w-full h-full object-cover"
                             />
@@ -590,7 +590,7 @@ const AdminDashboard = () => {
                                       <button
                                         onClick={() => {
                                           setPreviewUrl(
-                                            `http://localhost:5000${url}`,
+                                            `${window.BACKEND_URL}${url}`,
                                           );
                                           setShowPreviewModal(true);
                                         }}
@@ -600,7 +600,7 @@ const AdminDashboard = () => {
                                         View
                                       </button>
                                       <a
-                                        href={`http://localhost:5000${url}`}
+                                        href={`${window.BACKEND_URL}${url}`}
                                         download={name}
                                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
                                         target="_blank"

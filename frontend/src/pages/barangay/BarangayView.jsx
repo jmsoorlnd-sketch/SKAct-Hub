@@ -29,7 +29,7 @@
 //     try {
 //       const token = localStorage.getItem("token");
 //       const res = await axios.get(
-//         `http://localhost:5000/api/barangays/get-barangay/${barangayId.trim()}`,
+//         `${window.API_BASE}/barangays/get-barangay/${barangayId.trim()}`,
 //         {
 //           headers: { Authorization: `Bearer ${token}` },
 //         },
@@ -46,7 +46,7 @@
 //       const token = localStorage.getItem("token");
 //       // Fixed: Use consistent URL format
 //       const res = await axios.get(
-//         `http://localhost:5000/api/barangays/officials/${barangayId.trim()}`,
+//         `${window.API_BASE}/barangays/officials/${barangayId.trim()}`,
 //         {
 //           headers: { Authorization: `Bearer ${token}` },
 //         },

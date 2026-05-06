@@ -174,7 +174,7 @@ const ProjectOverview = ({
                         </button>
                         {currentItem.documentUrl && (
                           <a
-                            href={`http://localhost:5000${currentItem.documentUrl}`}
+                            href={`${window.BACKEND_URL}${currentItem.documentUrl}`}
                             target="_blank"
                             rel="noreferrer"
                             className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1"

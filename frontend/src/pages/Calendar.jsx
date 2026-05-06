@@ -16,7 +16,7 @@ const Calendar = () => {
 
         // Fetch activities
         const resActivities = await axios.get(
-          "http://localhost:5000/api/messages/activities",
+          `${window.API_BASE}/messages/activities`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -25,7 +25,7 @@ const Calendar = () => {
 
         // Fetch barangays
         const resBarangays = await axios.get(
-          "http://localhost:5000/api/barangays/all-barangays",
+          `${window.API_BASE}/barangays/all-barangays`,
         );
         setBarangays(resBarangays.data.barangays || []);
       } catch (error) {

@@ -1,8 +1,8 @@
 import { createContext, useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
+import { API_BASE } from "../config/apiConfig.js";
 
 const AuthContext = createContext();
-const API_BASE = "http://localhost:5000/api";
 
 // 20 minutes in milliseconds
 const INACTIVITY_TIMEOUT = 20 * 60 * 1000;

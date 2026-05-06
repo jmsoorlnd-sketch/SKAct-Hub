@@ -32,7 +32,7 @@ const SkPersonnelAdmin = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `http://localhost:5000/api/sk-personnel/${barangayId}`,
+          `${window.API_BASE}/sk-personnel/${barangayId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -62,7 +62,7 @@ const SkPersonnelAdmin = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        "http://localhost:5000/api/barangays/all-barangays",
+        `${window.API_BASE}/barangays/all-barangays`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
@@ -115,7 +115,7 @@ const SkPersonnelAdmin = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `http://localhost:5000/api/admins/status-official/${personnel._id}`,
+        `${window.API_BASE}/admins/status-official/${personnel._id}`,
         {
           method: "PUT",
           headers: {

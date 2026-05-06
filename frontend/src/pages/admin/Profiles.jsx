@@ -31,7 +31,7 @@ const Profiles = () => {
         navigate && navigate("/", { replace: true });
         return;
       }
-      const res = await axios.get("http://localhost:5000/api/users/all", {
+      const res = await axios.get(`${window.API_BASE}/users/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data.users || []);
@@ -63,7 +63,7 @@ const Profiles = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/admins/status-official/${official._id}`,
+        `${window.API_BASE}/admins/status-official/${official._id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -88,7 +88,7 @@ const Profiles = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(
-        `http://localhost:5000/api/users/${deleteTarget._id}`,
+        `${window.API_BASE}/users/${deleteTarget._id}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       setUsers((prev) => prev.filter((u) => u._id !== deleteTarget._id));
@@ -115,7 +115,7 @@ const Profiles = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "http://localhost:5000/api/users/signup",
+        `${window.API_BASE}/users/signup`,
         {
           firstname: form.firstname,
           lastname: form.lastname,

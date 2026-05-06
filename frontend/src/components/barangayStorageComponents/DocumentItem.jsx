@@ -39,8 +39,8 @@ const DocumentItem = ({
   const resolveAttachmentUrl = (url) => {
     if (!url) return "";
     if (/^(https?:)?\/\//i.test(url)) return url;
-    if (url.startsWith("/")) return `http://localhost:5000${url}`;
-    return `http://localhost:5000/${url}`;
+    if (url.startsWith("/")) return `${window.BACKEND_URL}${url}`;
+    return `${window.BACKEND_URL}/${url}`;
   };
 
   const handleAddToCalendar = async (e) => {
@@ -62,7 +62,7 @@ const DocumentItem = ({
         item.documentName || item.document?.subject || "Document";
 
       await axios.post(
-        "http://localhost:5000/api/messages/send",
+        `${window.API_BASE}/messages/send`,
         {
           recipientId: user?._id,
           subject: `Document: ${documentSubject}`,

@@ -119,7 +119,7 @@ const SKPersonnelPage = () => {
   const fetchUserProfile = async (userId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/users/me`, {
+      const response = await fetch(`${window.API_BASE}/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -156,7 +156,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/barangays/get-barangay/${barangayId}`,
+        `${window.API_BASE}/barangays/get-barangay/${barangayId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -183,7 +183,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/sk-personnel/${normalizedId}`,
+        `${window.API_BASE}/sk-personnel/${normalizedId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -268,7 +268,7 @@ const SKPersonnelPage = () => {
       else if (position === "secretary") endpoint = "treasurer";
 
       const response = await fetch(
-        `http://localhost:5000/api/sk-personnel/${barangayId}/${endpoint}`,
+        `${window.API_BASE}/sk-personnel/${barangayId}/${endpoint}`,
         {
           method: "PUT",
           headers: {
@@ -329,7 +329,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/sk-personnel/${barangayId}/kagawad`,
+        `${window.API_BASE}/sk-personnel/${barangayId}/kagawad`,
         {
           method: "POST",
           headers: {
@@ -384,7 +384,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
+        `${window.API_BASE}/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
         {
           method: "PUT",
           headers: {
@@ -424,7 +424,7 @@ const SKPersonnelPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
+        `${window.API_BASE}/sk-personnel/${barangayId}/kagawad/${kagawadId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

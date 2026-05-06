@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 /* ===================== CONSTANTS ===================== */
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = window.API_BASE;
 
 /* ===================== STATUS CONFIG ===================== */
 const STATUS_CONFIG = {
@@ -774,7 +774,7 @@ const Inbox = () => {
                                 <Paperclip className="w-3.5 h-3.5 text-blue-600" />
                                 {att.url ? (
                                   <a
-                                    href={`http://localhost:5000${att.url}`}
+                                    href={`${window.BACKEND_URL}${att.url}`}
                                     download
                                     className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
                                     onClick={(e) => e.stopPropagation()}
@@ -911,7 +911,7 @@ const Inbox = () => {
                         <div key={`attachment-${index}`} className="mb-2">
                           {att.url ? (
                             <a
-                              href={`http://localhost:5000${att.url}`}
+                              href={`${window.BACKEND_URL}${att.url}`}
                               download
                               target="_blank"
                               rel="noreferrer"
