@@ -74,7 +74,6 @@ const AdminCalendar = () => {
   const [events, setEvents] = useState([]);
   const [barangays, setBarangays] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEventIds, setSelectedEventIds] = useState(new Set());
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     eventIds: [],
@@ -116,9 +115,7 @@ const AdminCalendar = () => {
 
   const fetchBarangays = async () => {
     try {
-      const res = await axios.get(
-        `${window.API_BASE}/barangays/all-barangays`,
-      );
+      const res = await axios.get(`${window.API_BASE}/barangays/all-barangays`);
       setBarangays(res.data.barangays || []);
     } catch (error) {
       console.error("Failed to fetch barangays:", error);
@@ -131,15 +128,11 @@ const AdminCalendar = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const res = await axios.get(
-        `${window.API_BASE}/messages/activities`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const res = await axios.get(`${window.API_BASE}/messages/activities`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setEvents(res.data.activities || []);
-      setSelectedEventIds(new Set());
     } catch (error) {
       console.error("Failed to fetch events:", error);
     } finally {
@@ -209,10 +202,6 @@ const AdminCalendar = () => {
     return map;
   }, [events]);
 
-  useEffect(() => {
-    setSelectedEventIds(new Set());
-  }, [events]);
-
   /* ===================== EVENT HANDLERS ===================== */
   const handleDeleteEvent = useCallback(
     (eventId) => {
@@ -235,15 +224,6 @@ const AdminCalendar = () => {
     },
     [events, user],
   );
-  const openConfirmationModal = (ids) => {
-    setConfirmationModal({
-      isOpen: true,
-      eventIds: ids,
-      title: "Cancel Events",
-      message: `Cancel ${ids.length} selected event${ids.length !== 1 ? "s" : ""}?`,
-    });
-  };
-
   const closeConfirmationModal = () => {
     setConfirmationModal({
       isOpen: false,
@@ -285,7 +265,6 @@ const AdminCalendar = () => {
       console.error("Failed to delete events", err);
     }
 
-    setSelectedEventIds(new Set());
     setShowDateModal(false);
     fetchEvents();
     closeConfirmationModal();
@@ -489,12 +468,6 @@ const AdminCalendar = () => {
       .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
   }, [events]);
 
-  const sortedEvents = useMemo(() => {
-    return [...events].sort(
-      (a, b) => new Date(a.startDate) - new Date(b.startDate),
-    );
-  }, [events]);
-
   /* ===================== CALENDAR RENDER ===================== */
   const renderCalendar = useCallback(() => {
     const daysInMonth = getDaysInMonth(currentDate);
@@ -533,12 +506,12 @@ const AdminCalendar = () => {
             setSelectedDate(date);
             setShowDateModal(true);
           }}
-          className={`border-2 rounded-xl p-3 min-h-[120px] cursor-pointer transition-all duration-200 flex flex-col ${
+          className={`border-2 rounded-3xl p-4 min-h-[130px] cursor-pointer transition-all duration-200 flex flex-col ${
             isToday
-              ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-400 shadow-md"
+              ? "bg-linear-to-br from-sky-50 to-indigo-50 border-blue-300 shadow-lg"
               : isPast
                 ? "bg-slate-50 border-slate-200 hover:border-slate-300"
-                : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-lg"
+                : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-xl"
           }`}
         >
           <div className="flex items-center justify-between mb-2">
@@ -571,23 +544,32 @@ const AdminCalendar = () => {
   /* ===================== RENDER ===================== */
   return (
     <>
-      <div className="min-h-screen bg-blue-50">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="min-h-screen bg-slate-100">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-8">
           {/* Page Header */}
-          <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold">Event Calendar</h1>
-              <p className="text-slate-600 mt-1 text-sm">
-                View and create events for all barangays or specific barangays
-              </p>
+          <div className="mb-6 rounded-[30px] border border-slate-200 bg-white/95 shadow-[0_30px_60px_-30px_rgba(15,23,42,0.3)] p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="max-w-2xl">
+                <p className="text-xs uppercase tracking-[0.32em] text-slate-400 mb-3">
+                  Admin dashboard
+                </p>
+                <h1 className="text-3xl lg:text-4xl font-semibold text-slate-900">
+                  Event Calendar
+                </h1>
+                <p className="mt-3 text-slate-600 text-sm lg:text-base leading-relaxed">
+                  Manage events, view schedules, and track completed and
+                  upcoming activities for all barangays from one polished
+                  workspace.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateEventForm(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-3xl bg-linear-to-r from-sky-600 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition-all hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                <Plus size={18} />
+                <span>Create Event</span>
+              </button>
             </div>
-            <button
-              onClick={() => setShowCreateEventForm(true)}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
-            >
-              <Plus size={18} />
-              <span>Create Event</span>
-            </button>
           </div>
 
           {loading ? (
@@ -627,10 +609,10 @@ const AdminCalendar = () => {
                     <StatCard
                       compact
                       icon={CalendarIcon}
-                      title="Total"
+                      title="Total Events"
                       value={statistics.total}
                       color="blue"
-                      subtitle="All"
+                      subtitle="All barangays"
                       badge="Total"
                     />
                     <StatCard
@@ -639,7 +621,7 @@ const AdminCalendar = () => {
                       title="Upcoming"
                       value={statistics.upcoming}
                       color="emerald"
-                      subtitle="Future"
+                      subtitle="Future activities"
                       badge="Active"
                     />
                     <StatCard
@@ -656,7 +638,7 @@ const AdminCalendar = () => {
                     <StatCard
                       compact
                       icon={FileText}
-                      title="Past"
+                      title="Past Events"
                       value={statistics.past}
                       color="slate"
                       subtitle="Completed"
@@ -810,17 +792,17 @@ const AdminCalendar = () => {
                   {/* Completed Events Count Card */}
                   <button
                     onClick={() => setShowCompletedEventsModal(true)}
-                    className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 hover:shadow-xl hover:border-emerald-300 transition-all cursor-pointer"
+                    className="bg-white rounded-[28px] border border-slate-200 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
                   >
                     <div className="text-center">
-                      <h3 className="text-sm font-bold text-slate-900 mb-2">
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400 mb-3">
                         Completed Events
-                      </h3>
-                      <p className="text-3xl font-bold text-emerald-600 mb-1">
+                      </p>
+                      <p className="text-4xl font-bold text-emerald-600 mb-2">
                         {completedEvents.length}
                       </p>
-                      <p className="text-xs text-slate-600">
-                        Click to view all
+                      <p className="text-sm text-slate-500">
+                        View completed activity logs
                       </p>
                     </div>
                   </button>
@@ -828,17 +810,17 @@ const AdminCalendar = () => {
                   {/* Upcoming Events Count Card */}
                   <button
                     onClick={() => setShowUpcomingEventsModal(true)}
-                    className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 hover:shadow-xl hover:border-blue-300 transition-all cursor-pointer"
+                    className="bg-white rounded-[28px] border border-slate-200 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
                   >
                     <div className="text-center">
-                      <h3 className="text-sm font-bold text-slate-900 mb-2">
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400 mb-3">
                         Upcoming Events
-                      </h3>
-                      <p className="text-3xl font-bold text-blue-600 mb-1">
+                      </p>
+                      <p className="text-4xl font-bold text-blue-600 mb-2">
                         {upcomingEvents.length}
                       </p>
-                      <p className="text-xs text-slate-600">
-                        Click to view all
+                      <p className="text-sm text-slate-500">
+                        See scheduled events ahead
                       </p>
                     </div>
                   </button>
