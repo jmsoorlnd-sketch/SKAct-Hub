@@ -1,11 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useMemo,
-  useCallback,
-  lazy,
-  Suspense,
-} from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import {
   Search,
@@ -98,18 +91,19 @@ const ActionBadge = React.memo(function ActionBadge({ actionType }) {
 const StatCard = React.memo(function StatCard({
   label,
   value,
-  icon: Icon,
+  icon,
   iconClass,
 }) {
+  const Icon = icon;
   return (
-    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div className="bg-white rounded-2xl border border-slate-100 px-3 py-2.5 flex items-center justify-between shadow-xs">
       <div>
-        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
           {label}
         </p>
-        <p className="text-2xl font-semibold text-gray-900 mt-0.5">{value}</p>
+        <p className="text-sm font-bold text-slate-900 mt-1">{value}</p>
       </div>
-      <Icon size={22} className={iconClass} />
+      <Icon size={18} className={iconClass} />
     </div>
   );
 });
@@ -268,150 +262,162 @@ export default function AdminUserLogs() {
   }, [page, totalPages]);
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">User Logs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Track login, logout, and system actions across all barangays
-          </p>
+        {/* Page hero */}
+        <div className="mb-6 rounded-4xl border border-slate-200 bg-white/95 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] px-6 py-7">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-600 mb-3">
+                Admin workspace
+              </p>
+              <h1 className="text-3xl font-semibold text-slate-950">
+                User Logs
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Track login, logout, and system actions across all barangays
+                with a clean audit view.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-3xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/15">
+              <Clock size={16} className="text-sky-300" />
+              Audit trail
+            </div>
+          </div>
         </div>
 
-        {/* Stats - Sticky */}
         {statistics && (
-          <div className="sticky top-0 z-10  ">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sticky top-4 z-10 mb-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 label="Total Logs"
                 value={statistics.totalLogs?.toLocaleString()}
                 icon={Clock}
-                iconClass="text-blue-400"
+                iconClass="text-sky-500"
               />
               <StatCard
                 label="Action Types"
                 value={statistics.actionTypeCounts?.length ?? 0}
                 icon={Filter}
-                iconClass="text-purple-400"
+                iconClass="text-violet-500"
               />
-              <div className="bg-white rounded-lg border border-gray-200 px-4 py-3">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                  Top user
+              <StatCard
+                label="Top User"
+                value={topUser ? `@${topUser.username}` : "—"}
+                icon={UserPlus}
+                iconClass="text-emerald-500"
+              />
+              <div className="rounded-2xl border border-slate-100 bg-white px-3 py-2.5 text-center shadow-xs">
+                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                  Actions
                 </p>
-                <p className="text-sm font-semibold text-gray-900 mt-1 truncate">
-                  {topUser ? `@${topUser.username}` : "—"}
+                <p className="text-sm font-bold text-slate-900 mt-1">
+                  {topUser?.count ?? 0}
                 </p>
-                <div className="flex flex-wrap gap-x-3 mt-1.5">
-                  {statistics.actionTypeCounts?.slice(0, 3).map((a) => (
-                    <span key={a._id} className="text-xs text-gray-500">
-                      {ACTION_META[a._id]?.label ?? a._id}:
-                      <strong className="text-gray-700">{a.count}</strong>
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg border shadow-sm border-gray-200 px-4 py-3 my-2">
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* Search */}
-            <div className="relative flex-1 min-w-48">
-              <Search
-                size={14}
-                className="absolute left-2.5 top-2.5 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Search user or description…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+        <div className="bg-white rounded-[28px] border border-slate-200 shadow-sm px-4 py-4 mb-5">
+          <div className="grid gap-4 lg:grid-cols-[1.5fr_auto] lg:items-center">
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr_1fr]">
+              <div className="relative min-w-0">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-3 text-slate-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Search user or description…"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
+              <select
+                value={filterAction}
+                onChange={(e) => {
+                  setFilterAction(e.target.value);
+                  setPage(1);
+                }}
+                className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              >
+                <option value="">All Activities</option>
+                {Object.entries(ACTION_META).map(([key, { label }]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="text-slate-400" />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-500">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                />
+              </div>
             </div>
-
-            {/* Action type */}
-            <select
-              value={filterAction}
-              onChange={(e) => {
-                setFilterAction(e.target.value);
-                setPage(1);
-              }}
-              className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Activities</option>
-              {Object.entries(ACTION_META).map(([key, { label }]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-
-            {/* Date range */}
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPage(1);
-              }}
-              className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <span className="text-xs text-gray-400">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPage(1);
-              }}
-              className="text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
             <button
               onClick={exportCSV}
-              className="ml-auto flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-3xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-800"
             >
-              <Download size={14} />
+              <Download size={16} />
               Export CSV
             </button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+        <div className="rounded-4xl border border-slate-200 bg-white shadow-[0_20px_50px_-20px_rgba(15,23,42,0.15)] overflow-hidden">
           {loading ? (
-            <div className="text-center py-16 text-sm text-gray-400">
-              Loading…
+            <div className="text-center py-20 text-sm text-slate-400">
+              Loading audit logs…
             </div>
           ) : filteredLogs.length === 0 ? (
-            <div className="text-center py-16 text-sm text-gray-400">
-              No logs found
+            <div className="text-center py-20 text-sm text-slate-400">
+              No logs found. Try adjusting your filters.
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto ">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wide">
-                      <th className="px-4 py-2.5 text-left font-medium">
+                    <tr className="bg-slate-50 text-xs uppercase tracking-[0.18em] text-slate-500">
+                      <th className="px-6 py-4 text-left font-semibold">
                         Timestamp
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium">
+                      <th className="px-6 py-4 text-left font-semibold">
                         User
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium">
-                        User Activity
+                      <th className="px-6 py-4 text-left font-semibold">
+                        Activity
                       </th>
-                      <th className="px-4 py-2.5 text-left font-medium">
+                      <th className="px-6 py-4 text-left font-semibold">
                         Description
                       </th>
-                      <th className="px-4 py-2.5 w-8" />
+                      <th className="px-6 py-4 w-10" />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-200 bg-white">
                     {filteredLogs.map((log) => (
                       <LogRow
                         key={log._id}
@@ -427,15 +433,16 @@ export default function AdminUserLogs() {
               </div>
 
               {/* Pagination */}
-              <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-                <p className="text-xs text-gray-400">
-                  {filteredLogs.length} of {totalLogs.toLocaleString()} logs
+              <div className="flex flex-col gap-4 px-6 py-4 border-t border-slate-200 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-slate-500">
+                  Showing {filteredLogs.length} of {totalLogs.toLocaleString()}{" "}
+                  logs
                 </p>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => fetchData(page - 1)}
                     disabled={page === 1}
-                    className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 transition"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Prev
                   </button>
@@ -443,10 +450,10 @@ export default function AdminUserLogs() {
                     <button
                       key={p}
                       onClick={() => fetchData(p)}
-                      className={`px-3 py-1.5 text-xs rounded-md transition ${
+                      className={`rounded-2xl px-4 py-2 text-xs font-medium transition ${
                         p === page
-                          ? "bg-gray-900 text-white"
-                          : "text-gray-600 border border-gray-200 hover:bg-gray-50"
+                          ? "bg-slate-900 text-white"
+                          : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                       }`}
                     >
                       {p}
@@ -455,7 +462,7 @@ export default function AdminUserLogs() {
                   <button
                     onClick={() => fetchData(page + 1)}
                     disabled={page === totalPages}
-                    className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 transition"
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Next
                   </button>
