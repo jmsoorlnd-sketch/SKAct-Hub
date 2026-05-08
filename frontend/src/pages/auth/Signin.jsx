@@ -213,120 +213,101 @@ const Signin = () => {
   /* ===================== RENDER ===================== */
   return (
     <>
-      <div className="min-h-screen w-full bg-blue-200 flex items-center justify-center p-4">
-        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+      <div className="min-h-screen w-full bg-slate-100 flex items-center justify-center p-4 overflow-hidden relative">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_20%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.16),transparent_22%)]"></div>
+        <div className="pointer-events-none absolute left-10 top-10 w-36 h-36 rounded-full bg-sky-400/25 blur-3xl"></div>
+        <div className="pointer-events-none absolute right-10 bottom-16 w-44 h-44 rounded-full bg-indigo-400/20 blur-3xl"></div>
+        <div className="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_30px_90px_rgba(15,23,42,0.12)] overflow-hidden border border-slate-200 flex flex-col md:flex-row">
           {/* MOBILE HEADER - Logo and Title */}
-          <div className="md:hidden w-full bg-gradient-to-br from-blue-600 to-indigo-700 p-3 flex flex-col justify-center text-white relative overflow-hidden">
+          <div className="md:hidden w-full bg-linear-to-br from-sky-600 to-indigo-700 p-6 flex flex-col justify-center text-white relative overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-32 bg-white/10 blur-3xl"></div>
             <div className="relative z-10">
-              {/* Logo */}
-              <div className="mb-2">
+              <div className="mb-4 flex items-center gap-3">
                 <img
                   src={SKLOGO}
-                  alt="Logo"
-                  className="h-6 w-6 object-contain"
+                  alt="SKActHub logo"
+                  className="h-10 w-10 object-contain rounded-full bg-white/10 p-2"
                 />
+                <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-white/80">
+                  Project Hub
+                </span>
               </div>
-
-              {/* Title */}
-              <h1 className="text-lg font-bold mb-0 leading-tight">
+              <h1 className="text-2xl font-semibold leading-tight">
                 Welcome to
                 <br />
                 SKActHub
               </h1>
+              <p className="mt-3 text-sm text-slate-100/90 max-w-sm leading-relaxed">
+                A modern workspace for youth-led projects, document tracking,
+                and team collaboration.
+              </p>
             </div>
           </div>
 
           {/* LEFT SIDE - Hero Section */}
-          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-6 md:p-8 lg:p-12 flex-col justify-center text-white relative overflow-hidden">
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-white opacity-5 rounded-full -mr-24 -mt-24"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-white opacity-5 rounded-full -ml-20 -mb-20"></div>
+          <div className="hidden md:flex md:w-1/2 bg-linear-to-br from-sky-600 to-indigo-700 p-10 lg:p-12 flex-col justify-between text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_20%)]"></div>
+            <div className="absolute -right-16 -top-16 w-52 h-52 rounded-full bg-white/10 blur-2xl"></div>
+            <div className="absolute -left-16 -bottom-16 w-52 h-52 rounded-full bg-white/10 blur-2xl"></div>
 
             <div className="relative z-10">
-              {/* Logo */}
-              <div className="mb-4 md:mb-6">
+              <div className="mb-6 inline-flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white/80">
                 <img
                   src={SKLOGO}
                   alt="Logo"
-                  className="h-8 md:h-10 w-8 md:w-10 object-contain"
+                  className="h-8 w-8 object-contain"
                 />
-              </div>
-
-              {/* Title */}
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 leading-tight">
-                Welcome to
-                <br />
                 SKActHub
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-semibold mb-3 leading-tight tracking-tight">
+                Empower your SK projects with smart collaboration.
               </h1>
-
-              {/* Description */}
-              <p className="text-sm md:text-base text-blue-100 mb-6 leading-relaxed">
-                Your centralized platform for Sangguniang Kabataan project
-                management and document tracking. Streamline your workflow and
-                enhance collaboration.
+              <p className="text-sm lg:text-base text-white/80 mb-8 leading-relaxed max-w-md">
+                Manage tasks, documents, notifications, and official workflows
+                from one polished hub built for youth councils.
               </p>
+            </div>
 
-              {/* Features */}
-              <div className="space-y-1.5 md:space-y-2">
-                <div className="flex items-center gap-2 text-blue-100 text-xs md:text-sm">
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>Secure document management</span>
-                </div>
-                <div className="flex items-center gap-2 text-blue-100 text-sm">
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>Real-time project tracking</span>
-                </div>
-                <div className="flex items-center gap-2 text-blue-100 text-sm">
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span>Efficient team collaboration</span>
-                </div>
+            <div className="relative z-10 mt-10 grid gap-4 text-sm">
+              <div className="rounded-3xl bg-white/10 border border-white/10 p-4 backdrop-blur-sm">
+                <p className="font-semibold">Secure document management</p>
+                <p className="text-white/70 mt-1 text-sm">
+                  Keep your files organized and approvals easy.
+                </p>
+              </div>
+              <div className="rounded-3xl bg-white/10 border border-white/10 p-4 backdrop-blur-sm">
+                <p className="font-semibold">Real-time project tracking</p>
+                <p className="text-white/70 mt-1 text-sm">
+                  Stay on top of deadlines and team progress.
+                </p>
+              </div>
+              <div className="rounded-3xl bg-white/10 border border-white/10 p-4 backdrop-blur-sm">
+                <p className="font-semibold">Fast team communication</p>
+                <p className="text-white/70 mt-1 text-sm">
+                  Connect quickly with officials and barangay coordinators.
+                </p>
               </div>
             </div>
           </div>
 
           {/* RIGHT SIDE - Form Section */}
-          <div className="w-full md:w-1/2 p-4 md:p-8 lg:p-12 flex flex-col justify-center bg-blue-50 overflow-y-auto max-h-screen md:max-h-none">
+          <div className="w-full md:w-1/2 p-6 md:p-10 lg:p-12 flex flex-col justify-center bg-white">
             <div className="w-full max-w-md mx-auto">
               {/* Header */}
-              <div className="mb-4 md:mb-6">
-                <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
-                  Sign In
+              <div className="mb-5 md:mb-7">
+                <div className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-500 mb-4">
+                  Sign in securely
+                </div>
+                <h2 className="text-3xl font-semibold text-slate-900 mb-2">
+                  Welcome back.
                 </h2>
-                <p className="text-xs md:text-sm text-slate-600">
-                  Enter your username or email to access your account
+                <p className="text-sm text-slate-500">
+                  Enter your username or email to access your account.
                 </p>
                 {failedAttempts > 0 && (
-                  <p className="text-xs text-orange-600 mt-2"></p>
+                  <p className="text-sm text-orange-600 mt-3">
+                    Locked out? Use the reset link below.
+                  </p>
                 )}
               </div>
 
@@ -334,7 +315,7 @@ const Signin = () => {
               {error && (
                 <div className="mb-3 md:mb-5 p-2 md:p-3 bg-red-50 border-2 border-red-200 rounded-lg flex items-start gap-2">
                   <svg
-                    className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0"
+                    className="w-4 h-4 text-red-600 mt-0.5 shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -364,13 +345,13 @@ const Signin = () => {
               <form onSubmit={handleSubmit} className="space-y-3 md:space-y-5">
                 {/* Username/Email Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1">
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
                     Username or Email
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg
-                        className="h-4 w-4 text-slate-400"
+                        className="h-5 w-5 text-slate-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -393,7 +374,7 @@ const Signin = () => {
                       autoComplete="username"
                       required
                       disabled={isLoading}
-                      className="w-full pl-10 pr-3 py-2 md:py-2.5 text-xs md:text-sm border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      className="w-full pl-12 pr-4 py-3 text-sm border border-slate-200 bg-slate-50 rounded-3xl focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
                       placeholder="Enter your username or email"
                     />
                   </div>
@@ -404,13 +385,13 @@ const Signin = () => {
 
                 {/* Password Field */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-900 mb-1">
+                  <label className="block text-sm font-semibold text-slate-900 mb-2">
                     Password
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg
-                        className="h-4 w-4 text-slate-400"
+                        className="h-5 w-5 text-slate-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -433,30 +414,35 @@ const Signin = () => {
                       autoComplete="current-password"
                       required
                       disabled={isLoading}
-                      className="w-full pl-10 pr-3 py-2 md:py-2.5 text-xs md:text-sm border-2  border-gray-500  rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-900 placeholder-slate-400 disabled:bg-white disabled:cursor-not-allowed"
+                      className="w-full pl-12 pr-4 py-3 text-sm border border-slate-200 bg-slate-50 rounded-3xl focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all text-slate-900 placeholder-slate-400 disabled:bg-slate-100 disabled:cursor-not-allowed"
                       placeholder="Enter your password"
                     />
                   </div>
                 </div>
 
                 {/* Forgot Password Link - Shows after 3 attempts */}
-                {showForgotPassword && (
-                  <div className="text-right">
+                <div className="flex items-center justify-between gap-3 text-sm text-slate-500">
+                  {showForgotPassword ? (
                     <button
                       type="button"
                       onClick={() => setShowForgotPasswordModal(true)}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                      className="font-semibold text-sky-600 hover:text-sky-700 transition-colors"
                     >
                       Forgot Password?
                     </button>
-                  </div>
-                )}
+                  ) : (
+                    <div />
+                  )}
+                  <span className="rounded-full bg-slate-100 px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">
+                    Secure access
+                  </span>
+                </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-2 md:py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs md:text-sm font-bold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:from-slate-400 disabled:to-slate-500 disabled:cursor-not-allowed"
+                  className="w-full py-3 px-5 bg-linear-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-3xl shadow-lg shadow-sky-500/10 transition-all duration-200 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
                 >
                   {isLoading ? (
                     <>
@@ -686,7 +672,7 @@ const Signin = () => {
                   maxLength={6}
                   disabled={isForgotPasswordLoading}
                   placeholder="000000"
-                  className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-1 text-center text-xl font-bold tracking-widest"
+                  className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-1 text-center text-xl font-bold tracking-widest"
                 />
                 <p className="text-xs text-slate-400 mb-4">
                   OTP expires in 10 minutes
