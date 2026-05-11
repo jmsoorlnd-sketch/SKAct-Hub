@@ -453,7 +453,7 @@ const SKPersonnelPage = () => {
   /* ===================== STATISTICS ===================== */
   const statistics = useMemo(() => {
     if (!skPersonnel)
-      return { total: 0, active: 0, inactive: 0, activeRate: 0 };
+      return { total: 0, active: 0, inactive: 0, resigned: 0, activeRate: 0 };
 
     const mergeOfficialData = (positionKey, fallbackKey) => {
       const accountOfficial = skPersonnel.accountPositions?.[positionKey] || {};
@@ -487,6 +487,21 @@ const SKPersonnelPage = () => {
     return { total, active, inactive, resigned, activeRate };
   }, [skPersonnel]);
 
+  const activeKagawadCount = useMemo(
+    () => skPersonnel?.kagawad?.filter((k) => !k.isDeleted).length || 0,
+    [skPersonnel],
+  );
+
+  const keyPositionsCount = useMemo(
+    () =>
+      [
+        staticOfficials.chairman,
+        staticOfficials.secretary,
+        staticOfficials.treasurer,
+      ].filter(Boolean).length,
+    [staticOfficials],
+  );
+
   /* ===================== LOADING STATE ===================== */
   if (loading) {
     return (
@@ -506,22 +521,35 @@ const SKPersonnelPage = () => {
   /* ===================== RENDER ===================== */
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Page Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">SK Personnel Management</h1>
-            {barangayName && (
-              <p className="text-slate-600 mt-1 text-sm flex items-center gap-2">
-                <Shield className="w-4 h-4 text-blue-600" />
-                Barangay:{" "}
-                <span className="font-bold text-blue-600">{barangayName}</span>
-              </p>
-            )}
+          <div className="rounded-4xl bg-white border border-slate-200 shadow-sm p-6 mb-6">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-sm uppercase tracking-[0.28em] text-sky-600 font-semibold">
+                  SK Personnel Dashboard
+                </p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                  SK Personnel Management
+                </h1>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Monitor barangay officials and kagawad members in one place
+                  with fast access to updates, team status, and personnel
+                  history.
+                </p>
+              </div>
+              <div className="rounded-3xl bg-slate-950 px-5 py-4 text-white shadow-lg">
+                <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
+                  Barangay
+                </p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {barangayName || "Unassigned"}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
             <StatCard
               icon={Users}
               title="Total Members"
@@ -561,104 +589,104 @@ const SKPersonnelPage = () => {
             <StatCard
               icon={Award}
               title="Key Positions"
-              value="3"
+              value={keyPositionsCount}
               color="purple"
               subtitle="Executive Officers"
             />
           </div>
 
-          {/* Key Officials Section */}
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">
-              Key Officials
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Chairman */}
-              <OfficialCard
-                title="SK Chairman"
-                color="blue"
-                displayData={staticOfficials.chairman}
-                formData={forms.chairman}
-                setFormData={(newData) =>
-                  setForms({ ...forms, chairman: newData })
-                }
-                isEditing={editingPosition === "chairman"}
-                onEdit={() => setEditingPosition("chairman")}
-                onSave={() => handleUpdatePosition("chairman", forms.chairman)}
-                onCancel={() => setEditingPosition(null)}
-              />
-
-              {/* Secretary */}
-              <OfficialCard
-                title="SK Secretary"
-                color="purple"
-                displayData={staticOfficials.secretary}
-                formData={forms.vicePresident}
-                setFormData={(newData) =>
-                  setForms({ ...forms, vicePresident: newData })
-                }
-                isEditing={editingPosition === "vicePresident"}
-                onEdit={() => setEditingPosition("vicePresident")}
-                onSave={() =>
-                  handleUpdatePosition("vicePresident", forms.vicePresident)
-                }
-                onCancel={() => setEditingPosition(null)}
-              />
-
-              {/* Treasurer */}
-              <OfficialCard
-                title="SK Treasurer"
-                color="emerald"
-                displayData={staticOfficials.treasurer}
-                formData={forms.secretary}
-                setFormData={(newData) =>
-                  setForms({ ...forms, secretary: newData })
-                }
-                isEditing={editingPosition === "secretary"}
-                onEdit={() => setEditingPosition("secretary")}
-                onSave={() =>
-                  handleUpdatePosition("secretary", forms.secretary)
-                }
-                onCancel={() => setEditingPosition(null)}
-              />
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Key Officials
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Manage the barangay's core SK officers with fast edit
+                  controls.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* SK Kagawad Section */}
-          <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-5 py-4 border-b-2 border-slate-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-purple-600" />
-                    <h2 className="text-lg font-bold text-slate-900">
-                      SK Kagawad
-                    </h2>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    {skPersonnel?.kagawad?.length || 0} member
-                    {(skPersonnel?.kagawad?.length || 0) !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                {!showAddKagawad && (
-                  <button
-                    onClick={() => setShowAddKagawad(true)}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm shadow-md transition-all flex items-center gap-2"
-                  >
-                    <Plus size={18} />
-                    <span>Add Kagawad</span>
-                  </button>
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <OfficialCard
+              title="SK Chairman"
+              color="blue"
+              displayData={staticOfficials.chairman}
+              formData={forms.chairman}
+              setFormData={(newData) =>
+                setForms({ ...forms, chairman: newData })
+              }
+              isEditing={editingPosition === "chairman"}
+              onEdit={() => setEditingPosition("chairman")}
+              onSave={() => handleUpdatePosition("chairman", forms.chairman)}
+              onCancel={() => setEditingPosition(null)}
+            />
 
-            <div className="p-5">
-              {/* Add Kagawad Modal */}
-              {showAddKagawad &&
-                createPortal(
+            <OfficialCard
+              title="SK Secretary"
+              color="purple"
+              displayData={staticOfficials.secretary}
+              formData={forms.vicePresident}
+              setFormData={(newData) =>
+                setForms({ ...forms, vicePresident: newData })
+              }
+              isEditing={editingPosition === "vicePresident"}
+              onEdit={() => setEditingPosition("vicePresident")}
+              onSave={() =>
+                handleUpdatePosition("vicePresident", forms.vicePresident)
+              }
+              onCancel={() => setEditingPosition(null)}
+            />
+
+            <OfficialCard
+              title="SK Treasurer"
+              color="emerald"
+              displayData={staticOfficials.treasurer}
+              formData={forms.secretary}
+              setFormData={(newData) =>
+                setForms({ ...forms, secretary: newData })
+              }
+              isEditing={editingPosition === "secretary"}
+              onEdit={() => setEditingPosition("secretary")}
+              onSave={() => handleUpdatePosition("secretary", forms.secretary)}
+              onCancel={() => setEditingPosition(null)}
+            />
+          </div>
+
+          <section className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
+            <div className="bg-white rounded-3xl shadow-md border border-slate-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-slate-50 to-purple-50 px-5 py-4 border-b border-slate-200">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3">
+                    <Users className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900">
+                        SK Kagawad
+                      </h2>
+                      <p className="text-sm text-slate-600 mt-0.5">
+                        {activeKagawadCount} active member
+                        {activeKagawadCount !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  </div>
+                  {!showAddKagawad && (
+                    <button
+                      onClick={() => setShowAddKagawad(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200/40 transition hover:from-blue-700 hover:to-indigo-700"
+                    >
+                      <Plus size={18} />
+                      Add Kagawad
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-5">
+                {showAddKagawad && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
-                      {/* Modal Header */}
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-in fade-in zoom-in duration-200">
                       <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                         <div>
                           <h2 className="text-lg font-bold text-slate-900">
@@ -675,8 +703,6 @@ const SKPersonnelPage = () => {
                           <X size={20} className="text-slate-600" />
                         </button>
                       </div>
-
-                      {/* Modal Body */}
                       <div className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                           <div>
@@ -693,7 +719,7 @@ const SKPersonnelPage = () => {
                                   surname: e.target.value,
                                 })
                               }
-                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                           </div>
                           <div>
@@ -710,7 +736,7 @@ const SKPersonnelPage = () => {
                                   firstName: e.target.value,
                                 })
                               }
-                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                           </div>
                           <div>
@@ -727,7 +753,7 @@ const SKPersonnelPage = () => {
                                   middleName: e.target.value,
                                 })
                               }
-                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                           </div>
                           <div>
@@ -744,7 +770,7 @@ const SKPersonnelPage = () => {
                                   age: e.target.value,
                                 })
                               }
-                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                           </div>
                         </div>
@@ -760,7 +786,7 @@ const SKPersonnelPage = () => {
                                 status: e.target.value,
                               })
                             }
-                            className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                            className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
                           >
                             <option>Active</option>
                             <option>Inactive</option>
@@ -768,190 +794,179 @@ const SKPersonnelPage = () => {
                           </select>
                         </div>
                       </div>
-
-                      {/* Modal Footer */}
                       <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex gap-3">
                         <button
                           onClick={() => setShowAddKagawad(false)}
-                          className="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-slate-900 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                          className="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 text-slate-900 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                           <Ban size={16} />
                           Cancel
                         </button>
                         <button
                           onClick={handleAddKagawad}
-                          className="flex-1 py-2 px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                          className="flex-1 py-2 px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                           <Save size={16} />
                           Add Kagawad
                         </button>
                       </div>
                     </div>
-                  </div>,
-                  document.body,
+                  </div>
                 )}
 
-              {/* Kagawad List */}
-              {skPersonnel?.kagawad &&
-              skPersonnel.kagawad.filter((k) => !k.isDeleted).length > 0 ? (
-                <div className="space-y-3">
-                  {skPersonnel.kagawad
-                    .filter((k) => !k.isDeleted)
-                    .map((k) => (
-                      <div
-                        key={k._id}
-                        className="p-5 bg-white rounded-xl border-2 border-slate-200 hover:shadow-lg hover:border-blue-400 transition-all duration-200"
-                      >
-                        <div className="flex justify-between items-start gap-4">
-                          {/* Left Content */}
-                          <div className="flex items-center gap-4 flex-1">
-                            {/* Avatar */}
-                            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
-                              <span className="text-white font-bold text-lg">
-                                {k.firstName?.charAt(0) ||
-                                  k.name?.charAt(0) ||
-                                  "K"}
-                              </span>
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1">
-                              <h4 className="font-bold text-slate-900 text-base">
-                                {k.name || `${k.firstName} ${k.surname || ""}`}
-                              </h4>
-                              <div className="flex items-center gap-4 mt-2 text-sm">
-                                <span className="text-slate-600">
-                                  <span className="font-semibold">Age:</span>{" "}
-                                  {k.age}
+                {skPersonnel?.kagawad &&
+                skPersonnel.kagawad.filter((k) => !k.isDeleted).length > 0 ? (
+                  <div className="space-y-3">
+                    {skPersonnel.kagawad
+                      .filter((k) => !k.isDeleted)
+                      .map((k) => (
+                        <div
+                          key={k._id}
+                          className="p-5 bg-white rounded-3xl border border-slate-200 hover:shadow-lg hover:border-blue-400 transition-all duration-200"
+                        >
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                                <span className="text-white font-bold text-lg">
+                                  {k.firstName?.charAt(0) ||
+                                    k.name?.charAt(0) ||
+                                    "K"}
                                 </span>
-                                {k.middleName && (
-                                  <span className="text-slate-500 text-xs">
-                                    {k.firstName} {k.middleName} {k.surname}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-slate-900 text-base truncate">
+                                  {k.name ||
+                                    `${k.firstName} ${k.surname || ""}`}
+                                </h4>
+                                <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600">
+                                  <span>
+                                    <span className="font-semibold">Age:</span>{" "}
+                                    {k.age}
                                   </span>
-                                )}
+                                  {k.status && (
+                                    <span>
+                                      <span className="font-semibold">
+                                        Status:
+                                      </span>{" "}
+                                      {k.status}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-
-                          {/* Right Actions */}
-                          <div className="flex items-center gap-3 flex-shrink-0">
-                            {/* Status Badge */}
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border-2 whitespace-nowrap ${
-                                k.status === "Active"
-                                  ? "bg-emerald-100 text-emerald-700 border-emerald-300"
-                                  : "bg-red-100 text-red-700 border-red-300"
-                              }`}
-                            >
-                              {k.status === "Active" ? (
-                                <UserCheck size={14} />
-                              ) : (
-                                <UserX size={14} />
-                              )}
-                              {k.status}
-                            </span>
-
-                            {/* Edit Button */}
-                            <button
-                              onClick={() => setEditingKagawad(k._id)}
-                              className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                              title="Edit Kagawad"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-
-                            {/* Delete Button */}
-                            <button
-                              onClick={() => handleDeleteKagawad(k._id)}
-                              className="p-2.5 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-lg transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
-                              title="Delete Kagawad"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                              <button
+                                onClick={() => setEditingKagawad(k._id)}
+                                className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-2xl transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                                title="Edit Kagawad"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteKagawad(k._id)}
+                                className="p-2.5 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 rounded-2xl transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md"
+                                title="Delete Kagawad"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="text-slate-400" size={36} />
+                    </div>
+                    <p className="text-base text-slate-600 font-semibold">
+                      No kagawad members added yet
+                    </p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Click "Add Kagawad" to register a new member
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <aside className="bg-white rounded-3xl shadow-md border border-slate-200 p-5">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400 font-semibold">
+                    Personnel History
+                  </p>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Change History
+                  </h2>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {skPersonnel?.history?.length || 0} entries
+                </span>
+              </div>
+
+              {skPersonnel?.history && skPersonnel.history.length > 0 ? (
+                <div className="space-y-3 max-h-[64vh] overflow-y-auto pr-2">
+                  {[...skPersonnel.history]
+                    .sort(
+                      (a, b) => new Date(b.changedAt) - new Date(a.changedAt),
+                    )
+                    .map((entry, index) => (
+                      <div
+                        key={`${entry.role}-${entry.memberId || index}-${entry.changedAt}`}
+                        className="border-l-4 border-blue-500 rounded-3xl p-4 bg-slate-50 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm uppercase font-bold tracking-wider text-blue-700">
+                              {entry.role || "Role"}
+                            </p>
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {entry.name || "Unknown"}
+                            </h3>
+                          </div>
+                          <span
+                            className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                              entry.status === "Active"
+                                ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                : entry.status === "Inactive"
+                                  ? "bg-amber-100 text-amber-700 border border-amber-200"
+                                  : "bg-red-100 text-red-700 border border-red-200"
+                            }`}
+                          >
+                            {entry.status || "N/A"}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 mt-3 space-y-2">
+                          <p>
+                            <span className="font-medium">Action:</span>{" "}
+                            {entry.action || "updated"}
+                          </p>
+                          <p>
+                            <span className="font-medium">By:</span>{" "}
+                            {entry.changedBy?.username || "System"}
+                          </p>
+                          <p>
+                            <span className="font-medium">When:</span>{" "}
+                            {new Date(entry.changedAt).toLocaleString()}
+                          </p>
+                        </div>
+                        {entry.details && (
+                          <p className="text-xs text-slate-500 mt-3 border-t border-slate-200 pt-2">
+                            <span className="font-semibold">Details:</span>{" "}
+                            {entry.details}
+                          </p>
+                        )}
                       </div>
                     ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="text-slate-400" size={36} />
-                  </div>
-                  <p className="text-base text-slate-600 font-semibold">
-                    No kagawad members added yet
-                  </p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Click "Add Kagawad" to register a new member
-                  </p>
+                <div className="text-center py-10 text-slate-500">
+                  No history entries yet. Changes will appear here.
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Personnel Change History */}
-        <div className="mt-6">
-          <h2 className="text-lg font-bold text-slate-900 mb-3">
-            Personnel Change History
-          </h2>
-          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
-            {skPersonnel?.history && skPersonnel.history.length > 0 ? (
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {[...skPersonnel.history]
-                  .sort((a, b) => new Date(b.changedAt) - new Date(a.changedAt))
-                  .map((entry, index) => (
-                    <div
-                      key={`${entry.role}-${entry.memberId || index}-${entry.changedAt}`}
-                      className="border-l-4 border-blue-500 rounded-lg p-4 bg-white shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm uppercase font-bold tracking-wider text-blue-700">
-                            {entry.role || "Role"}
-                          </p>
-                          <h3 className="text-lg font-bold text-slate-900">
-                            {entry.name || "Unknown"}
-                          </h3>
-                        </div>
-                        <span
-                          className={`text-xs font-bold px-3 py-1.5 rounded-full ${
-                            entry.status === "Active"
-                              ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                              : entry.status === "Inactive"
-                                ? "bg-amber-100 text-amber-700 border border-amber-200"
-                                : "bg-red-100 text-red-700 border border-red-200"
-                          }`}
-                        >
-                          {entry.status || "N/A"}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        <span className="font-medium">Action:</span>{" "}
-                        {entry.action || "updated"}
-                        {" • "}
-                        <span className="font-medium">By:</span>{" "}
-                        {entry.changedBy?.username || "System"}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        <span className="font-medium">When:</span>{" "}
-                        {new Date(entry.changedAt).toLocaleString()}
-                      </div>
-                      {entry.details && (
-                        <p className="text-xs text-slate-500 mt-3 border-t border-slate-200 pt-2">
-                          <span className="font-semibold">Details:</span>{" "}
-                          {entry.details}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-slate-500">
-                No history entries yet. Changes will appear here.
-              </div>
-            )}
-          </div>
+            </aside>
+          </section>
         </div>
       </div>
 
