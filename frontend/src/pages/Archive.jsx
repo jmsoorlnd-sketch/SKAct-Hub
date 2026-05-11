@@ -330,6 +330,17 @@ const Archive = () => {
     });
   }, [folders, messages, kagawad]);
 
+  const itemCounts = useMemo(() => {
+    return {
+      folders: allArchivedItems.filter((item) => item.type === "folder").length,
+      events: allArchivedItems.filter((item) => item.type === "event").length,
+      documents: allArchivedItems.filter((item) => item.type === "document")
+        .length,
+      personnel: allArchivedItems.filter((item) => item.type === "personnel")
+        .length,
+    };
+  }, [allArchivedItems]);
+
   /* ===================== RENDER HELPERS ===================== */
   const getTypeIcon = (type) => {
     switch (type) {
@@ -405,14 +416,17 @@ const Archive = () => {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Archive</h1>
-            <p className="text-sm text-slate-600 mt-1">
-              View all deleted items for your barangay.
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Archive
+            </h1>
+            <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+              View deleted folders, documents, events, and personnel from your
+              barangay. Restore or permanently remove items in one place.
             </p>
           </div>
           <button
             onClick={fetchArchive}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow-sm transition"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-semibold shadow-lg transition"
           >
             <RefreshCw size={16} />
             Refresh
@@ -426,15 +440,15 @@ const Archive = () => {
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-4xl shadow-[0_20px_60px_-35px_rgba(15,23,42,0.18)] border border-slate-200 overflow-hidden">
             {/* Header */}
-            <div className="bg-linear-to-r from-slate-50 to-indigo-50 px-6 py-4 border-b border-slate-200">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-linear-to-r from-slate-50 via-sky-50 to-indigo-50 px-6 py-6 border-b border-slate-200">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-xl font-semibold text-slate-900">
                     All Archived Items
                   </h2>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-sm text-slate-500 mt-1">
                     {filteredItems.length} item
                     {filteredItems.length === 1 ? "" : "s"}
                     {searchQuery && ` • Filtering ${allArchivedItems.length}`}
@@ -442,23 +456,78 @@ const Archive = () => {
                 </div>
               </div>
 
+              <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <Folder className="text-sky-500" size={18} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                        Folders
+                      </p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {itemCounts.folders}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <CalendarIcon className="text-emerald-500" size={18} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                        Events
+                      </p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {itemCounts.events}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <FileText className="text-violet-500" size={18} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                        Documents
+                      </p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {itemCounts.documents}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <Users className="text-emerald-600" size={18} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">
+                        Personnel
+                      </p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {itemCounts.personnel}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Search Bar */}
-              <div className="relative">
+              <div className="mt-6 relative">
                 <Search
                   size={18}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"
                 />
                 <input
                   type="text"
                   placeholder="Search by name, type, or deleted by..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white"
+                  className="w-full pl-12 pr-12 py-3 border-2 border-slate-200 rounded-3xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white shadow-sm"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     title="Clear search"
                   >
                     <X size={18} />
@@ -489,32 +558,27 @@ const Archive = () => {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="space-y-4 p-6">
                 {filteredItems.map((item) => (
                   <div
                     key={item.id}
-                    className="p-4 hover:bg-slate-50 transition-colors"
+                    className="rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white hover:shadow-lg"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
                       {/* Left: Type & Details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${getTypeBadgeStyles(
+                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border ${getTypeBadgeStyles(
                               item.type,
                             )}`}
                           >
                             {getTypeIcon(item.type)}
                             {getTypeLabel(item.type)}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-slate-900 truncate">
-                            {item.title}
-                          </p>
                           {item.type === "event" && item.data?.status && (
                             <span
-                              className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              className={`text-xs font-semibold px-2 py-1 rounded-full ${
                                 item.data.status === "cancelled"
                                   ? "bg-red-100 text-red-700"
                                   : "bg-blue-100 text-blue-700"
@@ -524,7 +588,10 @@ const Archive = () => {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-base font-semibold text-slate-900 truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-sm text-slate-500 mt-2">
                           Deleted by {item.deletedBy} on{" "}
                           {item.deletedAt
                             ? new Date(item.deletedAt).toLocaleString()
@@ -533,10 +600,10 @@ const Archive = () => {
 
                         {/* Extra details for Personnel */}
                         {item.type === "personnel" && item.data?.age && (
-                          <p className="text-xs text-slate-600 mt-1">
+                          <p className="text-sm text-slate-600 mt-2">
                             Age: {item.data.age} •{" "}
                             <span
-                              className={`${
+                              className={`font-semibold ${
                                 item.data.status === "Active"
                                   ? "text-emerald-600"
                                   : "text-red-600"
@@ -549,7 +616,7 @@ const Archive = () => {
                       </div>
 
                       {/* Right: Actions */}
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => {
                             if (item.type === "folder") {
@@ -562,9 +629,9 @@ const Archive = () => {
                               handleRestoreKagawad(item.id);
                             }
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
+                          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition"
                         >
-                          <RotateCcw size={14} />
+                          <RotateCcw size={16} />
                           Restore
                         </button>
                         <button
@@ -579,9 +646,9 @@ const Archive = () => {
                               handleHardDeleteKagawad(item.id);
                             }
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                          className="inline-flex items-center gap-2 rounded-2xl bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                           Delete
                         </button>
                       </div>
