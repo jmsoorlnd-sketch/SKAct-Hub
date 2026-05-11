@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useToast } from "../../components/Toast";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, X } from "lucide-react";
 
 const SubmitReport = () => {
   const { success, error } = useToast();
@@ -90,6 +90,24 @@ const SubmitReport = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const reportSummary = useMemo(() => {
+    const counts = {
+      total: myReports.length,
+      valid: 0,
+      invalid: 0,
+      pending: 0,
+    };
+
+    myReports.forEach((report) => {
+      const status = report.validationStatus?.toLowerCase() || "pending";
+      if (status === "valid") counts.valid += 1;
+      else if (status === "not valid") counts.invalid += 1;
+      else counts.pending += 1;
+    });
+
+    return counts;
+  }, [myReports]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm();
@@ -144,9 +162,9 @@ const SubmitReport = () => {
     }`;
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="space-y-8">
-        <div className="bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <div className="rounded-4xl border border-slate-200/80 bg-white px-6 py-8 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.15)] sm:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800">
@@ -167,7 +185,7 @@ const SubmitReport = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="rounded-4xl border border-slate-200/80 bg-white px-6 py-8 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.15)] sm:px-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-2 text-slate-800">
               Your Submitted Reports
@@ -175,6 +193,33 @@ const SubmitReport = () => {
             <p className="text-slate-600 text-sm">
               Every report shows the full details below.
             </p>
+          </div>
+
+          <div className="mb-6 grid gap-3 sm:grid-cols-4">
+            <div className="rounded-3xl border border-slate-200/80 bg-slate-50 px-4 py-4 text-sm">
+              <p className="text-slate-500">Total Reports</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">
+                {reportSummary.total}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-slate-200/80 bg-emerald-50 px-4 py-4 text-sm">
+              <p className="text-emerald-700">Valid</p>
+              <p className="mt-2 text-2xl font-semibold text-emerald-900">
+                {reportSummary.valid}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-slate-200/80 bg-rose-50 px-4 py-4 text-sm">
+              <p className="text-rose-700">Not Valid</p>
+              <p className="mt-2 text-2xl font-semibold text-rose-900">
+                {reportSummary.invalid}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-slate-200/80 bg-amber-50 px-4 py-4 text-sm">
+              <p className="text-amber-700">Pending</p>
+              <p className="mt-2 text-2xl font-semibold text-amber-900">
+                {reportSummary.pending}
+              </p>
+            </div>
           </div>
 
           {loadingReports ? (
@@ -187,92 +232,96 @@ const SubmitReport = () => {
               button above.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Reference ID Number
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      PYDP
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Program Name
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Objectives
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Start Date
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Budget Allocated
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Budget Spent
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Status
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Barangay
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Submitted By
-                    </th>
-                    <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
-                      Submitted At
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {myReports.map((report) => (
-                    <tr key={report._id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2">{report.idNumber}</td>
-                      <td className="px-3 py-2">{report.pydp}</td>
-                      <td className="px-3 py-2">{report.programName || "-"}</td>
-                      <td className="max-w-48 px-3 py-2 text-slate-700 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {report.objectives || "-"}
-                      </td>
-                      <td className="px-3 py-2">
-                        {new Date(report.startDate).toLocaleDateString()}
-                      </td>
-                      <td className="px-3 py-2">
-                        ₱{Number(report.budgetAllocated).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2">
-                        ₱{Number(report.budgetSpent).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            report.validationStatus === "valid"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : report.validationStatus === "not valid"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {report.validationStatus
-                            ? report.validationStatus
-                            : "pending"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        {report.barangay?.barangayName || "Unknown"}
-                      </td>
-                      <td className="px-3 py-2">
-                        {report.submittedBy?.firstname || ""}{" "}
-                        {report.submittedBy?.lastname || ""}
-                      </td>
-                      <td className="px-3 py-2">
-                        {new Date(report.submittedAt).toLocaleString()}
-                      </td>
+            <div className="overflow-hidden rounded-3xl border border-slate-200/80 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Reference ID Number
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        PYDP
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Program Name
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Objectives
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Start Date
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Budget Allocated
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Budget Spent
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Status
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Barangay
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Submitted By
+                      </th>
+                      <th className="whitespace-nowrap px-3 py-2 font-semibold text-xs">
+                        Submitted At
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 bg-white">
+                    {myReports.map((report) => (
+                      <tr key={report._id} className="hover:bg-slate-50">
+                        <td className="px-3 py-2">{report.idNumber}</td>
+                        <td className="px-3 py-2">{report.pydp}</td>
+                        <td className="px-3 py-2">
+                          {report.programName || "-"}
+                        </td>
+                        <td className="max-w-48 px-3 py-2 text-slate-700 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {report.objectives || "-"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {new Date(report.startDate).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-2">
+                          ₱{Number(report.budgetAllocated).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2">
+                          ₱{Number(report.budgetSpent).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${
+                              report.validationStatus === "valid"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : report.validationStatus === "not valid"
+                                  ? "bg-rose-100 text-rose-700"
+                                  : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {report.validationStatus
+                              ? report.validationStatus
+                              : "pending"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          {report.barangay?.barangayName || "Unknown"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {report.submittedBy?.firstname || ""}{" "}
+                          {report.submittedBy?.lastname || ""}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-slate-500 text-sm">
+                          {new Date(report.submittedAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -287,7 +336,7 @@ const SubmitReport = () => {
             }
           }}
         >
-          <div className="w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl max-h-[90vh]">
+          <div className="w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl max-h-[90vh]">
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">
