@@ -24,14 +24,18 @@ const StatCard = React.memo(function StatCard({
 }) {
   const Icon = icon;
   return (
-    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between">
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm px-5 py-5 flex items-center justify-between gap-4">
       <div>
-        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
           {label}
         </p>
-        <p className="text-2xl font-semibold text-gray-900 mt-0.5">{value}</p>
+        <p className="text-3xl font-semibold text-slate-950 mt-1">{value}</p>
       </div>
-      {Icon && <Icon size={22} className={iconClass} />}
+      {Icon && (
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+          <Icon size={24} className={iconClass} />
+        </div>
+      )}
     </div>
   );
 });
@@ -427,76 +431,97 @@ const AdminArchive = () => {
   const isLoading = loadingUsers || loadingBarangays || loadingEvents;
 
   return (
-    <div className="min-h-screen bg-blue-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">Archive</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Manage deleted users and barangays. You can restore or permanently
-              delete them.
-            </p>
+    <div className="min-h-screen bg-slate-100 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
+        <div className="rounded-4xl border border-slate-200 bg-white/90 shadow-[0_25px_70px_-40px_rgba(15,23,42,0.25)] backdrop-blur-md p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-sky-600">
+                Archive workspace
+              </p>
+              <h1 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-950">
+                Archived records
+              </h1>
+              <p className="mt-4 text-sm leading-7 text-slate-600 max-w-2xl">
+                Restore or permanently delete archived users, barangays, and
+                canceled events from a single secure workspace.
+              </p>
+            </div>
+            <div className="rounded-3xl bg-slate-950 px-6 py-5 shadow-xl shadow-slate-950/10 text-white">
+              <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
+                Total archived
+              </p>
+              <p className="mt-3 text-4xl font-semibold tracking-tight">
+                {allArchivedItems.length}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard
             label="Deleted Users"
             value={stats.deletedUsers}
             icon={Users}
-            iconClass="text-blue-400"
+            iconClass="text-sky-500"
           />
           <StatCard
             label="Deleted Barangays"
             value={stats.deletedBarangays}
             icon={Building2}
-            iconClass="text-purple-400"
+            iconClass="text-violet-500"
           />
           <StatCard
             label="Cancelled Events"
             value={stats.cancelledEvents}
             icon={Calendar}
-            iconClass="text-red-400"
+            iconClass="text-rose-500"
           />
         </div>
 
         {/* Combined Archive Section */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-          {/* Header */}
-          <div className="bg-linear-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
-                All Archived Items
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">
-                {filteredItems.length} item
-                {filteredItems.length === 1 ? "" : "s"}
-                {searchQuery && ` • Filtering ${allArchivedItems.length}`}
-              </p>
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-slate-950 px-6 py-6 sm:px-8 sm:py-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-white">
+                  All Archived Items
+                </h2>
+                <p className="mt-2 text-sm text-slate-300 max-w-2xl">
+                  Showing {filteredItems.length} of {allArchivedItems.length}{" "}
+                  archived records.
+                  {searchQuery && ` • Filtered from all records.`}
+                </p>
+              </div>
+              <div className="rounded-3xl bg-slate-900/80 px-4 py-3 text-sm text-slate-200 border border-slate-800">
+                <span className="font-semibold text-white">
+                  {filteredItems.length}
+                </span>
+                <span className="ml-2">results</span>
+              </div>
             </div>
+          </div>
 
-            {/* Search Bar */}
+          <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-8">
             <div className="relative">
               <Search
-                size={18}
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
               />
               <input
                 type="text"
                 placeholder="Search by name, type, or details..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                className="w-full rounded-3xl border border-slate-200 bg-white py-3 pl-12 pr-12 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-200"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   title="Clear search"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               )}
             </div>
@@ -504,36 +529,36 @@ const AdminArchive = () => {
 
           {/* Content */}
           {isLoading ? (
-            <div className="p-6">
-              <p className="text-sm text-gray-500">Loading...</p>
+            <div className="p-10 text-center">
+              <p className="text-sm text-slate-500">Loading archived items…</p>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ArchiveIcon className="text-gray-400" size={40} />
+            <div className="p-14 text-center">
+              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                <ArchiveIcon size={42} />
               </div>
-              <p className="text-base text-gray-600 font-semibold">
+              <p className="text-base font-semibold text-slate-900">
                 {searchQuery ? "No matching items found" : "No archived items"}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="mt-2 text-sm text-slate-500">
                 {searchQuery
-                  ? "Try adjusting your search terms"
-                  : "Deleted users, barangays, and cancelled events will appear here."}
+                  ? "Try another search term or clear the filter."
+                  : "Deleted users, barangays, and canceled events will appear here once archived."}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="grid gap-4 px-6 py-6 sm:px-8 sm:py-8 xl:grid-cols-2">
               {filteredItems.map((item) => (
                 <div
                   key={item.id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
+                  className="group rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     {/* Left: Type & Details */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-3">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${getTypeBadgeStyles(
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${getTypeBadgeStyles(
                             item.type,
                           )}`}
                         >
@@ -541,10 +566,10 @@ const AdminArchive = () => {
                           {getTypeLabel(item.type)}
                         </span>
                       </div>
-                      <p className="font-semibold text-gray-900 truncate">
+                      <h3 className="mt-4 text-lg font-semibold text-slate-950 truncate">
                         {item.title}
-                      </p>
-                      <div className="text-xs text-gray-600 mt-2 space-y-1">
+                      </h3>
+                      <div className="mt-3 space-y-2 text-sm text-slate-600">
                         {item.type === "user" && (
                           <>
                             {item.data.username && <p>@{item.data.username}</p>}
@@ -569,7 +594,7 @@ const AdminArchive = () => {
                           </>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-slate-500 mt-2">
                         <Calendar size={12} className="inline mr-1" />
                         Deleted{" "}
                         {item.deletedAt
@@ -579,7 +604,7 @@ const AdminArchive = () => {
                     </div>
 
                     {/* Right: Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-col gap-3 items-stretch pt-2 lg:pt-0">
                       <button
                         onClick={() => {
                           if (item.type === "event") {
@@ -591,9 +616,9 @@ const AdminArchive = () => {
                             );
                           }
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                       >
-                        <RotateCcw size={14} />
+                        <RotateCcw size={16} />
                         Restore
                       </button>
                       <button
@@ -623,9 +648,9 @@ const AdminArchive = () => {
                             );
                           }
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                         Delete
                       </button>
                     </div>
