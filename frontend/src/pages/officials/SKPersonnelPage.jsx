@@ -164,7 +164,9 @@ const SKPersonnelPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setBarangayName(data.barangayName || data.name || "");
+        setBarangayName(
+          data.barangay?.barangayName || data.barangay?.name || "",
+        );
       }
     } catch (error) {
       console.error("Error fetching barangay name:", error);
