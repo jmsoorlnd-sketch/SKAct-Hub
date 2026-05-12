@@ -65,10 +65,22 @@ const DEFAULT_STATUS = {
   label: "Unknown",
 };
 
+const getDisplayName = (user, fallback = "Unknown") => {
+  if (!user) return fallback;
+
+  const fullName =
+    user.firstname || user.lastname
+      ? `${user.firstname || ""} ${user.lastname || ""}`.trim()
+      : "";
+
+  return fullName || user.username || user.email || fallback;
+};
+
 /* ===================== MAIN COMPONENT ===================== */
 const Inbox = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [sentMessages, setSentMessages] = useState([]);
   const [receivedMessages, setReceivedMessages] = useState([]);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -330,10 +342,42 @@ const Inbox = () => {
     );
   }, [activeTab, sentMessages, receivedMessages]);
 
+  const getDisplayName = useCallback((user, fallback = "Unknown") => {
+    if (!user) return fallback;
+
+    const fullName =
+      user.firstname || user.lastname
+        ? `${user.firstname || ""} ${user.lastname || ""}`.trim()
+        : "";
+
+    return fullName || user.username || user.email || fallback;
+  }, []);
+
   const filteredMessages = useMemo(() => {
-    if (statusFilter === "all") return messages;
-    return messages.filter((m) => m.status === statusFilter);
-  }, [messages, statusFilter]);
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    const statusFiltered =
+      statusFilter === "all"
+        ? messages
+        : messages.filter((m) => m.status === statusFilter);
+
+    if (!normalizedQuery) return statusFiltered;
+
+    return statusFiltered.filter((m) => {
+      const searchable = [
+        m.subject,
+        m.body,
+        getDisplayName(m.sender),
+        getDisplayName(m.recipient),
+        m.status,
+        m._source,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(normalizedQuery);
+    });
+  }, [messages, statusFilter, searchQuery, getDisplayName]);
 
   const statusToggleOptions = [
     "all",
@@ -377,17 +421,6 @@ const Inbox = () => {
     [],
   );
 
-  const getDisplayName = useCallback((user, fallback = "Unknown") => {
-    if (!user) return fallback;
-
-    const fullName =
-      user.firstname || user.lastname
-        ? `${user.firstname || ""} ${user.lastname || ""}`.trim()
-        : "";
-
-    return fullName || user.username || user.email || fallback;
-  }, []);
-
   const getAttachments = useCallback((message) => {
     if (!message) return [];
 
@@ -427,7 +460,7 @@ const Inbox = () => {
 
   /* ==================== RENDER ==================== */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
         {/* Toast Notification */}
         {toastMessage && (
@@ -463,7 +496,7 @@ const Inbox = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 sm:gap-3">
-                <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <div className="w-8 sm:w-10 h-8 sm:h-10 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
                   <InboxIcon className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
                 </div>
                 Messages
@@ -528,28 +561,41 @@ const Inbox = () => {
           </div>
 
           {/* Status Filter Buttons */}
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="text-sm font-semibold text-slate-600">
-              Filter:
-            </span>
-            {statusToggleOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setStatusFilter(option)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                  statusFilter === option
-                    ? "bg-blue-500 text-white border-blue-600"
-                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
-                }`}
-              >
-                {option.charAt(0).toUpperCase() + option.slice(1)}
-                {option !== "all" && stats[option] > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
-                    {stats[option]}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="grid gap-3 md:grid-cols-[1fr_auto] items-center mb-4">
+            <div className="relative">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                type="text"
+                placeholder="Search by subject, body, sender, or status"
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 pr-12 text-sm text-slate-800 shadow-sm focus:border-blue-400 focus:outline-none focus:ring focus:ring-blue-100"
+              />
+              <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                <span className="text-sm">Search</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {statusToggleOptions.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setStatusFilter(option)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    statusFilter === option
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
+                  }`}
+                >
+                  {option === "all"
+                    ? "All"
+                    : option.charAt(0).toUpperCase() + option.slice(1)}
+                  {option !== "all" && stats[option] > 0 && (
+                    <span className="ml-1 inline-flex h-5 items-center justify-center rounded-full bg-slate-100 px-2 text-[10px] text-slate-700">
+                      {stats[option]}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Statistics Cards */}
@@ -616,7 +662,7 @@ const Inbox = () => {
         {error && (
           <div className="mb-6 bg-white rounded-xl shadow-md border-2 border-red-200 p-5">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
                 <AlertCircle className="w-5 h-5 text-red-600" />
               </div>
               <div className="flex-1">
@@ -676,177 +722,323 @@ const Inbox = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredMessages.map((msg) => {
-              const statusConfig = getStatusConfig(msg.status);
-              const StatusIcon = statusConfig.icon;
+          <div className="grid gap-4 xl:grid-cols-[1.55fr_0.95fr]">
+            <div className="space-y-3">
+              {filteredMessages.map((msg) => {
+                const statusConfig = getStatusConfig(msg.status);
+                const StatusIcon = statusConfig.icon;
 
-              return (
-                <div
-                  key={msg._id}
-                  onClick={() => setSelectedMessage(msg)}
-                  className="bg-white rounded-lg shadow-md border-2 border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
-                >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                        <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md ${
-                            activeTab === "received" && msg.isAdminScheduled
-                              ? "bg-gradient-to-br from-purple-500 to-purple-600"
-                              : "bg-gradient-to-br from-blue-500 to-indigo-600"
-                          }`}
-                        >
-                          {activeTab === "received" && msg.isAdminScheduled ? (
-                            <Calendar className="w-4 h-4 text-white" />
-                          ) : (
-                            <Mail className="w-4 h-4 text-white" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="font-bold text-slate-900 text-base leading-tight">
-                              {msg.subject}
-                            </h3>
+                return (
+                  <div
+                    key={msg._id}
+                    onClick={() => setSelectedMessage(msg)}
+                    className="bg-white rounded-lg shadow-md border-2 border-slate-200 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
+                  >
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-md ${
+                              activeTab === "received" && msg.isAdminScheduled
+                                ? "bg-linear-to-br from-purple-500 to-purple-600"
+                                : "bg-linear-to-br from-blue-500 to-indigo-600"
+                            }`}
+                          >
                             {activeTab === "received" &&
-                              msg.isAdminScheduled && (
-                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold whitespace-nowrap">
-                                  Admin Event
-                                </span>
-                              )}
+                            msg.isAdminScheduled ? (
+                              <Calendar className="w-4 h-4 text-white" />
+                            ) : (
+                              <Mail className="w-4 h-4 text-white" />
+                            )}
                           </div>
-                          <div className="space-y-0.5 text-[11px] text-slate-500">
-                            <p>
-                              To:{" "}
-                              <span className="font-semibold text-slate-700">
-                                {getDisplayName(msg.recipient, "Admin")}
-                              </span>
-                            </p>
-                            <p>
-                              From:{" "}
-                              <span className="font-semibold text-slate-700">
-                                {getDisplayName(msg.sender)}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <span
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold border-2 bg-gradient-to-r ${statusConfig.color} flex-shrink-0`}
-                      >
-                        <StatusIcon
-                          size={12}
-                          className={
-                            statusConfig.animate
-                              ? "animate-spin inline-block"
-                              : ""
-                          }
-                        />
-                        {statusConfig.label}
-                      </span>
-                    </div>
-
-                    <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                      <p className="text-xs text-slate-700 whitespace-pre-wrap break-words line-clamp-3">
-                        {msg.body}
-                      </p>
-                    </div>
-
-                    {msg.status === "rejected" && msg.rejectionReason && (
-                      <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <p className="text-xs text-red-700 whitespace-pre-wrap break-words">
-                          <strong>Reason:</strong> {msg.rejectionReason}
-                        </p>
-                      </div>
-                    )}
-
-                    {(() => {
-                      const msgAttachments = getAttachments(msg);
-                      return msgAttachments.length > 0 ? (
-                        <div className="mb-3 p-2.5 bg-blue-50 rounded-lg border-2 border-blue-200">
-                          <div className="space-y-2">
-                            {msgAttachments.map((att, i) => (
-                              <div
-                                key={`att-${i}`}
-                                className="flex items-center gap-1.5"
-                              >
-                                <Paperclip className="w-3.5 h-3.5 text-blue-600" />
-                                {att.url ? (
-                                  <a
-                                    href={`${window.BACKEND_URL}${att.url}`}
-                                    download
-                                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {att.name}
-                                  </a>
-                                ) : (
-                                  <span className="text-xs font-semibold text-blue-600 truncate">
-                                    {att.name}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
+                                {msg.subject}
+                              </h3>
+                              {activeTab === "received" &&
+                                msg.isAdminScheduled && (
+                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold whitespace-nowrap">
+                                    Admin Event
                                   </span>
                                 )}
-                              </div>
-                            ))}
+                            </div>
+                            <div className="grid grid-cols-1 gap-1 text-[12px] text-slate-500 sm:grid-cols-2">
+                              <p className="truncate">
+                                To:{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {getDisplayName(msg.recipient, "Admin")}
+                                </span>
+                              </p>
+                              <p className="truncate">
+                                From:{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {getDisplayName(msg.sender)}
+                                </span>
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      ) : null;
-                    })()}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500">
-                        <Calendar size={11} />
-                        <span className="font-medium">
-                          {new Date(msg.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                        <span
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold border ${statusConfig.color}`}
+                        >
+                          <StatusIcon
+                            size={14}
+                            className={
+                              statusConfig.animate
+                                ? "animate-spin inline-block"
+                                : ""
+                            }
+                          />
+                          {statusConfig.label}
                         </span>
                       </div>
 
-                      <div className="flex gap-2">
-                        {activeTab === "sent" && msg.status === "pending" && (
+                      <div className="mb-3 p-4 bg-slate-50 rounded-3xl border border-slate-200">
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap wrap-break-word line-clamp-4">
+                          {msg.body}
+                        </p>
+                      </div>
+
+                      {msg.status === "rejected" && msg.rejectionReason && (
+                        <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                          <p className="text-xs text-red-700 whitespace-pre-wrap wrap-break-word">
+                            <strong>Reason:</strong> {msg.rejectionReason}
+                          </p>
+                        </div>
+                      )}
+
+                      {(() => {
+                        const msgAttachments = getAttachments(msg);
+                        return msgAttachments.length > 0 ? (
+                          <div className="mb-3 p-2.5 bg-blue-50 rounded-lg border-2 border-blue-200">
+                            <div className="space-y-2">
+                              {msgAttachments.map((att, i) => (
+                                <div
+                                  key={`att-${i}`}
+                                  className="flex items-center gap-1.5"
+                                >
+                                  <Paperclip className="w-3.5 h-3.5 text-blue-600" />
+                                  {att.url ? (
+                                    <a
+                                      href={`${window.BACKEND_URL}${att.url}`}
+                                      download
+                                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline truncate"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {att.name}
+                                    </a>
+                                  ) : (
+                                    <span className="text-xs font-semibold text-blue-600 truncate">
+                                      {att.name}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-2 text-[12px] text-slate-500">
+                          <Calendar size={12} />
+                          <span className="font-medium">
+                            {new Date(msg.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                            {" • "}
+                            {new Date(msg.createdAt).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {activeTab === "sent" && msg.status === "pending" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmAndUpdateMessageStatus(
+                                  msg._id,
+                                  "cancelled",
+                                );
+                              }}
+                              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-full text-[11px] font-semibold border border-red-200 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                          {activeTab === "sent" &&
+                            msg.status === "cancelled" && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleUpdateMessageStatus(msg._id, "pending");
+                                }}
+                                className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-full text-[11px] font-semibold border border-amber-200 transition-colors"
+                              >
+                                Resend
+                              </button>
+                            )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              confirmAndUpdateMessageStatus(
-                                msg._id,
-                                "cancelled",
-                              );
+                              setSelectedMessage(msg);
                             }}
-                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-[11px] font-semibold border border-red-200 transition-colors"
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-[11px] font-semibold border border-slate-200 transition-colors"
                           >
-                            Cancel
+                            View details
                           </button>
-                        )}
-                        {activeTab === "sent" && msg.status === "cancelled" && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUpdateMessageStatus(msg._id, "pending");
-                            }}
-                            className="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg text-[11px] font-semibold border border-amber-200 transition-colors"
-                          >
-                            Resend
-                          </button>
-                        )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <aside className="hidden xl:block">
+              <div className="sticky top-6 space-y-4">
+                <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.2em]">
+                        Inbox summary
+                      </p>
+                      <h2 className="text-xl font-bold text-slate-900 mt-2">
+                        {selectedMessage
+                          ? "Selected message"
+                          : "Choose a message"}
+                      </h2>
+                    </div>
+                    <button
+                      onClick={() => fetchMessages()}
+                      disabled={loading}
+                      className="h-10 w-10 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition"
+                      title="Refresh messages"
+                    >
+                      <RefreshCw
+                        size={18}
+                        className={loading ? "animate-spin" : ""}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="rounded-3xl bg-slate-50 p-4 border border-slate-200">
+                      <p className="text-xs font-semibold uppercase text-slate-500 tracking-[0.2em]">
+                        Total
+                      </p>
+                      <p className="mt-2 text-3xl font-bold text-slate-900">
+                        {stats.total}
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-3xl bg-blue-50 p-4 border border-blue-100">
+                        <p className="text-xs font-semibold uppercase text-blue-600 tracking-[0.2em]">
+                          Pending
+                        </p>
+                        <p className="mt-2 text-xl font-bold text-blue-800">
+                          {stats.pending}
+                        </p>
+                      </div>
+                      <div className="rounded-3xl bg-emerald-50 p-4 border border-emerald-100">
+                        <p className="text-xs font-semibold uppercase text-emerald-600 tracking-[0.2em]">
+                          Approved
+                        </p>
+                        <p className="mt-2 text-xl font-bold text-emerald-800">
+                          {stats.approved}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-md font-semibold text-slate-900">
+                      Details
+                    </h3>
+                    {selectedMessage && (
+                      <button
+                        onClick={() => setSelectedMessage(null)}
+                        className="text-sm text-slate-500 hover:text-slate-700"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {selectedMessage ? (
+                    <div className="space-y-4 text-sm text-slate-700">
+                      <p>
+                        <span className="block text-slate-500">Subject</span>
+                        <span className="font-semibold">
+                          {selectedMessage.subject}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="block text-slate-500">From</span>
+                        <span className="font-semibold">
+                          {getDisplayName(selectedMessage.sender)}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="block text-slate-500">To</span>
+                        <span className="font-semibold">
+                          {getDisplayName(selectedMessage.recipient, "Admin")}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="block text-slate-500">Status</span>
+                        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-[12px] text-slate-700">
+                          {getStatusConfig(selectedMessage.status).label}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="block text-slate-500">Created</span>
+                        <span className="font-semibold">
+                          {new Date(selectedMessage.createdAt).toLocaleString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl bg-slate-50 p-4 border border-slate-200 text-slate-500">
+                      Select a message to view details, attachments, and
+                      actions.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </aside>
           </div>
         )}
 
         {/* Message Details Modal */}
         {selectedMessage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 lg:hidden">
             <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-blue-50">
                 <h2 className="text-lg font-bold">Message Details</h2>
                 <button
                   onClick={() => setSelectedMessage(null)}
@@ -858,88 +1050,6 @@ const Inbox = () => {
               <div className="p-4 space-y-3 overflow-y-auto flex-1">
                 <p className="text-sm text-slate-600">
                   <strong>Subject:</strong> {selectedMessage.subject}
-                </p>
-                <p className="text-sm text-slate-600">
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      selectedMessage.status === "approved"
-                        ? "bg-green-100 text-green-700"
-                        : selectedMessage.status === "rejected"
-                          ? "bg-red-100 text-red-700"
-                          : selectedMessage.status === "pending"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {selectedMessage.status?.toUpperCase()}
-                  </span>
-                </p>
-                <div className="space-y-1">
-                  <p className="text-sm text-slate-600">
-                    <strong>To:</strong>{" "}
-                    {getDisplayName(selectedMessage.recipient, "Admin")}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    <strong>From:</strong>{" "}
-                    {getDisplayName(selectedMessage.sender)}
-                  </p>
-                </div>
-                <p className="text-sm text-slate-600">
-                  <strong>Body:</strong>
-                </p>
-                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-700 whitespace-pre-wrap">
-                  {selectedMessage.body}
-                </div>
-                {selectedMessage.status === "rejected" &&
-                  selectedMessage.rejectionReason && (
-                    <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                      <p className="text-sm text-red-700">
-                        <strong>Rejection Reason:</strong>{" "}
-                        {selectedMessage.rejectionReason}
-                      </p>
-                    </div>
-                  )}
-                {(() => {
-                  const selectedAttachments = getAttachments(selectedMessage);
-                  return selectedAttachments.length > 0 ? (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm font-semibold text-blue-800 mb-2">
-                        Attachments:
-                      </p>
-                      {selectedAttachments.map((att, index) => (
-                        <div key={`attachment-${index}`} className="mb-2">
-                          {att.url ? (
-                            <a
-                              href={`${window.BACKEND_URL}${att.url}`}
-                              download
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-2"
-                            >
-                              <Paperclip size={14} />
-                              {att.name}
-                            </a>
-                          ) : (
-                            <span className="text-sm font-semibold text-blue-600 flex items-center gap-2">
-                              <Paperclip size={14} />
-                              {att.name}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null;
-                })()}
-                <p className="text-sm text-slate-500">
-                  <strong>Created:</strong>{" "}
-                  {new Date(selectedMessage.createdAt).toLocaleString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
                 </p>
               </div>
             </div>
@@ -981,7 +1091,7 @@ const StatCard = ({ icon: Icon, title, value, color }) => {
     <div className="bg-white rounded-xl shadow-md border-2 border-slate-200 p-4 hover:shadow-lg transition-all">
       <div className="flex items-center justify-between mb-3">
         <div
-          className={`w-11 h-11 bg-gradient-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
+          className={`w-11 h-11 bg-linear-to-br ${c.bg} rounded-lg flex items-center justify-center shadow-md`}
         >
           <Icon className="w-5 h-5 text-white" />
         </div>
