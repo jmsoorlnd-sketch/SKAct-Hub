@@ -317,7 +317,7 @@ const ProfilePage = () => {
     formData.email.trim() === verifiedEmail;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-4 sm:py-6 px-3 sm:px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-100 to-slate-200 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Setup Banner */}
         {showSetupBanner && (
@@ -362,23 +362,24 @@ const ProfilePage = () => {
         )}
 
         {/* Main Card */}
-        <div className="bg-white rounded-lg sm:rounded-xl shadow-md border-2 border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 overflow-hidden">
           {/* Card Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 sm:px-6 py-4 sm:py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="bg-gradient-to-r from-sky-600 to-indigo-600 px-6 sm:px-8 py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-white mb-1">
+                <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-1">
                   My Profile
                 </h1>
-                <p className="text-xs text-blue-100">
-                  Manage your personal information
+                <p className="text-sm text-sky-100 max-w-xl">
+                  Manage your personal information and keep your account details
+                  up to date.
                 </p>
               </div>
               {!isEditing && (
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="px-3 sm:px-4 py-2 bg-white text-blue-600 rounded-lg text-xs sm:text-sm font-bold hover:bg-blue-50 transition-colors shadow-md flex items-center gap-2 whitespace-nowrap"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white text-sky-700 rounded-2xl text-sm font-semibold hover:bg-slate-100 transition-colors shadow-sm whitespace-nowrap"
                 >
                   <Edit2 className="w-4 h-4" /> Edit
                 </button>
@@ -389,9 +390,9 @@ const ProfilePage = () => {
           <form onSubmit={handleSubmit}>
             {/* Profile Image Section */}
             <div className="px-6 py-5 border-b-2 border-slate-200 bg-slate-50">
-              <div className="flex flex-col sm:flex-row items-center gap-5">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="relative">
-                  <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-200 border-2 border-white shadow-lg">
+                  <div className="w-28 h-28 rounded-[1.5rem] overflow-hidden bg-slate-200 border-4 border-white shadow-xl">
                     {imagePreview || formData.profileImage ? (
                       <img
                         src={
@@ -402,13 +403,13 @@ const ProfilePage = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-500 to-indigo-600">
                         <User className="w-12 h-12 text-white" />
                       </div>
                     )}
                   </div>
                   {isEditing && (
-                    <label className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors shadow-md border-2 border-white">
+                    <label className="absolute bottom-0 right-0 w-9 h-9 bg-sky-600 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-sky-700 transition-colors shadow-lg border-2 border-white">
                       <Camera className="w-4 h-4 text-white" />
                       <input
                         type="file"
@@ -488,13 +489,19 @@ const ProfilePage = () => {
                   </div>
                 ) : !isEditing ? (
                   <div className="flex-1 text-center sm:text-left">
-                    <h2 className="text-lg font-bold text-slate-900">
+                    <h2 className="text-2xl font-semibold text-slate-900">
                       {formData.firstname} {formData.lastname}
                     </h2>
-                    <p className="text-sm text-slate-600">{formData.role}</p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-sm font-medium text-slate-600 mt-1">
+                      {formData.role}
+                    </p>
+                    <p className="text-sm text-slate-500 mt-2">
                       {formData.email}
                     </p>
+                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold shadow-sm">
+                      <Shield className="w-3.5 h-3.5" />
+                      Profile info
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -896,13 +903,13 @@ const ProfilePage = () => {
 
 /* ==================== HELPER COMPONENTS ==================== */
 const InfoField = ({ icon, label, value, badge }) => (
-  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-    <div className="flex items-center gap-2 mb-1">
+  <div className="p-4 bg-white rounded-3xl border border-slate-200 shadow-sm">
+    <div className="flex items-center gap-2 mb-2">
       {icon && <div className="text-slate-500">{icon}</div>}
       <label className="text-xs font-bold text-slate-600">{label}</label>
     </div>
     {badge ? (
-      <span className="inline-block px-2.5 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-bold">
+      <span className="inline-flex items-center px-3 py-1 rounded-full bg-sky-100 text-sky-700 text-xs font-semibold">
         {value || "—"}
       </span>
     ) : (
@@ -945,8 +952,8 @@ const InputField = ({
         readOnly={readOnly}
         disabled={disabled}
         required={required}
-        className={`w-full ${icon ? "pl-9" : "pl-3"} pr-3 py-2 text-sm border-2 rounded-lg transition-all
-          ${error ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-500 focus:border-red-500" : "border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"}
+        className={`w-full ${icon ? "pl-9" : "pl-3"} pr-3 py-2 text-sm border-2 rounded-2xl transition-all
+          ${error ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-500 focus:border-red-500" : "border-slate-200 bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"}
           ${disabled ? "bg-slate-100 text-slate-600 cursor-not-allowed" : "bg-white"}`}
       />
     </div>
