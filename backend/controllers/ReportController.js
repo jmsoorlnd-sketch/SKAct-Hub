@@ -31,11 +31,14 @@ export const submitReport = async (req, res) => {
         .json({ message: "Reference ID number must be exactly 5 digits." });
     }
 
-    const existingReport = await Report.findOne({ idNumber });
+    const existingReport = await Report.findOne({
+      idNumber,
+      barangay: user.barangay._id,
+    });
     if (existingReport) {
       return res.status(400).json({
         message:
-          "Reference ID number already taken. Please use another Reference ID.",
+          "Reference ID number already taken in your barangay. Please use another Reference ID.",
       });
     }
 
@@ -110,10 +113,14 @@ export const submitReport = async (req, res) => {
     res.status(201).json({ message: "Report submitted successfully", report });
   } catch (error) {
     console.error(error);
-    if (error.code === 11000 && error.keyPattern?.idNumber) {
+    if (
+      error.code === 11000 &&
+      (error.keyPattern?.idNumber ||
+        (error.keyPattern?.barangay && error.keyPattern?.idNumber))
+    ) {
       return res.status(400).json({
         message:
-          "Reference ID number already taken. Please use another Reference ID.",
+          "Reference ID number already taken in your barangay. Please use another Reference ID.",
       });
     }
     res.status(500).json({ message: "Server error" });

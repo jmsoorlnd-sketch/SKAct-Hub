@@ -5,7 +5,6 @@ const reportSchema = new mongoose.Schema({
     type: String,
     required: true,
     match: /^\d+$/,
-    unique: true,
   },
   pydp: {
     type: String,
@@ -67,7 +66,7 @@ const reportSchema = new mongoose.Schema({
   },
 });
 
-reportSchema.index({ idNumber: 1 }, { unique: true });
+reportSchema.index({ barangay: 1, idNumber: 1 }, { unique: true });
 
 const Report = mongoose.models.Report || mongoose.model("Report", reportSchema);
 

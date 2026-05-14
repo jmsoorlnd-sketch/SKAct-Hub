@@ -139,10 +139,14 @@ const SubmitReport = () => {
       const message = err?.response?.data?.message;
       if (
         message ===
-        "Reference ID number already taken. Please use another Reference ID."
+        "Reference ID number already taken in your barangay. Please use another Reference ID."
       ) {
-        setFormErrors({ idNumber: "This Reference ID is already taken" });
-        error("The Reference ID is already taken, please use another ID");
+        setFormErrors({
+          idNumber: "This Reference ID is already taken in your barangay",
+        });
+        error(
+          "The Reference ID is already taken in your barangay, please use another ID",
+        );
       } else if (message === "Reference ID number must be exactly 5 digits.") {
         setFormErrors({ idNumber: "Reference ID must be exactly 5 digits" });
         error("Reference ID must be exactly 5 digits");
